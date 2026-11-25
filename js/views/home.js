@@ -22,14 +22,14 @@ export default async function home(){
   const n = CHECK.filter(x => done[x[0]]).length;
   const live = PATHWAYS.filter(p => ['live', 'waived'].includes(lic[p.k].status));
   const attn = [
-    unpaid.length && [`${unpaid.length} order${unpaid.length > 1 ? 's' : ''} awaiting payment`, `${gbp(due)} · pay by card or bank transfer`, '#/shop/orders', 'Pay now', 1],
+    unpaid.length && [`${unpaid.length} order${unpaid.length > 1 ? 's' : ''} not paid yet`, `${gbp(due)} · finish payment to confirm`, '#/shop/orders', 'Finish payment', 1],
     needMusic && [`${needMusic} gymnast${needMusic === 1 ? '' : 's'} need${needMusic === 1 ? 's' : ''} floor music`, `${esc(mc.ev.title)} · by ${date(mc.ev.deadline, {day:'numeric', month:'short'})}${musicDue.length > 1 ? ' · and ' + (musicDue.length - 1) + ' more' : ''}`, '#/competitions/music', 'Upload'],
     buy && [`Buy your places on JustGo`, `${esc(buy.name)} · buy by ${date(buy.buyBy)}`, '#/competitions/places', 'View'],
     !mine.length && ['Reserve places for 2027', 'Competitions are filling fast: reserving is free', '#/competitions', 'Reserve']
   ].filter(Boolean);
   return `<h1>Welcome, ${esc(c.name)}</h1><p class="lead">Everything your club does with the NGL, in one place.</p>
   <div class="grid g4" style="margin-bottom:16px">
-    <a class="card stat" href="#/shop/orders"><b>${gbp(due)}</b><span>Awaiting payment · ${unpaid.length} order${unpaid.length === 1 ? '' : 's'}</span></a>
+    <a class="card stat" href="#/shop/orders"><b>${gbp(due)}</b><span>Not paid yet · ${unpaid.length} order${unpaid.length === 1 ? '' : 's'}</span></a>
     <a class="card stat" href="#/competitions/places"><b>${places}</b><span>Competition places reserved</span></a>
     <a class="card stat" href="#/competitions"><b>${date(nextAny.date, {day:'numeric', month:'short'})}</b><span>${next ? 'Your next' : 'Next'}: ${esc(nextAny.name)}</span></a>
     <a class="card stat" href="#/programmes"><b>${live.length}</b><span>Programmes active</span></a></div>

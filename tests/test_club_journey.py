@@ -1,5 +1,5 @@
 """A new club's journey on the STAGING database: reserve, change, calendar, cancel,
-shop, order, invoice, log out and back in. Runs in order, sharing one test club."""
+shop, order (straight to Stripe's secure checkout), log out and back in. Runs in order, sharing one test club."""
 
 
 def test_new_club_lands_on_home(account):
@@ -37,7 +37,7 @@ def test_cancel_reservation(account):
     pg.p.wait_for_selector("text=No places reserved yet", timeout=15000)
 
 
-def test_basket_order_and_invoice(account):
+def test_basket_order_goes_straight_to_payment(account):
     pg = account["page"]
     pg.route("#/shop")
     pg.p.click("[data-act=add][data-prod=gbook]")
@@ -45,17 +45,12 @@ def test_basket_order_and_invoice(account):
     pg.p.click("[data-act=checkout]")
     pg.p.fill("#addr", "AUTOTEST club, 1 Test Road, AB1 2CD")
     pg.p.click(".modal form .btn")
-    placed = pg.p.wait_for_selector(".modal >> text=placed", timeout=20000)
-    ref = placed.inner_text().split()[1]
-    assert ref.startswith("ORD-")
-    pg.p.wait_for_selector("text=Test address: no email sent.", timeout=15000)
-    pg.p.click(".modal a[data-close]")
-    pg.p.wait_for_selector("#page h1 >> text=" + ref, timeout=15000)
-    assert "Awaiting payment" in pg.p.inner_text("#page")
-    pg.p.click("[data-act=invoice]")
-    inv = pg.p.wait_for_selector(".inv").inner_text()
-    assert ref in inv and "£44" in inv and "AUTOTEST" in inv
-    pg.p.click("[data-shut]")
+    pg.p.wait_for_url("**checkout.stripe.com**", timeout=45000)   # Stripe sandbox; nothing is paid
+    pg.p.go_back()
+    pg.p.wait_for_selector("#page h1", timeout=20000)
+    pg.route("#/shop/orders")
+    page_text = pg.p.inner_text("#page")
+    assert "Not paid" in page_text and "Finish payment" in page_text and "£44" in page_text
 
 
 def test_log_out_and_back_in(account):

@@ -40,18 +40,16 @@ const ACT = {
       <table>${lines.map(l => `<tr><td>${l.qty} × ${esc(l.n)}</td><td style="text-align:right">${gbp(l.qty * l.unit)}</td></tr>`).join('')}
       <tr><td>Postage</td><td style="text-align:right">${gbp(t.post)}</td></tr><tr><td><b>Total</b></td><td style="text-align:right"><b>${gbp(t.total)}</b></td></tr></table>
       <form><label class="field"><span>Deliver to</span><textarea id="addr" rows="3" required placeholder="Club name, street, town, postcode">${esc(c.deliveryAddress || '')}</textarea></label>
-      <p class="err" id="err"></p><div class="btn-row"><button class="btn">Place order: pay by card or bank transfer</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
+      <p class="lead" style="font-size:13px;margin:0">Pay by card, Apple Pay or Google Pay, or <b>Pay by bank</b> straight from your banking app. Stripe emails your receipt.</p>
+      <p class="err" id="err"></p><div class="btn-row"><button class="btn">Continue to secure payment</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
     m.querySelector('form').addEventListener('submit', async e => { e.preventDefault(); const btn = m.querySelector('.btn'); btn.disabled = true;
       const addr = m.querySelector('#addr').value.trim();
       try {
         const all = [...lines, {k: 'postage', n: 'Postage', unit: t.post, qty: 1}];
         const o = await api.placeOrder(all, addr); api.updateClub({deliveryAddress: addr}).catch(() => {});
         basket.set([]); m.remove();
-        const done = modal(`<h2>Order ${esc(o.id)} placed</h2><p class="lead">${gbp(o.total)}. Pay now by card, or by bank transfer quoting <b>${esc(o.id)}</b>. We post it as soon as payment arrives.</p>
-          <div class="btn-row"><button class="btn" data-act="pay" data-order="${esc(o.id)}">Pay by card</button><a class="btn ghost" href="#/shop/orders/${esc(o.id)}" data-close>View order</a></div>
-          <p class="lead" id="mailNote" style="font-size:13px;margin:12px 0 0">Emailing your invoice to ${esc(c.email || '')}…</p>`);
-        api.order(o.id).then(full => emailInvoice(full, c)).then(r => { const n = done.querySelector('#mailNote'); if (n) n.textContent = r === 'sent' ? '✓ Invoice emailed to ' + c.email : 'Test address: no email sent.'; })
-          .catch(e => { console.error(e); const n = done.querySelector('#mailNote'); if (n) n.textContent = 'We couldn’t email the invoice just now. You can email it again from the order page.'; });
+        try { await api.payByCard(o.id); }                     // straight to Stripe: card or Pay by bank
+        catch (x) { toast(x.message, false); location.hash = '#/shop/orders/' + o.id; }
         rerender();
       } catch (x) { m.querySelector('#err').textContent = x.message.startsWith('Sample') ? x.message : 'Couldn’t place the order. Please try again.'; console.error(x); btn.disabled = false; } });
   },
@@ -71,13 +69,13 @@ const ACT = {
   },
 
   async pay(b){
-    const label = b.textContent; b.disabled = true; b.textContent = 'Opening secure checkout…';
+    const label = b.textContent; b.disabled = true; b.textContent = 'Opening secure payment…';
     try { await api.payByCard(b.dataset.order); }
     catch (x) { b.disabled = false; b.textContent = label; toast(x.message, false); }
   },
   async invoice(b){
     const [o, c] = await Promise.all([api.order(b.dataset.order), api.club()]);
-    if (o) showInvoice(o, c); else toast('Couldn’t open that invoice.', false);
+    if (o) showInvoice(o, c); else toast('Couldn’t open that receipt.', false);
   },
 
   // Calendar file (.ics) for one competition or all reserved ones: opens in Google, Outlook or Apple Calendar.
@@ -109,8 +107,8 @@ const ACT = {
   async 'email-invoice'(b){
     b.disabled = true; const label = b.textContent; b.textContent = 'Sending…';
     try { const [o, c] = await Promise.all([api.order(b.dataset.order), api.club()]); const r = await emailInvoice(o, c);
-      toast(r === 'sent' ? 'Invoice emailed to ' + c.email : 'Test address: no email sent.'); }
-    catch (x) { console.error(x); toast('Couldn’t send the email. Please try again.', false); }
+      toast(r === 'sent' ? 'Receipt emailed to ' + c.email : 'Test address: no email sent.'); }
+    catch (x) { console.error(x); toast(x.message.includes('paid') ? x.message : 'Couldn’t send the email. Please try again.', false); }
     b.disabled = false; b.textContent = label;
   },
 

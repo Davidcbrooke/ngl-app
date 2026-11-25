@@ -9,7 +9,7 @@ const SCREENS = [
   ['Floor music upload', '#/competitions/music', 'Competitions', 'mp3 floor music'],
   ['Results and league tables', '#/competitions/results', 'Competitions', 'scores national league table training league'],
   ['Shop', '#/shop', 'Shop & orders', 'order buy books medals certificates passports kit'],
-  ['Invoices and payments', '#/shop/orders', 'Shop & orders', 'invoice pay card bank transfer receipt'],
+  ['Orders, payments and receipts', '#/shop/orders', 'Shop & orders', 'invoice pay card bank receipt apple google'],
   ['Lesson plans', '#/programmes/recreational', 'Programmes', 'plans warm-ups stations'],
   ['Pre-School', '#/programmes/preschool', 'Programmes', 'somi flic passport term planner'],
   ['Schools', '#/programmes/schools', 'Programmes', 'graduation profit planner'],
@@ -39,7 +39,7 @@ export function SEARCH(input, box){
       return {...x, score};
     }).filter(x => x.score).sort((a, b) => b.score - a.score).slice(0, 8);
     box.innerHTML = hits.length ? hits.map(x => `<a href="${esc(x.go)}" ${x.ext ? 'target="_blank" rel="noopener"' : ''}>${svg(x.where === 'Rules & resources' ? 'rules' : x.where === 'Help' ? 'help' : 'prog')}<span>${esc(x.t)}</span><small>${esc(x.where)}${x.ext ? ' · PDF' : ''}</small></a>`).join('')
-      : '<div style="padding:10px;color:var(--muted)">No match. Try "rules", "music" or "invoice".</div>';
+      : '<div style="padding:10px;color:var(--muted)">No match. Try "rules", "music" or "receipt".</div>';
     box.classList.add('open');
   });
   box.addEventListener('click', () => { input.value = ''; close(); });

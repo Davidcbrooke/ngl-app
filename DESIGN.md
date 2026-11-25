@@ -72,7 +72,7 @@ Live examples of every component: `styleguide.html` (open it from the sandbox).
 **Status pills**: one status per item, always one of these:
 | Status | Pill |
 |---|---|
-| Awaiting payment | red |
+| Not paid | red |
 | Paid · Live · Sent · Reserved | green |
 | Waiting list · Renew soon · Coming soon | amber |
 | Explore free · Not started | grey |
@@ -99,8 +99,9 @@ Live examples of every component: `styleguide.html` (open it from the sandbox).
 - Every order has one reference (ORD-XXXXX), one total and one status.
 - Prices to clubs exclude VAT; licence fees show "+ VAT". Books, medals and t-shirts carry no VAT.
 - Show postage as its own line, then a bold total.
-- "Pay by card" is the primary action on any unpaid order; bank transfer details are always one click away on the invoice.
-- After payment the status changes immediately and a receipt is emailed.
+- **Pay at checkout only** (agreed 25 Nov 2026): card, Apple Pay, Google Pay or Stripe Pay by bank. No invoices with bank details, so nobody marks orders paid by hand.
+- An unpaid order (checkout not finished) shows "Not paid" and one action: "Finish payment".
+- After payment the status changes immediately and Stripe emails the receipt; the club can download or re-send it.
 
 ## 8. Words
 - UK English. "Club Licence", never "membership". "Licence fee waived", never "free".

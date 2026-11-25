@@ -38,11 +38,25 @@ def test_search_finds_rules(page):
     assert any("WAG" in r for r in results) and any("MAG" in r for r in results)
 
 
-def test_invoice_opens(page):
-    page.go("#/shop/orders/ORD-R2M6F", demo=True)
+def test_receipt_opens_for_paid_order(page):
+    page.go("#/shop/orders/ORD-K3M7Q", demo=True)
     page.p.click("[data-act=invoice]")
-    inv = page.p.wait_for_selector(".inv").inner_text()
-    assert "INVOICE" in inv.upper() and "60-84-64" in inv and "Company no. 10702099" in inv
+    r = page.p.wait_for_selector(".inv").inner_text()
+    assert "RECEIPT" in r.upper() and "Company no. 10702099" in r
+
+
+def test_unpaid_order_only_offers_finish_payment(page):
+    page.go("#/shop/orders/ORD-R2M6F", demo=True)
+    assert page.p.locator("[data-act=pay]").count() == 1
+    assert page.p.locator("[data-act=invoice]").count() == 0
+
+
+@pytest.mark.parametrize("hash_", ["#/home", "#/shop", "#/shop/orders", "#/shop/orders/ORD-R2M6F", "#/shop/orders/ORD-K3M7Q", "#/help"])
+def test_no_bank_details_anywhere(page, hash_):
+    """Pay at checkout only (agreed 25 Nov 2026): no sort codes, account numbers or "bank transfer"."""
+    page.go(hash_, demo=True)
+    text = page.p.inner_text("body").lower()
+    assert "60-84-64" not in text and "93416867" not in text and "bank transfer" not in text
 
 
 @pytest.mark.parametrize("hash_", ["#/home", "#/shop/orders", "#/competitions/music", "#/programmes/recreational"])

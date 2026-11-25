@@ -27,7 +27,7 @@ section{margin:0 0 34px}.demo{display:flex;gap:10px;flex-wrap:wrap;align-items:c
 <div class="demo"><button class="btn">Place order</button><button class="btn ghost">Cancel</button><button class="btn sm">Reserve places</button><button class="btn sm ghost">Details</button><button class="btn" disabled>Placing order…</button></div></section>
 
 <section><h2>Status pills</h2><p class="rule">One status per item, from this set only.</p>
-<div class="demo"><span class="pill red">Awaiting payment</span><span class="pill ok">Paid</span><span class="pill ok">Live</span><span class="pill ok">Reserved</span><span class="pill warn">Waiting list</span><span class="pill warn">Renew soon</span><span class="pill">Explore free</span></div></section>
+<div class="demo"><span class="pill red">Not paid</span><span class="pill ok">Paid</span><span class="pill ok">Live</span><span class="pill ok">Reserved</span><span class="pill warn">Waiting list</span><span class="pill warn">Renew soon</span><span class="pill">Explore free</span></div></section>
 
 <section><h2>Pathway switcher and sub-tabs</h2><p class="rule">Pills in pathway order; sub-tabs max 5; active tab takes the pathway colour.</p>
 <div class="paths"><a class="on" style="--c:var(--rec)"><span class="dot"></span>Recreational</a><a style="--c:var(--pre)"><span class="dot"></span>Pre-School</a><a class="y" style="--c:var(--sch)"><span class="dot"></span>Schools</a><a style="--c:var(--gen)"><span class="dot"></span>General League</a></div>
@@ -35,9 +35,9 @@ section{margin:0 0 34px}.demo{display:flex;gap:10px;flex-wrap:wrap;align-items:c
 
 <section><h2>Cards and lists</h2><p class="rule">Key fact bold, detail muted underneath, action on the right. Same columns everywhere.</p>
 <div class="grid g2"><div class="card attn"><h2>Needs your attention</h2>
-<div class="row"><div class="grow"><b>3 orders awaiting payment</b><small>£1,762 · pay by card or bank transfer</small></div><a class="btn sm">Pay now</a></div>
+<div class="row"><div class="grow"><b>3 orders not paid yet</b><small>£1,762 · finish payment to confirm</small></div><a class="btn sm">Finish payment</a></div>
 <div class="row"><div class="grow"><b>4 gymnasts need floor music</b><small>General League · East Region · by 24 Jan</small></div><a class="btn sm ghost">Upload</a></div></div>
-<div class="card"><table><tr><th>Date</th><th>Ref</th><th>Total</th><th>Status</th></tr><tr><td>24 Nov</td><td><b>ORD-R2M6F</b></td><td>£800</td><td><span class="pill red">Awaiting payment</span></td></tr><tr><td>26 Oct</td><td><b>ORD-K3M7Q</b></td><td>£950</td><td><span class="pill ok">Paid</span></td></tr></table></div></div></section>
+<div class="card"><table><tr><th>Date</th><th>Ref</th><th>Total</th><th>Status</th></tr><tr><td>24 Nov</td><td><b>ORD-R2M6F</b></td><td>£800</td><td><span class="pill red">Not paid</span></td></tr><tr><td>26 Oct</td><td><b>ORD-K3M7Q</b></td><td>£950</td><td><span class="pill ok">Paid</span></td></tr></table></div></div></section>
 
 <section><h2>Empty and locked states</h2><p class="rule">Never a dead end: say what to do next.</p>
 <div class="grid g2"><div class="card empty">No orders yet. <a href="#">Go to the shop</a></div>

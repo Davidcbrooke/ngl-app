@@ -74,7 +74,7 @@ export const FAQ = [
   {id:'music', q:'How do I upload floor music?', a:'Competitions → Floor music. One MP3 per gymnast, up to 15MB, no voice-over or lyrics.', go:'#/competitions/music'},
   {id:'results', q:'Where are the results and league tables?', a:'Competitions → Results & league tables. Share the Family Hub link so parents can follow them too.', go:'#/competitions/results'},
   {id:'licence', q:'What does a licence cost, and what do I get?', a:'My club → Licences shows every programme. Explore any programme before you buy; a licence unlocks the lesson plans, ordering at club prices and the family app.', go:'#/club'},
-  {id:'pay', q:'How do I pay an invoice?', a:'Shop & orders → Orders & invoices → Pay by card, or by bank transfer using the order reference.', go:'#/shop/orders'},
+  {id:'pay', q:'How do I pay for an order?', a:'You pay when you order, through Stripe’s secure checkout: card, Apple Pay, Google Pay or Pay by bank from your banking app. Stripe emails your receipt and the order shows as Paid straight away. If you didn’t finish paying, open the order in Shop & orders and choose Finish payment.', go:'#/shop/orders'},
   {id:'parents', q:'What do I give parents?', a:'My club → Family codes: one link and QR code per programme.', go:'#/club'},
   {id:'judges', q:'How do my coaches become judges?', a:'Share the NGL Judging Pathway link; each judge registers themselves.', go:'#/help'},
   {id:'contact', q:'Who do I talk to?', a:'Chat with us, email admin@nationalgymnasticsleague.co.uk, or book a call with Dave.', go:'#/help'}
@@ -186,7 +186,7 @@ const fbApi = {
     return {id, ...o, date: iso(o.createdAt), placedAt: iso(o.createdAt), paidAt: o.paidAt ? iso(o.paidAt) : null, sentAt: o.sentAt ? iso(o.sentAt) : null};
   },
   async payByCard(orderId){
-    if (!CARD_PAY_URL) throw new Error('Card payment is being connected. You can pay by bank transfer using the details on the invoice.');
+    if (!CARD_PAY_URL) throw new Error('Payment isn’t available just now. Please try again shortly.');
     const {A} = await fb(), u = A.currentUser, token = await u.getIdToken();
     const r = await fetch(CARD_PAY_URL, {method: 'POST', headers: {'Content-Type': 'text/plain'},
       body: JSON.stringify({action: 'checkout', uid: u.uid, idToken: token, coll: 'orders', orderId, ret: location.href.split('#')[0] + '#/shop/orders/' + orderId})});
