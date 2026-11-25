@@ -57,6 +57,13 @@ service cloud.firestore {
     match /products/{id}     { allow read: if signedIn(); allow write: if isAdmin(); }
     match /resources/{id}    { allow read: if signedIn(); allow write: if isAdmin(); }
 
+    // The full Recreational programme: clubs with a live Recreational licence, and NGL admins
+    function recLicensed() { return signedIn() && get(/databases/$(database)/documents/clubs/$(request.auth.uid)).data.licences.recreational.status == 'live'; }
+    match /recContent/{id} { allow read: if isAdmin() || recLicensed(); allow write: if isAdmin(); }
+    match /recShared/{key}/docs/{id} { allow read: if isAdmin() || recLicensed(); allow write: if isAdmin(); }
+    // Data move report (rehearsal and switch-over): NGL admins only
+    match /migration/{id} { allow read: if isAdmin(); allow write: if false; }
+
     // Everything else is closed
     match /{document=**} { allow read, write: if false; }
   }

@@ -42,14 +42,16 @@ const sample = () => S.kind === 'sample';
 
 async function loadContent(){
   if (S.content) return;
-  try { const c = await api.recContent?.(); if (c && c.plan) { S.content = c; S.kind = 'full'; return; } } catch (_) {}
+  if (licensed() || (api.isAdmin && await api.isAdmin().catch(() => false))) {
+    try { const c = await api.recContent?.(); if (c && c.plan) { S.content = c; S.kind = 'full'; return; } } catch (e) { console.warn('Full programme not available', e.code || e); }
+  }
   const r = await fetch(SAMPLE_URL, {cache: 'force-cache'}); if (!r.ok) throw new Error('Sample not available');
   const c = await r.json(), idx = {}; (c.images || []).forEach((ch, n) => Object.keys(ch).forEach(h => { idx[h] = n; }));
   S.content = {...c, imgIndex: idx}; S.kind = 'sample';
 }
 async function ready(){
   const [lic, club] = await Promise.all([api.licences(), api.club()]); S.lic = lic.recreational || {}; S.club = club;
-  await loadContent(); return S;
+  await loadContent(); if (S.content && !S.content.imgIndex) S.content.imgIndex = {}; return S;
 }
 
 // ---------- the club plan (engine) ----------

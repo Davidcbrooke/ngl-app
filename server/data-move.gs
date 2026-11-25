@@ -1,0 +1,180 @@
+/**
+ * NGL Club Hub: DATA MOVE REHEARSAL (run from the Apps Script editor, bookingoffice@ account).
+ * READS live data (Firebase ngl-schools and saadi-rotation) and WRITES the new one-app layout into the
+ * STAGING project (ngl-club-hub-staging). Nothing in the live projects is changed: every call to them is a GET.
+ * Run rehearse(). Then read the report: staging Firestore → migration/report, and the execution log.
+ * Script properties: none. Scopes: script.external_request, datastore (see appsscript.json).
+ */
+const LIVE = 'ngl-schools', BOOK = 'saadi-rotation', STAGING = 'ngl-club-hub-staging';
+const base = p => 'https://firestore.googleapis.com/v1/projects/' + p + '/databases/(default)/documents';
+
+/* ---------- prices and band names (same as the hubs) ---------- */
+const SCHOOLS_BANDS = {xs: '1 to 24 Schools gymnasts', sm: '25 to 49 Schools gymnasts', s: '50 to 99 Schools gymnasts', m: '100 to 249 Schools gymnasts', m2: '250 to 399 Schools gymnasts', l: '400 to 599 Schools gymnasts', xl: '600 or more Schools gymnasts'};
+const REC_BANDS = {xs: '1 to 24 recreational gymnasts', sm: '25 to 49 recreational gymnasts', s: '50 to 99 recreational gymnasts', m: '100 to 249 recreational gymnasts', m2: '250 to 399 recreational gymnasts', l: '400 to 599 recreational gymnasts', xl: '600 or more recreational gymnasts'};
+const PS_BANDS = {xs: '1–24 Pre-School gymnasts', sm: '25–49 Pre-School gymnasts', s: '50–99 Pre-School gymnasts', m: '100 or more Pre-School gymnasts'};
+
+function rehearse(){
+  const t0 = Date.now(), report = {startedAt: new Date(), clubs: [], unmatched: {reservations: [], music: [], orders: []}, counts: {}};
+  // 1. READ live (GET only)
+  const clubs = listAll(LIVE, 'clubs'), schoolsOrders = listAll(LIVE, 'orders'), recOrders = listAll(LIVE, 'recOrders');
+  const events = listAll(LIVE, 'events'), musicEvents = listAll(LIVE, 'musicEvents'), musicUploads = listAll(LIVE, 'musicUploads');
+  const comps = listAll(BOOK, 'ngl_competitions'), bookings = listAll(BOOK, 'ngl_bookings');
+  clubs.forEach(c => { c.data.schoolsSub = listAll(LIVE, 'clubs/' + c.id + '/schools').map(s => ({id: s.id, name: s.data.name || '', children: Number(s.data.children) || 0})); });
+  report.counts.live = {clubs: clubs.length, schoolsOrders: schoolsOrders.length, recOrders: recOrders.length, events: events.length, musicEvents: musicEvents.length, musicUploads: musicUploads.length, competitions: comps.length, bookings: bookings.length};
+
+  // 2. CONVERT
+  const now = new Date(), writes = [];
+  const emailIndex = {};   // email or sha256(email) -> club id
+  clubs.forEach(c => { [c.data.email].concat(c.data.bookingEmails || []).filter(Boolean).forEach(e => { const k = String(e).trim().toLowerCase(); emailIndex[k] = c.id; emailIndex[sha256(k)] = c.id; }); });
+  // Fallback: the club name on the booking, when exactly one Club Hub account has that name
+  const norm = n => String(n || '').toLowerCase().replace(/&/g, 'and').replace(/\b(gymnastics?|gym|club|academy|ltd|limited|c\.?i\.?c\.?|and|tumbling|trampoline|the)\b/g, '').replace(/[^a-z0-9]/g, '');
+  const nameIndex = {}; clubs.forEach(c => { const k = norm(c.data.name); if (k) (nameIndex[k] = nameIndex[k] || []).push(c.id); });
+  const byName = n => { const ids = nameIndex[norm(n)] || []; return ids.length === 1 ? ids[0] : null; };
+  const dupNames = Object.keys(nameIndex).filter(k => nameIndex[k].length > 1).map(k => nameIndex[k].map(id => clubs.find(c => c.id === id).data.name + ' (' + mask(clubs.find(c => c.id === id).data.email || '') + ')'));
+  report.duplicateClubs = dupNames;
+
+  // Competitions
+  const compOut = comps.map(c => { const d = c.data, name = d.name || d.title || c.id, date = isoDate(d.date);
+    const path = /recreational/i.test(name + ' ' + (d.pathway || '')) ? 'recreational' : /performance|grades|classic/i.test(name) ? 'performance' : /schools/i.test(name) ? 'schools' : 'general';
+    return {id: c.id, name, path, date, where: d.venue || d.location || 'TBC', who: [d.level, d.gender && d.gender !== 'both' ? (d.gender === 'boys' ? 'Boys' : 'Girls') : ''].filter(Boolean).join(' · ') || 'All levels', status: 'open'}; })
+    .filter(c => c.date);
+  compOut.forEach(c => writes.push(doc('competitions/' + c.id, c)));
+
+  // Reservations, linked to clubs by email
+  const resByClub = {};
+  bookings.forEach(b => { const d = b.data, key = d.email ? String(d.email).trim().toLowerCase() : d.emailHash, byEmail = emailIndex[key] || emailIndex[d.emailHash], club = byEmail || byName(d.club || d.clubName);
+    if (!club) { report.unmatched.reservations.push({id: b.id, club: d.club || d.clubName || '', compName: d.compName || d.compId, places: Number(d.spaces) || 0}); return; }
+    if (!byEmail) report.matchedByName = (report.matchedByName || 0) + 1;
+    const ref = d.reference || b.id, rec = {clubId: club, clubName: (clubs.find(x => x.id === club).data.name || ''), compId: d.compId || '', places: Number(d.spaces) || 0,
+      status: d.waitlist ? 'waiting' : (d.bought || d.purchased ? 'bought' : 'reserved'), ref, createdAt: d.createdAt || now, movedFrom: 'saadi-rotation/ngl_bookings/' + b.id};
+    writes.push(doc('reservations/' + safeId(ref), rec)); (resByClub[club] = resByClub[club] || []).push(rec); });
+
+  // Orders (Schools + Recreational/Pre-School/General) in one list
+  const ordByClub = {};
+  const pushOrder = (o, coll) => { const d = o.data, lines = orderLines(d, coll), total = round2(lines.reduce((a, l) => a + l.qty * l.unit, 0));
+    if (!d.clubId) { report.unmatched.orders.push(o.id); return; }
+    const path = coll === 'orders' ? 'schools' : d.pathway === 'preschool' ? 'preschool' : d.pathway === 'general' ? 'general' : 'recreational';
+    const rec = {clubId: d.clubId, clubName: d.clubName || '', path, lines, total, details: lines.filter(l => l.k !== 'vat').map(l => l.qty + ' × ' + l.n).join(', '),
+      status: d.status || 'awaiting-payment', delivery: d.delivery || '', createdAt: d.createdAt || now, kind: d.kind || d.type || 'supplies', movedFrom: LIVE + '/' + coll + '/' + o.id};
+    if (d.paidAt) rec.paidAt = d.paidAt; if (d.sentAt) rec.sentAt = d.sentAt; if (d.paidBy) rec.paidBy = d.paidBy;
+    writes.push(doc('orders/' + o.id, rec)); (ordByClub[d.clubId] = ordByClub[d.clubId] || []).push(rec); };
+  schoolsOrders.forEach(o => pushOrder(o, 'orders')); recOrders.forEach(o => pushOrder(o, 'recOrders'));
+
+  // Floor music: entries per club, uploads copied with the same ids
+  musicEvents.forEach(ev => { const d = ev.data, links = d.links || {};
+    Object.keys(d.clubs || {}).forEach(key => { const cl = d.clubs[key], uid = links[key] || (cl.bg && (clubs.find(c => String(c.data.bgNumber || '').trim() === String(cl.bg).trim()) || {}).id);
+      const gymnasts = []; (d.levels || []).forEach(L => (L.gymnasts || []).forEach(g => { if (g.club === key) gymnasts.push({id: g.id, n: g.name, level: L.name || L.id}); }));
+      if (!gymnasts.length) return;
+      if (!uid) { report.unmatched.music.push({event: d.title || ev.id, club: cl.name || key, gymnasts: gymnasts.length}); return; }
+      writes.push(doc('musicEntries/' + ev.id + '_' + uid, {compId: ev.id, clubId: uid, clubName: cl.name || '', title: d.title || '', date: isoDate(d.date), deadline: isoDate(d.deadline) || d.deadline || '', gymnasts, status: d.status === 'open' ? 'open' : 'closed'})); }); });
+  musicUploads.forEach(u => writes.push(doc('musicUploads/' + u.id, Object.assign({}, u.data, {compId: u.data.compKey || u.data.compId || '', movedFrom: LIVE + '/musicUploads/' + u.id}))));
+
+  // Clubs: one licence list, schools and Graduations on the club, plans carried over
+  clubs.forEach(c => { const d = c.data, lic = {};
+    const live = r => r && r.status === 'active' && (!r.expires || toDate(r.expires) > now);
+    const seasonEnd = season => new Date(Number(String(season).slice(0, 4)) + 1, 7, 31);   // 2026/27 -> 31 Aug 2027
+    const codeLive = d.codeActive && (!d.codeTrialUntil || toDate(d.codeTrialUntil) > now);
+    const legacySeason = Object.keys(d.bands || {}).filter(k => seasonEnd(k) > now).sort().pop();
+    if (!live(d.schools) && legacySeason && codeLive) d.schools = {status: 'active', band: '', expires: seasonEnd(legacySeason), legacy: true, gymnasts: d.bands[legacySeason]};
+    lic.schools = live(d.schools) ? {status: 'live', label: d.schools.trial ? 'Free trial' : 'Licence live', band: d.schools.legacy ? d.schools.gymnasts + ' gymnasts (' + legacySeason + ' season)' : (SCHOOLS_BANDS[d.schools.band] || d.schools.band || ''), renews: isoDate(d.schools.expires), code: codeLive ? (d.accessCode || '') : ''} : {status: 'explore', label: 'Explore free'};
+    lic.recreational = live(d.rec) ? {status: 'live', label: 'Licence live', band: REC_BANDS[d.rec.band] || d.rec.band || '', renews: isoDate(d.rec.expires), code: d.recCode || ''} : {status: 'explore', label: 'Explore free'};
+    const p = d.preschool || {};
+    lic.preschool = p.status === 'active' ? {status: 'live', label: 'Licence live', band: PS_BANDS[p.band] || p.band || '', renews: p.since ? isoDate(addYear(p.since)) : '', packs: {pack2: !!p.pack2, pack3: !!p.pack3, pack4: !!p.pack4, seasonal: !!p.seasonal}} : {status: 'explore', label: 'Explore free'};
+    lic.general = {status: 'waived', label: 'Fee waived for 2027'};
+    lic.performance = {status: 'soon', label: 'Coming 2027'}; lic.university = {status: 'soon', label: 'Coming soon'}; lic.masters = {status: 'soon', label: 'Coming soon'};
+    const evs = events.filter(e => e.data.clubId === c.id).map(e => ({id: e.id, title: e.data.title || '', schoolId: e.data.schoolId || '', schoolName: e.data.schoolName || '', date: e.data.date || '', time: e.data.time || '', venue: e.data.venue || '', bookingUrl: e.data.bookingUrl || ''}));
+    const out = {name: d.name || '', contact: d.contact || '', email: d.email || '', bgNumber: d.bgNumber || '', phone: d.phone || '', deliveryAddress: d.deliveryAddress || '',
+      licences: lic, schoolsList: d.schoolsSub, schoolEvents: evs, createdAt: d.createdAt || now, movedFrom: LIVE + '/clubs/' + c.id};
+    ['recTerm', 'rotaJson', 'projection', 'secPlan', 'interest', 'bookingEmails'].forEach(k => { if (d[k] != null) out[k] = d[k]; });
+    if (d.preschoolPlan) out.plans = {preschool: d.preschoolPlan};
+    writes.push(doc('clubs/' + c.id, out));
+    report.clubs.push({id: c.id, name: d.name || '', email: mask(d.email || ''), licences: Object.keys(lic).filter(k => lic[k].status === 'live').join(', ') || 'none',
+      schools: d.schoolsSub.length, graduations: evs.length, orders: (ordByClub[c.id] || []).length, unpaid: (ordByClub[c.id] || []).filter(o => o.status === 'awaiting-payment').length,
+      reservations: (resByClub[c.id] || []).length}); });
+
+  // 3. WRITE to staging (batches of 400)
+  for (let i = 0; i < writes.length; i += 400) commit(STAGING, writes.slice(i, i + 400));
+  const content = copyRecContent();
+  report.counts.written = {docs: writes.length, recContentDocs: content};
+  report.seconds = Math.round((Date.now() - t0) / 1000);
+  commit(STAGING, [doc('migration/report', {json: JSON.stringify(report), at: new Date(), clubs: report.clubs.length, docs: writes.length})]);
+  Logger.log(JSON.stringify(report.counts));
+  const um = {}; report.unmatched.reservations.forEach(r => { um[r.club || '(no name)'] = (um[r.club || '(no name)'] || 0) + r.places; });
+  Logger.log('Reservations matched by club name: ' + (report.matchedByName || 0) + ' · still unmatched (places by club): ' + JSON.stringify(um));
+  Logger.log('Club names with more than one account: ' + JSON.stringify(report.duplicateClubs));
+  Logger.log('Clubs: ' + report.clubs.length + ' · unmatched reservations: ' + report.unmatched.reservations.length + ' · unmatched music: ' + report.unmatched.music.length + ' · orders with no club: ' + report.unmatched.orders.length);
+  report.clubs.forEach(c => Logger.log([c.name, c.licences, 'schools ' + c.schools, 'orders ' + c.orders + ' (' + c.unpaid + ' unpaid)', 'places ' + c.reservations, 'grads ' + c.graduations].join(' | ')));
+  return report;
+}
+
+/* Recreational programme: recContent/meta and recShared/{key}/docs/* copied as they are */
+function copyRecContent(){
+  const meta = getDoc(LIVE, 'recContent/meta'); if (!meta) { Logger.log('No Recreational content published in live'); return 0; }
+  const key = fromVal_({mapValue: {fields: meta.fields}}).key, docs = listAll(LIVE, 'recShared/' + key + '/docs');
+  const w = [{update: {name: base(STAGING).replace('https://firestore.googleapis.com/v1/', '') + '/recContent/meta', fields: meta.fields}}]
+    .concat(docs.map(d => ({update: {name: base(STAGING).replace('https://firestore.googleapis.com/v1/', '') + '/recShared/' + key + '/docs/' + d.id, fields: d.raw}})));
+  for (let i = 0; i < w.length; i += 20) commitRaw(STAGING, w.slice(i, i + 20));   // small batches: image chunks are large
+  return w.length;
+}
+
+/* ---------- order lines in the new shape ---------- */
+function orderLines(d, coll){
+  if (d.lines && d.lines.length) return d.lines.map(l => ({k: l.kind || l.k || '', n: l.desc || l.n || l.name || 'Item', qty: Number(l.qty) || 0, unit: Number(l.unit) || 0}));
+  const L = [];
+  if (d.type === 'graduation') { L.push({k: 'graduation', n: 'Graduation medals and places', qty: Number(d.qty) || 0, unit: Number(d.price) || 0});
+    if (d.spectators) L.push({k: 'spectator', n: 'Extra spectator tickets', qty: Number(d.spectators), unit: Number(d.spectatorPrice) || 5}); }
+  else L.push({k: d.type || 'item', n: d.type === 'club-licence' ? 'NGL Schools Club Licence' + (d.band ? ' (' + (SCHOOLS_BANDS[d.band] || d.band) + ')' : '') : 'NGL Schools order', qty: Number(d.qty) || 1, unit: Number(d.price) || Number(d.total) || 0});
+  if (d.vat) { const net = L.reduce((a, l) => a + l.qty * l.unit, 0); L.push({k: 'vat', n: 'VAT (20%)', qty: 1, unit: round2(net * 0.2)}); }
+  return L;
+}
+
+/* ---------- Firestore REST helpers (live: GET only; staging: commit) ---------- */
+function auth_(){ return {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()}; }
+function listAll(project, path){
+  const out = []; let token = '';
+  do { const r = UrlFetchApp.fetch(base(project) + '/' + path + '?pageSize=300' + (token ? '&pageToken=' + encodeURIComponent(token) : ''), {headers: auth_(), muteHttpExceptions: true});
+    if (r.getResponseCode() === 404) return out;
+    if (r.getResponseCode() !== 200) throw new Error('Read ' + project + '/' + path + ' ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 200));
+    const j = JSON.parse(r.getContentText()); (j.documents || []).forEach(d => out.push({id: d.name.split('/').pop(), raw: d.fields || {}, data: fromVal_({mapValue: {fields: d.fields || {}}})}));
+    token = j.nextPageToken || ''; } while (token);
+  return out;
+}
+function getDoc(project, path){ const r = UrlFetchApp.fetch(base(project) + '/' + path, {headers: auth_(), muteHttpExceptions: true}); return r.getResponseCode() === 200 ? JSON.parse(r.getContentText()) : null; }
+function doc(path, obj){ const f = {}; Object.keys(obj).forEach(k => { if (obj[k] !== undefined) f[k] = toVal_(obj[k]); });
+  return {update: {name: base(STAGING).replace('https://firestore.googleapis.com/v1/', '') + '/' + path, fields: f}}; }
+function commit(project, writes){ commitRaw(project, writes); }
+function commitRaw(project, writes){
+  if (project !== STAGING) throw new Error('Refusing to write anywhere but staging');
+  const r = UrlFetchApp.fetch(base(project) + ':commit', {method: 'post', contentType: 'application/json', headers: auth_(), payload: JSON.stringify({writes}), muteHttpExceptions: true});
+  if (r.getResponseCode() !== 200) throw new Error('Write ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 300));
+}
+function toVal_(v){
+  if (v === null || v === undefined) return {nullValue: null};
+  if (v instanceof Date) return {timestampValue: v.toISOString()};
+  if (typeof v === 'boolean') return {booleanValue: v};
+  if (typeof v === 'number') return Number.isInteger(v) ? {integerValue: String(v)} : {doubleValue: v};
+  if (typeof v === 'string') return {stringValue: v};
+  if (Array.isArray(v)) return {arrayValue: {values: v.map(toVal_)}};
+  const f = {}; Object.keys(v).forEach(k => { f[k] = toVal_(v[k]); }); return {mapValue: {fields: f}};
+}
+function fromVal_(v){
+  if ('stringValue' in v) return v.stringValue; if ('integerValue' in v) return Number(v.integerValue); if ('doubleValue' in v) return v.doubleValue;
+  if ('booleanValue' in v) return v.booleanValue; if ('timestampValue' in v) return new Date(v.timestampValue); if ('nullValue' in v) return null;
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(fromVal_);
+  if ('mapValue' in v) { const o = {}, f = v.mapValue.fields || {}; Object.keys(f).forEach(k => { o[k] = fromVal_(f[k]); }); return o; }
+  return null;
+}
+const toDate = v => v instanceof Date ? v : new Date(v);
+const isoDate = v => { if (!v) return ''; const d = toDate(v); return isNaN(d) ? '' : Utilities.formatDate(d, 'Europe/London', 'yyyy-MM-dd'); };
+const addYear = v => { const d = toDate(v); d.setFullYear(d.getFullYear() + 1); return d; };
+const round2 = x => Math.round(x * 100) / 100;
+const safeId = s => String(s).replace(/[\/#?\s]/g, '-');
+const mask = e => String(e).replace(/^(.).*(@.*)$/, '$1•••$2');
+const sha256 = s => Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, s, Utilities.Charset.UTF_8).map(b => ('0' + (b & 0xff).toString(16)).slice(-2)).join('');
+
+/* Run first: checks the account can read both live projects and write to staging. */
+function checkAccess(){
+  Logger.log('live clubs read: ' + (UrlFetchApp.fetch(base(LIVE) + '/clubs?pageSize=1', {headers: auth_(), muteHttpExceptions: true}).getResponseCode()));
+  Logger.log('bookings read: ' + (UrlFetchApp.fetch(base(BOOK) + '/ngl_competitions?pageSize=1', {headers: auth_(), muteHttpExceptions: true}).getResponseCode()));
+  commit(STAGING, [doc('migration/check', {at: new Date()})]); Logger.log('staging write: ok');
+}

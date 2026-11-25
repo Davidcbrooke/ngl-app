@@ -206,6 +206,18 @@ const fbApi = {
     const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Card payment could not start.');
     location.href = j.url;
   },
+  // Full Recreational programme (published by NGL): recContent/meta -> recShared/{key}/docs/*. Images come in chunks img0, img1, ...
+  async recContent(){
+    const {fs, D} = await fb();
+    const meta = await fs.getDoc(fs.doc(D, 'recContent', 'meta')); if (!meta.exists()) return null;
+    const key = meta.data().key, names = ['plan', 'warmups', 'book', 'competition', 'imgIndex', 'videos'];
+    const snaps = await Promise.all(names.map(k => fs.getDoc(fs.doc(D, 'recShared', key, 'docs', k)))), c = {version: meta.data().version || ''};
+    snaps.forEach((s, i) => { if (s.exists()) c[names[i]] = JSON.parse(s.data().json); });
+    if (!c.plan) return null;
+    const chunks = [...new Set(Object.values(c.imgIndex || {}))].sort((a, b) => a - b);
+    c.images = []; await Promise.all(chunks.map(async n => { const s = await fs.getDoc(fs.doc(D, 'recShared', key, 'docs', 'img' + n)); c.images[n] = s.exists() ? JSON.parse(s.data().json) : {}; }));
+    return c;
+  },
   async products(){ return PRODUCTS; },
   async reserve(compId, places){
     const {fs, A, D} = await fb(), c = await this.club();

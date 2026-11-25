@@ -22,6 +22,10 @@ ATTEMPTS = {
         "await fs.setDoc(fs.doc(D, 'musicUploads', 'x_g1'), {clubId: me, compId: 'x', gymnastId: 'g1'});",
     "write the competition calendar":
         "await fs.setDoc(fs.doc(D, 'competitions', 'hack'), {name: 'Hack'});",
+    "read the full Recreational programme without a licence":
+        "await fs.getDoc(fs.doc(D, 'recContent', 'meta'));",
+    "read the data move report":
+        "await fs.getDoc(fs.doc(D, 'migration', 'report'));",
     "write to an unknown collection":
         "await fs.setDoc(fs.doc(D, 'anything', 'x'), {a: 1});",
 }
