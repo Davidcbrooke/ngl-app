@@ -1,6 +1,6 @@
 // Data layer. Every screen asks this file for data, never Firebase directly,
 // so the sandbox (sample data) and live (Firebase) run exactly the same screens.
-import { RULES_BASE } from './config.js';
+import { RULES_BASE, CARD_PAY_URL } from './config.js';
 import { fb } from './firebase.js';
 
 // Sample data when the address has ?demo, otherwise the staging database.
@@ -105,6 +105,9 @@ const demoApi = {
   async competitions(){ return demo.competitions; },
   async music(){ return demo.music; },
   async orders(){ return demo.orders; },
+  async order(id){ const o = demo.orders.find(x => x.id === id); if (!o) return null;
+    return {...o, lines: o.lines || [{n: o.details, qty: 1, unit: o.total}], delivery: 'SAADI Gymnastics, Redbourn, AL3 7PP', placedAt: o.date, paidAt: o.status === 'paid' ? o.date : null}; },
+  async payByCard(){ throw new Error('Sample data: nothing is charged.'); },
   async products(){ return demo.products; },
   async reserve(){ throw new Error('Sample data: nothing is saved. Remove ?demo from the address to use the test database.'); },
   async placeOrder(){ throw new Error('Sample data: nothing is saved.'); },
@@ -146,6 +149,19 @@ const fbApi = {
       return {id: d.id, date: iso(o.createdAt), path: o.path, details: o.details, total: o.total, status: o.status, lines: o.lines}; })
       .sort((a, b) => b.date.localeCompare(a.date));
   },
+  async order(id){
+    const {fs, D} = await fb(); const snap = await fs.getDoc(fs.doc(D, 'orders', id));
+    if (!snap.exists()) return null; const o = snap.data();
+    return {id, ...o, date: iso(o.createdAt), placedAt: iso(o.createdAt), paidAt: o.paidAt ? iso(o.paidAt) : null, sentAt: o.sentAt ? iso(o.sentAt) : null};
+  },
+  async payByCard(orderId){
+    if (!CARD_PAY_URL) throw new Error('Card payment is being connected. You can pay by bank transfer using the details on the invoice.');
+    const {A} = await fb(), u = A.currentUser, token = await u.getIdToken();
+    const r = await fetch(CARD_PAY_URL, {method: 'POST', headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({action: 'checkout', uid: u.uid, idToken: token, coll: 'orders', orderId, ret: location.href.split('#')[0] + '#/shop/orders/' + orderId})});
+    const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Card payment could not start.');
+    location.href = j.url;
+  },
   async products(){ return PRODUCTS; },
   async reserve(compId, places){
     const {fs, A, D} = await fb(), c = await this.club();
@@ -171,7 +187,7 @@ const fbApi = {
   async register(d){
     const {auth, fs, A, D} = await fb(); CLUB = null;
     const cred = await auth.createUserWithEmailAndPassword(A, d.email, d.password);
-    await fs.setDoc(fs.doc(D, 'clubs', cred.user.uid), {name: d.name, contact: d.contact, bgNumber: d.bgNumber || '', phone: d.phone || '', createdAt: fs.serverTimestamp()});
+    await fs.setDoc(fs.doc(D, 'clubs', cred.user.uid), {name: d.name, contact: d.contact, email: d.email, bgNumber: d.bgNumber || '', phone: d.phone || '', createdAt: fs.serverTimestamp()});
     return cred;
   },
   async reset(email){ const {auth, A} = await fb(); return auth.sendPasswordResetEmail(A, email); },

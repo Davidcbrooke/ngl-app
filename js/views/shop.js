@@ -1,18 +1,20 @@
 import api from '../data.js';
 import { esc, gbp, date, dot, pill, tabs, head, ic, path } from '../ui.js';
 import { basket, totals } from '../actions.js';
+import { due } from '../invoice.js';
 
-export default async function shop([sub = '']){
+export default async function shop([sub = '', id]){
+  if (sub === 'orders' && id) return orderPage(id);
   const [orders, products, lic] = await Promise.all([api.orders(), api.products(), api.licences()]);
   let body;
   if (sub === 'orders') {
-    const due = orders.filter(o => o.status === 'awaiting-payment').reduce((a, o) => a + o.total, 0);
+    const owed = orders.filter(o => o.status === 'awaiting-payment').reduce((a, o) => a + o.total, 0);
     body = !orders.length ? `<div class="card empty">No orders yet. <a href="#/shop">Go to the shop</a></div>` :
-    `<div class="grid g4" style="margin-bottom:16px"><div class="card stat"><b>${gbp(due)}</b><span>Awaiting payment</span></div></div>
+    `<div class="grid g4" style="margin-bottom:16px"><div class="card stat"><b>${gbp(owed)}</b><span>Awaiting payment</span></div></div>
     <div class="card"><table><tr><th>Date</th><th>Ref</th><th>Programme</th><th>Details</th><th>Total</th><th>Status</th><th></th></tr>
     ${orders.map(o => { const unpaid = o.status === 'awaiting-payment';
-      return `<tr><td>${date(o.date, {day:'numeric', month:'short'})}</td><td><b>${esc(o.id)}</b></td><td>${dot(o.path)} ${esc((path(o.path) || {n: ''}).n)}</td><td>${esc(o.details)}</td><td>${gbp(o.total)}</td>
-      <td>${pill(unpaid ? 'Awaiting payment' : o.status === 'sent' ? 'Sent' : 'Paid', unpaid ? 'red' : 'ok')}</td><td style="white-space:nowrap">${unpaid ? '<button class="btn sm" disabled title="Card payment is connected in the Shop stage">Pay by card</button> ' : ''}<button class="btn sm ghost" disabled title="Invoices come in the Shop stage">Invoice</button></td></tr>`; }).join('')}</table></div>
+      return `<tr><td>${date(o.date, {day:'numeric', month:'short'})}</td><td><a href="#/shop/orders/${esc(o.id)}"><b>${esc(o.id)}</b></a></td><td>${dot(o.path)} ${esc((path(o.path) || {n: ''}).n)}</td><td>${esc(o.details)}</td><td>${gbp(o.total)}</td>
+      <td>${pill(unpaid ? 'Awaiting payment' : o.status === 'sent' ? 'Sent' : 'Paid', unpaid ? 'red' : 'ok')}</td><td style="white-space:nowrap">${unpaid ? `<button class="btn sm" data-act="pay" data-order="${esc(o.id)}">Pay by card</button> ` : ''}<button class="btn sm ghost" data-act="invoice" data-order="${esc(o.id)}">Invoice</button></td></tr>`; }).join('')}</table></div>
     <p class="lead" style="margin-top:12px">Pay by card, or by bank transfer using the order reference.</p>`;
   } else {
     const bk = basket.get(), t = totals(bk);
@@ -28,4 +30,29 @@ export default async function shop([sub = '']){
       <button class="btn" style="width:100%;justify-content:center;margin-top:10px" data-act="checkout">Place order</button>` : '<p class="empty">Your basket is empty.</p>'}</div></div>`;
   }
   return head('Shop & orders', 'One shop for every programme. Pay by card or bank transfer.') + tabs([['', 'Shop'], ['orders', 'Orders & invoices']], sub, '#/shop') + body;
+}
+
+// One order, Stripe-style: status, timeline, lines, invoice, pay.
+async function orderPage(id){
+  const o = await api.order(id);
+  if (!o) return head('Order not found') + `<div class="card empty">We can’t find order ${esc(id)}. <a href="#/shop/orders">Back to your orders</a></div>`;
+  const unpaid = o.status === 'awaiting-payment', tot = (o.lines || []).reduce((a, l) => a + l.qty * l.unit, 0);
+  const steps = [
+    ['Order placed', date(o.placedAt), 1],
+    [o.paidBy === 'card' ? 'Paid by card' : 'Paid', o.paidAt ? date(o.paidAt) : unpaid ? 'Due by ' + date(due(o)) : '', !unpaid],
+    ['Posted', o.sentAt ? date(o.sentAt) : 'We post as soon as payment arrives', o.status === 'sent']
+  ];
+  return `<p style="margin:0 0 6px"><a href="#/shop/orders">← Orders & invoices</a></p>
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><h1 style="margin:0">${esc(o.id)}</h1>${pill(unpaid ? 'Awaiting payment' : o.status === 'sent' ? 'Sent' : 'Paid', unpaid ? 'red' : 'ok')}</div>
+  <p class="lead">${gbp(tot)} · placed ${date(o.placedAt)}</p>
+  <div class="grid" style="grid-template-columns:1fr 320px;align-items:start">
+    <div class="card"><h2>Items</h2><table><tr><th>Item</th><th>Qty</th><th>Price</th><th>Amount</th></tr>
+      ${(o.lines || []).map(l => `<tr><td>${esc(l.n)}</td><td>${l.qty}</td><td>${gbp(l.unit)}</td><td>${gbp(l.qty * l.unit)}</td></tr>`).join('')}
+      <tr><td colspan="3"><b>Total</b></td><td><b>${gbp(tot)}</b></td></tr></table>
+      ${o.delivery ? `<p class="lead" style="margin:14px 0 0"><b>Deliver to:</b> ${esc(o.delivery)}</p>` : ''}</div>
+    <div><div class="card" style="margin-bottom:16px"><h2>${unpaid ? 'Pay' : 'Payment'}</h2>
+      ${unpaid ? `<button class="btn" style="width:100%;justify-content:center" data-act="pay" data-order="${esc(o.id)}">Pay ${gbp(tot)} by card</button>
+        <p class="lead" style="font-size:13px;margin:10px 0 0">Or by bank transfer: the details are on the invoice.</p>` : '<p class="lead" style="margin:0">Paid. Thank you.</p>'}
+      <button class="btn ghost" style="width:100%;justify-content:center;margin-top:10px" data-act="invoice" data-order="${esc(o.id)}">${unpaid ? 'Invoice' : 'Receipt'} (PDF)</button></div>
+    <div class="card"><h2>Timeline</h2><ul class="timeline">${steps.map(s => `<li class="${s[2] ? 'done' : ''}"><div><b>${s[0]}</b><small>${esc(s[1])}</small></div></li>`).join('')}</ul></div></div></div>`;
 }

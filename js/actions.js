@@ -2,6 +2,7 @@
 // edit club details, sign out. Every write goes through the data layer.
 import api from './data.js';
 import { modal, toast, esc, gbp } from './ui.js';
+import { showInvoice } from './invoice.js';
 
 const rerender = () => window.NGL_RENDER && window.NGL_RENDER();
 export const basket = {
@@ -47,7 +48,7 @@ const ACT = {
         const o = await api.placeOrder(all, addr); api.updateClub({deliveryAddress: addr}).catch(() => {});
         basket.set([]); m.remove();
         modal(`<h2>Order ${esc(o.id)} placed</h2><p class="lead">${gbp(o.total)}. Pay now by card, or by bank transfer quoting <b>${esc(o.id)}</b>. We post it as soon as payment arrives.</p>
-          <div class="btn-row"><button class="btn" disabled title="Card payment is connected in the Shop stage">Pay by card</button><a class="btn ghost" href="#/shop/orders" data-close>See my orders</a></div>`);
+          <div class="btn-row"><button class="btn" data-act="pay" data-order="${esc(o.id)}">Pay by card</button><a class="btn ghost" href="#/shop/orders/${esc(o.id)}" data-close>View order</a></div>`);
         rerender();
       } catch (x) { m.querySelector('#err').textContent = x.message.startsWith('Sample') ? x.message : 'Couldn’t place the order. Please try again.'; console.error(x); btn.disabled = false; } });
   },
@@ -64,6 +65,16 @@ const ACT = {
     m.querySelector('form').addEventListener('submit', async e => { e.preventDefault();
       try { await api.updateClub({name: v('name'), contact: v('contact'), bgNumber: v('bg'), phone: v('phone')}); m.remove(); toast('Saved'); location.reload(); }
       catch (x) { m.querySelector('#err').textContent = x.message.startsWith('Sample') ? x.message : 'Couldn’t save. Please try again.'; console.error(x); } });
+  },
+
+  async pay(b){
+    const label = b.textContent; b.disabled = true; b.textContent = 'Opening secure checkout…';
+    try { await api.payByCard(b.dataset.order); }
+    catch (x) { b.disabled = false; b.textContent = label; toast(x.message, false); }
+  },
+  async invoice(b){
+    const [o, c] = await Promise.all([api.order(b.dataset.order), api.club()]);
+    if (o) showInvoice(o, c); else toast('Couldn’t open that invoice.', false);
   },
 
   async 'reset-pw'(){
