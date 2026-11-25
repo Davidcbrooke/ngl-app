@@ -21,6 +21,8 @@ export const INVOICE = {name: 'SAADI Gymnastics Ltd trading as National Gymnasti
 export const EMAILJS = {serviceId: 'service_3qlufgh', templateId: 'template_8i40iia', publicKey: 'ZSjEpECoOMHkWNB1D'};
 // Card payments: the STAGING copy of the "NGL card payments" Apps Script (Stripe TEST mode, staging database).
 export const CARD_PAY_URL = 'https://script.google.com/macros/s/AKfycbzhIP9CZydepNQ05-rwfN4RqcURJIi-00qVZAJJBe9C-r7Mdu7r_-eamCZFYjzImRH-vw/exec';
+// NGL admins: must match isAdmin() in firestore.rules, and the email must be verified.
+export const ADMIN_EMAILS = ['admin@nationalgymnasticsleague.co.uk', 'bookingoffice@saadigymnastics.co.uk'];
 export const CONTACT_EMAIL = 'admin@nationalgymnasticsleague.co.uk';
 export const RULES_BASE = 'https://davidcbrooke.github.io/GYMNASTICS-RESULTS/ngl-rules-2027-numbered-update/';
 export const BRAND = 'https://davidcbrooke.github.io/GYMNASTICS-RESULTS/brand/';

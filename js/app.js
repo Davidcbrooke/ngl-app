@@ -13,6 +13,7 @@ import programmes from './views/programmes.js';
 import shop from './views/shop.js';
 import club from './views/club.js';
 import help from './views/help.js';
+import admin from './views/admin.js';
 
 const NAV = [
   ['home', 'Home', 'home', home],
@@ -24,18 +25,19 @@ const NAV = [
   ['help', 'Help', 'help', help]
 ];
 const $ = s => document.querySelector(s);
+const CTX = {isAdmin: false, needsVerify: false};
 
 async function render(){
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
-  const key = NAV.some(n => n[0] === parts[0]) ? parts[0] : 'home';
+  const key = parts[0] === 'admin' ? 'admin' : NAV.some(n => n[0] === parts[0]) ? parts[0] : 'home';
   const unpaid = (await api.orders()).filter(o => o.status === 'awaiting-payment').length;
   $('#nav').innerHTML = NAV.map(([k, l, i]) => {
     const badge = (k === 'shop' && unpaid) ? `<span class="badge">${unpaid}</span>` : '';
     return `<a href="#/${k}" class="${k === key ? 'on' : ''}" ${k === key ? 'aria-current="page"' : ''}>${svg(i)}<span>${l}</span>${badge}</a>`;
-  }).join('');
-  const view = NAV.find(n => n[0] === key)[3];
-  $('#page').innerHTML = await view(parts.slice(1));
-  document.title = (key === 'home' ? '' : NAV.find(n => n[0] === key)[1] + ' · ') + 'NGL Club Hub';
+  }).join('') + (CTX.isAdmin ? `<a href="#/admin" class="admin-link ${key === 'admin' ? 'on' : ''}">${svg('club')}<span>NGL Admin</span></a>` : '');
+  const view = key === 'admin' ? admin : NAV.find(n => n[0] === key)[3];
+  $('#page').innerHTML = await view(parts.slice(1), CTX);
+  document.title = (key === 'home' ? '' : (key === 'admin' ? 'NGL Admin' : NAV.find(n => n[0] === key)[1]) + ' · ') + 'NGL Club Hub';
 }
 
 async function start(){
@@ -45,6 +47,7 @@ async function start(){
     if (!u) return showAuth();
   }
   const c = await api.club(), lic = await api.licences();
+  CTX.isAdmin = await api.isAdmin(); CTX.needsVerify = await api.needsVerify();
   const live = Object.entries(lic).filter(([, v]) => v.status === 'live' || v.status === 'waived').length;
   $('#clubCard').innerHTML = `<b>${esc(c.name)}</b><span>${live} programme${live === 1 ? '' : 's'} active</span>`;
   const who = c.contact || c.name || '';

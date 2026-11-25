@@ -26,7 +26,7 @@ def test_signed_out_shows_login(page):
 
 def test_seven_menu_items_in_order(page):
     page.go(demo=True)
-    labels = [t.strip() for t in page.p.locator("#nav a span:first-of-type").all_inner_texts()]
+    labels = [t.strip() for t in page.p.locator("#nav a:not(.admin-link) span:first-of-type").all_inner_texts()]
     assert labels == ["Home", "Competitions", "Rules & resources", "Programmes", "Shop & orders", "My club", "Help"]
 
 

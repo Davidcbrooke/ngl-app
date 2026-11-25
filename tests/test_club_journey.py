@@ -4,6 +4,7 @@ shop, order (straight to Stripe's secure checkout), log out and back in. Runs in
 
 def test_new_club_lands_on_home(account):
     pg = account["page"]
+    pg.route("#/home")
     assert "AUTOTEST GYMNASTICS CLUB" in pg.p.inner_text("#page h1").upper()
     assert "Reserve places for 2027" in pg.p.inner_text("#page")
 

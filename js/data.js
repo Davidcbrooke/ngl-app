@@ -1,6 +1,6 @@
 // Data layer. Every screen asks this file for data, never Firebase directly,
 // so the sandbox (sample data) and live (Firebase) run exactly the same screens.
-import { RULES_BASE, CARD_PAY_URL } from './config.js';
+import { RULES_BASE, CARD_PAY_URL, ADMIN_EMAILS } from './config.js';
 import { fb } from './firebase.js';
 
 // Sample data when the address has ?demo, otherwise the staging database.
@@ -83,7 +83,7 @@ export const FAQ = [
 // ---------- Shared NGL content (same for every club) ----------
 // The competition calendar and products are NGL content; they will move into the
 // database (competitions, products collections) when the admin screens are built.
-const CALENDAR = demo.competitions.map(({reserved, ref, buyBy, waiting, ...c}) => c);
+export const CALENDAR = demo.competitions.map(({reserved, ref, buyBy, waiting, musicBy, ...c}) => c);
 const PRODUCTS = demo.products;
 const DEFAULT_LICENCES = {
   preschool:   {status:'explore', label:'Explore free', price:'from £150 a year + VAT'},
@@ -102,6 +102,8 @@ const minusMonths = (isoDate, m) => { const d = new Date(isoDate + 'T12:00'); d.
 const demoApi = {
   mode: 'demo',
   async user(){ return {uid: 'demo', email: demo.club.email}; },
+  async isAdmin(){ return true; },                       // sample data shows the admin screens too
+  async needsVerify(){ return false; },
   async club(){ return demo.club; },
   async licences(){ return demo.licences; },
   async competitions(){ return demo.competitions; },
@@ -135,15 +137,24 @@ const fbApi = {
     return CLUB;
   },
   async licences(){ const c = await this.club(); return {...DEFAULT_LICENCES, ...(c.licences || {})}; },
+  async isAdmin(){ const {A} = await fb(), u = A.currentUser; return !!(u && u.emailVerified && ADMIN_EMAILS.includes(String(u.email).toLowerCase())); },
+  async needsVerify(){ const {A} = await fb(), u = A.currentUser; return !!(u && !u.emailVerified && ADMIN_EMAILS.includes(String(u.email).toLowerCase())); },
+  async sendVerify(){ const {auth, A} = await fb(); return auth.sendEmailVerification(A.currentUser); },
+  // The competition calendar: from the database once NGL has added it, otherwise the built-in 2027 list.
+  async calendar(){
+    const {fs, D} = await fb(); const q = await fs.getDocs(fs.collection(D, 'competitions'));
+    const list = q.docs.map(d => ({id: d.id, ...d.data()})).filter(c => c.status !== 'hidden');
+    return (list.length ? list : CALENDAR).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  },
   async reservations(){
     const {fs, A, D} = await fb();
     const q = await fs.getDocs(fs.query(fs.collection(D, 'reservations'), fs.where('clubId', '==', A.currentUser.uid)));
     return q.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.status !== 'cancelled');
   },
   async competitions(){
-    const res = await this.reservations();
-    return CALENDAR.map(c => { const r = res.find(x => x.compId === c.id);
-      return r ? {...c, reserved: r.status === 'waiting' ? 0 : r.places, waiting: r.status === 'waiting', ref: r.ref, buyBy: minusMonths(c.date, 3)} : c; });
+    const [res, cal] = await Promise.all([this.reservations(), this.calendar()]);
+    return cal.map(c => { const r = res.find(x => x.compId === c.id);
+      return r ? {...c, reserved: r.status === 'waiting' ? 0 : r.places, waiting: r.status === 'waiting', bought: r.status === 'bought', ref: r.ref, buyBy: minusMonths(c.date, 3)} : c; });
   },
   // Floor music. NGL admin adds musicEntries/{compId}_{clubId} from the start lists (gymnast id, name, level);
   // the club uploads one MP3 per gymnast to Storage music/{compId}/{clubId}/{gymnastId}.mp3 and a musicUploads record.
@@ -225,5 +236,6 @@ const fbApi = {
   async signOut(){ const {auth, A} = await fb(); CLUB = null; window.removeEventListener('hashchange', window.NGL_ONHASH); await auth.signOut(A); location.replace(location.pathname); }
 };
 
+export { demo, DEFAULT_LICENCES, code, iso };
 const api = MODE === 'demo' ? demoApi : fbApi;
 export default api;

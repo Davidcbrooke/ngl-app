@@ -1,0 +1,96 @@
+// NGL Admin: for Dave and Christine. Clubs, licences, orders to post, the competition
+// calendar and reservations, and floor music entries. Shown only to verified NGL admins.
+import adm from '../admin-data.js';
+import { PATHWAYS } from '../config.js';
+import { esc, gbp, date, dot, pill, tabs, head, path } from '../ui.js';
+
+const SUB = [['', 'Overview'], ['clubs', 'Clubs'], ['orders', 'Orders'], ['competitions', 'Competitions'], ['music', 'Floor music']];
+const on = L => L && ['live', 'waived'].includes(L.status);
+const statusPill = o => o.status === 'sent' ? pill('Posted', 'ok') : o.status === 'paid' ? pill('Paid · to post', 'warn') : pill('Not paid', 'red');
+
+export default async function admin([sub = '', id], ctx = {}){
+  if (!ctx.isAdmin) return head('NGL Admin') + `<div class="card empty">This area is for NGL admins only.</div>`;
+  const body = await ({'': overview, clubs, orders, competitions, music}[sub] || overview)(id);
+  return head('NGL Admin', 'Run the league: clubs, licences, orders, competitions and floor music.') + tabs(SUB, SUB.some(s => s[0] === sub) ? sub : '', '#/admin') + body;
+}
+
+async function overview(){
+  const [cl, ord, res] = await Promise.all([adm.clubs(), adm.orders(), adm.reservations()]);
+  const week = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+  const toPost = ord.filter(o => o.status === 'paid'), paid = ord.filter(o => ['paid', 'sent'].includes(o.status));
+  const yearStart = new Date().getFullYear() + '-01-01';
+  return `<div class="grid g4" style="margin-bottom:16px">
+    <a class="card stat" href="#/admin/clubs"><b>${cl.length}</b><span>Clubs · ${cl.filter(c => c.createdAt >= week).length} new this week</span></a>
+    <a class="card stat" href="#/admin/orders"><b>${toPost.length}</b><span>Orders to post</span></a>
+    <a class="card stat" href="#/admin/orders"><b>${gbp(paid.filter(o => o.date >= yearStart).reduce((a, o) => a + o.total, 0))}</b><span>Taken this year (paid orders)</span></a>
+    <a class="card stat" href="#/admin/competitions"><b>${res.filter(r => r.status === 'reserved').reduce((a, r) => a + r.places, 0)}</b><span>Places reserved</span></a></div>
+  <div class="grid g2"><div class="card attn"><h2>To do</h2>
+    ${toPost.length ? toPost.slice(0, 6).map(o => `<div class="row"><div class="grow"><b>Post ${esc(o.id)}</b><small>${esc(o.clubName)} · ${esc(o.details)}</small></div><button class="btn sm" data-act="adm-sent" data-order="${esc(o.id)}">Mark posted</button></div>`).join('')
+      : '<p class="empty">Nothing to post. Paid orders appear here automatically.</p>'}</div>
+    <div class="card"><h2>Newest clubs</h2>${cl.slice(0, 6).map(c => `<a class="row" href="#/admin/clubs/${esc(c.id)}"><div class="grow"><b>${esc(c.name)}</b><small>${esc(c.contact || '')} · joined ${c.createdAt ? date(c.createdAt) : '–'}</small></div><span style="color:var(--muted)">›</span></a>`).join('')}</div></div>`;
+}
+
+async function clubs(id){
+  const cl = await adm.clubs();
+  if (id) return clubPage(cl.find(c => c.id === id));
+  return `<div class="card"><label class="field" style="margin-top:0"><span>Find a club</span><input id="admFind" placeholder="Club name, contact, email or BG number" data-filter="#admClubs tr.c"></label>
+    <table id="admClubs"><tr><th>Club</th><th>Joined</th>${PATHWAYS.slice(0, 4).map(p => `<th title="${esc(p.n)}">${dot(p.k)}</th>`).join('')}<th></th></tr>
+    ${cl.map(c => `<tr class="c" data-text="${esc([c.name, c.contact, c.email, c.bgNumber].join(' ').toLowerCase())}"><td><b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.contact || '')} · ${esc(c.email || '')}</small></td>
+      <td>${c.createdAt ? date(c.createdAt, {day: 'numeric', month: 'short'}) : '–'}</td>${PATHWAYS.slice(0, 4).map(p => `<td>${on(c.licences[p.k]) ? '✓' : ''}</td>`).join('')}
+      <td><a class="btn sm ghost" href="#/admin/clubs/${esc(c.id)}">Open</a></td></tr>`).join('')}</table></div>`;
+}
+
+async function clubPage(c){
+  if (!c) return '<div class="card empty">Club not found. <a href="#/admin/clubs">All clubs</a></div>';
+  const [ord, res, cal] = await Promise.all([adm.orders(), adm.reservations(), adm.calendar()]);
+  const mine = ord.filter(o => o.clubId === c.id), places = res.filter(r => r.clubId === c.id);
+  return `<p style="margin:0 0 6px"><a href="#/admin/clubs">← All clubs</a></p><h2 style="font-size:24px">${esc(c.name)}</h2>
+  <p class="lead">${esc(c.contact || '')} · ${esc(c.email || '')}${c.phone ? ' · ' + esc(c.phone) : ''}${c.bgNumber ? ' · BG ' + esc(c.bgNumber) : ''}</p>
+  <div class="grid g2"><div class="card"><h2>Licences</h2>${PATHWAYS.map(p => { const L = c.licences[p.k] || {};
+    return `<div class="row"><span class="dot" style="background:${p.c}"></span><div class="grow"><b>${esc(p.n)}</b><small>${esc(L.label || '')}${L.band ? ' · ' + esc(L.band) : ''}${L.renews ? ' · renews ' + date(L.renews) : ''}</small></div>
+      ${['soon'].includes(L.status) ? '' : on(L) && p.k !== 'general' ? `<button class="btn sm ghost" data-act="adm-lic" data-club="${esc(c.id)}" data-path="${p.k}" data-to="off">Switch off</button>` : p.k === 'general' ? pill(L.label || '', 'ok') : `<button class="btn sm" data-act="adm-lic" data-club="${esc(c.id)}" data-path="${p.k}" data-to="on">Switch on</button>`}</div>`; }).join('')}
+    <p class="lead" style="font-size:13px;margin:10px 0 0">Licences paid at checkout switch on automatically. Use this for trials, corrections or a licence paid another way.</p></div>
+  <div><div class="card" style="margin-bottom:16px"><h2>Orders</h2>${mine.length ? mine.map(o => `<div class="row"><div class="grow"><b>${esc(o.id)}</b><small>${date(o.date)} · ${esc(o.details)} · ${gbp(o.total)}</small></div>${statusPill(o)}</div>`).join('') : '<p class="empty">No orders.</p>'}</div>
+  <div class="card"><h2>Competition places</h2>${places.length ? places.map(r => { const k = cal.find(x => x.id === r.compId) || {name: r.compId};
+    return `<div class="row"><div class="grow"><b>${esc(k.name)}</b><small>${r.places} places · ${esc(r.ref || '')}</small></div>${pill(r.status, r.status === 'waiting' ? 'warn' : 'ok')}</div>`; }).join('') : '<p class="empty">No reservations.</p>'}</div></div></div>`;
+}
+
+async function orders(filter = 'post'){
+  const ord = await adm.orders();
+  const F = {post: ['To post', o => o.status === 'paid'], unpaid: ['Not paid', o => o.status === 'awaiting-payment'], all: ['All', () => true]};
+  const list = ord.filter(F[filter] ? F[filter][1] : F.post[1]);
+  return `<div class="paths">${Object.entries(F).map(([k, [l, f]]) => `<a class="${k === filter ? 'on' : ''}" style="--c:var(--navy)" href="#/admin/orders/${k}">${l} (${ord.filter(f).length})</a>`).join('')}</div>
+  <div class="card">${list.length ? `<table><tr><th>Date</th><th>Order</th><th>Club</th><th>Details</th><th>Total</th><th>Status</th><th></th></tr>
+    ${list.map(o => `<tr><td>${date(o.date, {day: 'numeric', month: 'short'})}</td><td><b>${esc(o.id)}</b></td><td><a href="#/admin/clubs/${esc(o.clubId)}">${esc(o.clubName)}</a></td><td>${esc(o.details)}${o.delivery ? `<br><small style="color:var(--muted)">→ ${esc(o.delivery)}</small>` : ''}</td><td>${gbp(o.total)}</td><td>${statusPill(o)}</td>
+      <td>${o.status === 'paid' ? `<button class="btn sm" data-act="adm-sent" data-order="${esc(o.id)}">Mark posted</button>` : ''}</td></tr>`).join('')}</table>`
+    : `<p class="empty">${filter === 'post' ? 'Nothing to post. Paid orders appear here automatically.' : 'No orders.'}</p>`}</div>
+  ${filter === 'unpaid' ? '<p class="lead" style="margin-top:12px">Not paid = the club started checkout but didn’t finish. Nothing to chase by hand: they finish payment from their Club Hub.</p>' : ''}`;
+}
+
+async function competitions(compId){
+  const [cal, res, saved] = await Promise.all([adm.calendar(), adm.reservations(), adm.calendarIsSaved ? adm.calendarIsSaved() : true]);
+  if (compId) { const c = cal.find(x => x.id === compId); const rs = res.filter(r => r.compId === compId);
+    return `<p style="margin:0 0 6px"><a href="#/admin/competitions">← All competitions</a></p><h2 style="font-size:24px">${esc(c.name)}</h2><p class="lead">${date(c.date)} · ${esc(c.where)} · ${esc(c.who)}</p>
+    <div class="card">${rs.length ? `<table><tr><th>Club</th><th>Places</th><th>Ref</th><th>Status</th><th></th></tr>${rs.map(r => `<tr><td><a href="#/admin/clubs/${esc(r.clubId)}">${esc(r.clubName)}</a></td><td>${r.places}</td><td>${esc(r.ref || '')}</td><td>${pill(r.status, r.status === 'waiting' ? 'warn' : 'ok')}</td>
+      <td style="white-space:nowrap">${r.status !== 'bought' ? `<button class="btn sm" data-act="adm-res" data-ref="${esc(r.ref)}" data-to="bought">Bought on JustGo</button> ` : ''}${r.status === 'reserved' ? `<button class="btn sm ghost" data-act="adm-res" data-ref="${esc(r.ref)}" data-to="waiting">To waiting list</button>` : r.status === 'waiting' ? `<button class="btn sm ghost" data-act="adm-res" data-ref="${esc(r.ref)}" data-to="reserved">Give places</button>` : ''}</td></tr>`).join('')}</table>`
+      : '<p class="empty">No reservations yet.</p>'}</div>`; }
+  return `${saved ? '' : `<div class="card attn" style="margin-bottom:16px"><div class="row" style="border:0"><div class="grow"><b>The calendar isn’t in the database yet</b><small>Clubs see the built-in 2027 list. Save it to the database to edit dates and add competitions.</small></div><button class="btn sm" data-act="adm-import-cal">Save calendar</button></div></div>`}
+  <div class="btn-row" style="margin:0 0 12px"><button class="btn" data-act="adm-comp">Add a competition</button></div>
+  <div class="card"><table><tr><th>Date</th><th>Competition</th><th>Places</th><th>Clubs</th><th></th></tr>${cal.map(c => { const rs = res.filter(r => r.compId === c.id);
+    return `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td>
+      <td>${rs.filter(r => r.status !== 'waiting').reduce((a, r) => a + r.places, 0)}${rs.some(r => r.status === 'waiting') ? ' + waiting' : ''}</td><td>${rs.length}</td>
+      <td style="white-space:nowrap"><a class="btn sm ghost" href="#/admin/competitions/${esc(c.id)}">Reservations</a> <button class="btn sm ghost" data-act="adm-comp" data-comp="${esc(c.id)}">Edit</button></td></tr>`; }).join('')}</table></div>`;
+}
+
+async function music(compId){
+  const cal = await adm.calendar(); const c = cal.find(x => x.id === compId) || cal[0];
+  const [ents, ups, cl] = await Promise.all([adm.musicEntries(c.id), adm.musicUploads(c.id), adm.clubs()]);
+  const got = new Set(ups.map(u => u.gymnastId)), total = ents.reduce((a, e) => a + (e.gymnasts || []).length, 0);
+  return `<label class="field" style="max-width:520px;margin-top:0"><span>Competition</span><select data-go="#/admin/music/">${cal.map(x => `<option value="${esc(x.id)}" ${x.id === c.id ? 'selected' : ''}>${date(x.date)} · ${esc(x.name)}</option>`).join('')}</select></label>
+  <div class="grid g4" style="margin:12px 0 16px"><div class="card stat"><b>${ups.length} / ${total}</b><span>Music uploaded</span></div><div class="card stat"><b>${ents.length}</b><span>Clubs with gymnasts entered</span></div></div>
+  <div class="btn-row" style="margin:0 0 12px"><button class="btn" data-act="adm-entry" data-comp="${esc(c.id)}">Add a club’s gymnasts</button></div>
+  ${ents.length ? ents.map(e => `<div class="card" style="margin-bottom:12px"><div class="row" style="border:0;padding-top:0"><div class="grow"><h2 style="margin:0">${esc(e.clubName)}</h2></div>${pill((e.gymnasts || []).filter(g => got.has(g.id)).length + ' of ' + (e.gymnasts || []).length, (e.gymnasts || []).every(g => got.has(g.id)) ? 'ok' : 'red')}<button class="btn sm ghost" data-act="adm-entry" data-comp="${esc(c.id)}" data-club="${esc(e.clubId)}">Edit list</button></div>
+    ${(e.gymnasts || []).map(g => { const u = ups.find(x => x.gymnastId === g.id); return `<div class="row"><div class="grow"><b>${esc(g.n)}</b><small>Level ${esc(g.level)}${u ? ' · ' + esc(u.fileName) : ' · not uploaded'}</small></div>${u ? `<a class="btn sm ghost" href="${esc(u.url)}" target="_blank" rel="noopener" download>Download</a>` : pill('Waiting', 'red')}</div>`; }).join('')}</div>`).join('')
+    : '<div class="card empty">No gymnasts entered for this competition yet. Add each club’s list from the JustGo start list.</div>'}
+  <datalist id="admClubList">${cl.map(x => `<option value="${esc(x.name)}" data-id="${esc(x.id)}">`).join('')}</datalist>`;
+}

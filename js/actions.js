@@ -3,6 +3,7 @@
 import api from './data.js';
 import { modal, toast, esc, gbp } from './ui.js';
 import { showInvoice, emailInvoice } from './invoice.js';
+import { ADM } from './admin-actions.js';
 
 const rerender = () => window.NGL_RENDER && window.NGL_RENDER();
 export const basket = {
@@ -112,6 +113,8 @@ const ACT = {
     b.disabled = false; b.textContent = label;
   },
 
+  async verify(){ try { await api.sendVerify(); toast('Check your inbox for the verification link, then log out and in again.'); } catch (x) { toast('Couldn’t send it. Please try again.', false); } },
+
   async 'reset-pw'(){
     const c = await api.club();
     try { await api.reset(c.email); toast('We’ve emailed a reset link to ' + c.email); } catch (x) { toast('Couldn’t send the email. Please try again.', false); }
@@ -133,6 +136,6 @@ document.addEventListener('change', async e => {
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
-  const f = ACT[b.dataset.act]; if (!f) return;
+  const f = ACT[b.dataset.act] || ADM[b.dataset.act]; if (!f) return;
   e.preventDefault(); f(b);
 });

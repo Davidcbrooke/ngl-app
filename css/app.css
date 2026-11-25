@@ -142,3 +142,5 @@ a.card:hover{border-color:#cfcde3}.nav a{color:#dcdcf2}.nav a.on{color:var(--nav
 .pill.ok{background:#e1f2e7;color:#145f34}
 .paths a.on[style*="--rec"],.paths a.on[style*="--sch"]{color:var(--navy)}
 .lock{opacity:1;background:var(--wash)}.lock .ic{filter:grayscale(1);opacity:.55}.lock b{color:var(--muted)}
+.nav .admin-link{margin-top:10px;border-top:1px solid rgba(255,255,255,.12);padding-top:14px;color:#fbd43a}.nav .admin-link.on{background:#fbd43a;color:var(--navy)}
+@media(max-width:860px){.nav .admin-link{margin:0;border:0;padding-top:6px}}
