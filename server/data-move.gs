@@ -29,6 +29,15 @@ function rehearse(){
   // Fallback: the club name on the booking, when exactly one Club Hub account has that name
   const norm = n => String(n || '').toLowerCase().replace(/&/g, 'and').replace(/\b(gymnastics?|gym|club|academy|ltd|limited|c\.?i\.?c\.?|and|tumbling|trampoline|the)\b/g, '').replace(/[^a-z0-9]/g, '');
   const nameIndex = {}; clubs.forEach(c => { const k = norm(c.data.name); if (k) (nameIndex[k] = nameIndex[k] || []).push(c.id); });
+  // One account per club (Dave, 25 Nov): duplicate accounts fold into the one on this email; their licences, schools, orders and places move with them
+  const KEEP = {saadi: 'reception@saadigymnastics.co.uk'};
+  const mergedInto = {}; report.merged = [];
+  Object.keys(KEEP).forEach(k => { const ids = nameIndex[k] || [], keeper = clubs.find(c => ids.includes(c.id) && String(c.data.email || '').trim().toLowerCase() === KEEP[k]);
+    if (!keeper) { if (ids.length) report.merged.push('NOT MERGED ' + k + ': no account on ' + KEEP[k]); return; }
+    ids.filter(id => id !== keeper.id).forEach(id => { mergedInto[id] = keeper.id; report.merged.push(mask(clubs.find(c => c.id === id).data.email || '') + ' -> ' + mask(KEEP[k])); });
+    nameIndex[k] = [keeper.id]; });
+  const home = id => mergedInto[id] || id;
+  Object.keys(emailIndex).forEach(e => { emailIndex[e] = home(emailIndex[e]); });
   const byName = n => { const ids = nameIndex[norm(n)] || []; return ids.length === 1 ? ids[0] : null; };
   const dupNames = Object.keys(nameIndex).filter(k => nameIndex[k].length > 1).map(k => nameIndex[k].map(id => clubs.find(c => c.id === id).data.name + ' (' + mask(clubs.find(c => c.id === id).data.email || '') + ')'));
   report.duplicateClubs = dupNames;
@@ -53,6 +62,7 @@ function rehearse(){
   const ordByClub = {};
   const pushOrder = (o, coll) => { const d = o.data, lines = orderLines(d, coll), total = round2(lines.reduce((a, l) => a + l.qty * l.unit, 0));
     if (!d.clubId) { report.unmatched.orders.push(o.id); return; }
+    d.clubId = home(d.clubId);
     const path = coll === 'orders' ? 'schools' : d.pathway === 'preschool' ? 'preschool' : d.pathway === 'general' ? 'general' : 'recreational';
     const rec = {clubId: d.clubId, clubName: d.clubName || '', path, lines, total, details: lines.filter(l => l.k !== 'vat').map(l => l.qty + ' × ' + l.n).join(', '),
       status: d.status || 'awaiting-payment', delivery: d.delivery || '', createdAt: d.createdAt || now, kind: d.kind || d.type || 'supplies', movedFrom: LIVE + '/' + coll + '/' + o.id};
@@ -62,15 +72,16 @@ function rehearse(){
 
   // Floor music: entries per club, uploads copied with the same ids
   musicEvents.forEach(ev => { const d = ev.data, links = d.links || {};
-    Object.keys(d.clubs || {}).forEach(key => { const cl = d.clubs[key], uid = links[key] || (cl.bg && (clubs.find(c => String(c.data.bgNumber || '').trim() === String(cl.bg).trim()) || {}).id);
+    Object.keys(d.clubs || {}).forEach(key => { const cl = d.clubs[key]; let uid = links[key] || (cl.bg && (clubs.find(c => String(c.data.bgNumber || '').trim() === String(cl.bg).trim()) || {}).id);
       const gymnasts = []; (d.levels || []).forEach(L => (L.gymnasts || []).forEach(g => { if (g.club === key) gymnasts.push({id: g.id, n: g.name, level: L.name || L.id}); }));
       if (!gymnasts.length) return;
+      if (uid) uid = home(uid);
       if (!uid) { report.unmatched.music.push({event: d.title || ev.id, club: cl.name || key, gymnasts: gymnasts.length}); return; }
       writes.push(doc('musicEntries/' + ev.id + '_' + uid, {compId: ev.id, clubId: uid, clubName: cl.name || '', title: d.title || '', date: isoDate(d.date), deadline: isoDate(d.deadline) || d.deadline || '', gymnasts, status: d.status === 'open' ? 'open' : 'closed'})); }); });
   musicUploads.forEach(u => writes.push(doc('musicUploads/' + u.id, Object.assign({}, u.data, {compId: u.data.compKey || u.data.compId || '', movedFrom: LIVE + '/musicUploads/' + u.id}))));
 
   // Clubs: one licence list, schools and Graduations on the club, plans carried over
-  clubs.forEach(c => { const d = c.data, lic = {};
+  const licOf = c => { const d = c.data, lic = {};
     const live = r => r && r.status === 'active' && (!r.expires || toDate(r.expires) > now);
     const seasonEnd = season => new Date(Number(String(season).slice(0, 4)) + 1, 7, 31);   // 2026/27 -> 31 Aug 2027
     const codeLive = d.codeActive && (!d.codeTrialUntil || toDate(d.codeTrialUntil) > now);
@@ -82,9 +93,17 @@ function rehearse(){
     lic.preschool = p.status === 'active' ? {status: 'live', label: 'Licence live', band: PS_BANDS[p.band] || p.band || '', renews: p.since ? isoDate(addYear(p.since)) : '', packs: {pack2: !!p.pack2, pack3: !!p.pack3, pack4: !!p.pack4, seasonal: !!p.seasonal}} : {status: 'explore', label: 'Explore free'};
     lic.general = {status: 'waived', label: 'Fee waived for 2027'};
     lic.performance = {status: 'soon', label: 'Coming 2027'}; lic.university = {status: 'soon', label: 'Coming soon'}; lic.masters = {status: 'soon', label: 'Coming soon'};
-    const evs = events.filter(e => e.data.clubId === c.id).map(e => ({id: e.id, title: e.data.title || '', schoolId: e.data.schoolId || '', schoolName: e.data.schoolName || '', date: e.data.date || '', time: e.data.time || '', venue: e.data.venue || '', bookingUrl: e.data.bookingUrl || ''}));
+    return lic; };
+  clubs.forEach(c => { if (mergedInto[c.id]) return;
+    const d = c.data, lic = licOf(c), dups = clubs.filter(x => mergedInto[x.id] === c.id);
+    dups.forEach(x => { const l = licOf(x); Object.keys(l).forEach(k => { if (l[k].status === 'live' && lic[k].status !== 'live') lic[k] = l[k]; });
+      const have = new Set(d.schoolsSub.map(s => String(s.name).trim().toLowerCase()));
+      x.data.schoolsSub.forEach(s => { if (!have.has(String(s.name).trim().toLowerCase())) d.schoolsSub.push(s); });
+      ['recTerm', 'rotaJson', 'projection', 'secPlan', 'preschoolPlan', 'deliveryAddress', 'bgNumber', 'phone'].forEach(k => { if (d[k] == null && x.data[k] != null) d[k] = x.data[k]; }); });
+    const evs = events.filter(e => home(e.data.clubId) === c.id).map(e => ({id: e.id, title: e.data.title || '', schoolId: e.data.schoolId || '', schoolName: e.data.schoolName || '', date: e.data.date || '', time: e.data.time || '', venue: e.data.venue || '', bookingUrl: e.data.bookingUrl || ''}));
     const out = {name: d.name || '', contact: d.contact || '', email: d.email || '', bgNumber: d.bgNumber || '', phone: d.phone || '', deliveryAddress: d.deliveryAddress || '',
       licences: lic, schoolsList: d.schoolsSub, schoolEvents: evs, createdAt: d.createdAt || now, movedFrom: LIVE + '/clubs/' + c.id};
+    if (dups.length) out.mergedFrom = dups.map(x => LIVE + '/clubs/' + x.id);
     ['recTerm', 'rotaJson', 'projection', 'secPlan', 'interest', 'bookingEmails'].forEach(k => { if (d[k] != null) out[k] = d[k]; });
     if (d.preschoolPlan) out.plans = {preschool: d.preschoolPlan};
     writes.push(doc('clubs/' + c.id, out));
@@ -93,14 +112,16 @@ function rehearse(){
       reservations: (resByClub[c.id] || []).length}); });
 
   // 3. WRITE to staging (batches of 400)
+  Object.keys(mergedInto).forEach(id => writes.push({delete: base(STAGING).replace('https://firestore.googleapis.com/v1/', '') + '/clubs/' + id}));   // staging only: remove accounts folded into another
   for (let i = 0; i < writes.length; i += 400) commit(STAGING, writes.slice(i, i + 400));
   const content = copyRecContent();
   report.counts.written = {docs: writes.length, recContentDocs: content};
   report.seconds = Math.round((Date.now() - t0) / 1000);
   commit(STAGING, [doc('migration/report', {json: JSON.stringify(report), at: new Date(), clubs: report.clubs.length, docs: writes.length})]);
   Logger.log(JSON.stringify(report.counts));
-  const um = {}; report.unmatched.reservations.forEach(r => { um[r.club || '(no name)'] = (um[r.club || '(no name)'] || 0) + r.places; });
+  const um = {}; report.unmatched.reservations.forEach(r => { const k = norm(r.club) || '(no name)'; um[k] = um[k] || {names: [], places: 0}; um[k].places += r.places; if (!um[k].names.includes(r.club)) um[k].names.push(r.club); });
   Logger.log('Reservations matched by club name: ' + (report.matchedByName || 0) + ' · still unmatched (places by club): ' + JSON.stringify(um));
+  Logger.log('Merged accounts: ' + JSON.stringify(report.merged));
   Logger.log('Club names with more than one account: ' + JSON.stringify(report.duplicateClubs));
   Logger.log('Clubs: ' + report.clubs.length + ' · unmatched reservations: ' + report.unmatched.reservations.length + ' · unmatched music: ' + report.unmatched.music.length + ' · orders with no club: ' + report.unmatched.orders.length);
   report.clubs.forEach(c => Logger.log([c.name, c.licences, 'schools ' + c.schools, 'orders ' + c.orders + ' (' + c.unpaid + ' unpaid)', 'places ' + c.reservations, 'grads ' + c.graduations].join(' | ')));
