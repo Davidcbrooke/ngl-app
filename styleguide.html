@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Club Hub · design rulebook (live)</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<style>.page{margin:0 auto}.sw{display:flex;gap:10px;flex-wrap:wrap}.sw div{width:120px}.sw i{display:block;height:56px;border-radius:12px;border:1px solid var(--line)}.sw small{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+section{margin:0 0 34px}.demo{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.rule{font-size:13px;color:var(--muted);margin:6px 0 12px}</style>
+</head><body>
+<div class="bar7"><i style="background:var(--pre)"></i><i style="background:var(--sch)"></i><i style="background:var(--rec)"></i><i style="background:var(--gen)"></i><i style="background:var(--perf)"></i><i style="background:var(--uni)"></i><i style="background:var(--mas)"></i></div>
+<main class="page" style="padding-top:34px">
+<h1>Club Hub design rulebook</h1><p class="lead">Every building block, live. Modelled on Shopify's admin, with Stripe for money screens and Linear for polish; NGL brand on top. Full rules: DESIGN.md.</p>
+
+<section><h2>Colours</h2><p class="rule">Navy and red lead. Pathway colours are accents only, always in this order.</p>
+<div class="sw">
+<div><i style="background:#28225c"></i><small><b>Navy</b> #28225c</small></div><div><i style="background:#c6152e"></i><small><b>Red</b> #c6152e</small></div>
+<div><i style="background:#1b1840"></i><small><b>Ink</b> #1b1840</small></div><div><i style="background:#5f5b80"></i><small><b>Muted</b> #5f5b80</small></div>
+<div><i style="background:#f4f4f9"></i><small><b>Wash</b> #f4f4f9</small></div><div><i style="background:#1f8a4c"></i><small><b>OK</b> #1f8a4c</small></div></div>
+<div class="sw" style="margin-top:12px">
+<div><i style="background:var(--pre)"></i><small>Pre-School</small></div><div><i style="background:var(--sch)"></i><small>Schools</small></div><div><i style="background:var(--rec)"></i><small>Recreational</small></div>
+<div><i style="background:var(--gen)"></i><small>General League</small></div><div><i style="background:var(--perf)"></i><small>Performance</small></div><div><i style="background:var(--uni)"></i><small>University</small></div><div><i style="background:var(--mas)"></i><small>Masters</small></div></div></section>
+
+<section><h2>Type</h2><p class="rule">Roboto Condensed Black for titles (uppercase); Roboto for everything else.</p>
+<div class="card"><h1 style="margin:0">Page title</h1><h2 style="margin:10px 0 4px">Section title</h2><p style="margin:0">Body text: short sentences, written for a busy coach on a phone.</p><p class="lead" style="margin:6px 0 0">Muted secondary text.</p>
+<div class="stat" style="margin-top:10px"><b>£1,762</b><span>Stat number and label</span></div></div></section>
+
+<section><h2>Buttons</h2><p class="rule">One red primary per area. Labels are verbs. Never "Submit".</p>
+<div class="demo"><button class="btn">Place order</button><button class="btn ghost">Cancel</button><button class="btn sm">Reserve places</button><button class="btn sm ghost">Details</button><button class="btn" disabled>Placing order…</button></div></section>
+
+<section><h2>Status pills</h2><p class="rule">One status per item, from this set only.</p>
+<div class="demo"><span class="pill red">Awaiting payment</span><span class="pill ok">Paid</span><span class="pill ok">Live</span><span class="pill ok">Reserved</span><span class="pill warn">Waiting list</span><span class="pill warn">Renew soon</span><span class="pill">Explore free</span></div></section>
+
+<section><h2>Pathway switcher and sub-tabs</h2><p class="rule">Pills in pathway order; sub-tabs max 5; active tab takes the pathway colour.</p>
+<div class="paths"><a class="on" style="--c:var(--rec)"><span class="dot"></span>Recreational</a><a style="--c:var(--pre)"><span class="dot"></span>Pre-School</a><a class="y" style="--c:var(--sch)"><span class="dot"></span>Schools</a><a style="--c:var(--gen)"><span class="dot"></span>General League</a></div>
+<div class="sub" style="--c:var(--rec)"><a class="on">Club plan</a><a>Run your class</a><a>Award books</a><a>Family app</a></div></section>
+
+<section><h2>Cards and lists</h2><p class="rule">Key fact bold, detail muted underneath, action on the right. Same columns everywhere.</p>
+<div class="grid g2"><div class="card attn"><h2>Needs your attention</h2>
+<div class="row"><div class="grow"><b>3 orders awaiting payment</b><small>£1,762 · pay by card or bank transfer</small></div><a class="btn sm">Pay now</a></div>
+<div class="row"><div class="grow"><b>4 gymnasts need floor music</b><small>General League · East Region · by 24 Jan</small></div><a class="btn sm ghost">Upload</a></div></div>
+<div class="card"><table><tr><th>Date</th><th>Ref</th><th>Total</th><th>Status</th></tr><tr><td>24 Nov</td><td><b>ORD-R2M6F</b></td><td>£800</td><td><span class="pill red">Awaiting payment</span></td></tr><tr><td>26 Oct</td><td><b>ORD-K3M7Q</b></td><td>£950</td><td><span class="pill ok">Paid</span></td></tr></table></div></div></section>
+
+<section><h2>Empty and locked states</h2><p class="rule">Never a dead end: say what to do next.</p>
+<div class="grid g2"><div class="card empty">No orders yet. <a href="#">Go to the shop</a></div>
+<div class="card lock"><b>Pre-School passports</b><br><small style="color:var(--muted)">Needs a Pre-School licence · <a href="#">Explore</a></small></div></div></section>
+
+<section><h2>Forms</h2><p class="rule">Label above, one column, plain-English errors under the form.</p>
+<div class="card" style="max-width:480px"><label class="field"><span>Club name</span><input value="SAADI Gymnastics"></label><label class="field"><span>BG club number (optional)</span><input></label>
+<p class="err">That email and password don’t match. Check them, or reset your password.</p><div class="btn-row"><button class="btn">Save</button><button class="btn ghost">Cancel</button></div></div></section>
+
+<section><h2>Feedback</h2><p class="rule">Green toast after saving; red only for failures. Disappears on its own.</p>
+<div class="demo"><button class="btn ghost" onclick="t('Reserved. Your reference is NGL-7Q2K')">Show a success toast</button><button class="btn ghost" onclick="t('Couldn’t save. Please try again.',1)">Show an error toast</button></div></section>
+</main>
+<script>function t(m,bad){const e=document.createElement('div');e.className='toast '+(bad?'bad':'ok');e.textContent=m;document.body.appendChild(e);setTimeout(()=>e.remove(),3500)}</script>
+</body></html>

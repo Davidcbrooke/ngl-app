@@ -96,3 +96,17 @@ a.card:hover{border-color:#cfcde3}.nav a{color:#dcdcf2}.nav a.on{color:var(--nav
 .basket{position:sticky;top:90px}
 .qty{display:flex;align-items:center;gap:6px}.qty button{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);background:#fff;font-weight:700}
 .empty{color:var(--muted);text-align:center;padding:26px 10px}
+/* Rulebook (DESIGN.md) sections 4, 9, 10: focus, motion, phone tables, tap targets */
+:focus-visible{outline:3px solid #0073b3;outline-offset:2px;border-radius:6px}
+.modal-bg{animation:fade .15s ease-out}.modal{animation:rise .18s ease-out}.toast{animation:rise .18s ease-out}
+@keyframes fade{from{opacity:0}}@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.toast{transform:translateX(-50%)}@keyframes rise{from{opacity:0;translate:0 8px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.pill.amber{background:#fff3e0;color:var(--warn)}
+@media(max-width:860px){
+  .btn{min-height:44px}.btn.sm{min-height:38px}
+  table,thead,tbody,tr,td,th{display:block}table tr:first-child:has(th){display:none}
+  table tr{border-top:1px solid var(--line);padding:10px 0}table td{border:0;padding:2px 0}
+  .grid[style*="300px"]{grid-template-columns:1fr!important}h1{font-size:24px}
+}
+@media(max-width:860px){.top .who [data-act=signout]{display:none}.sandbox{bottom:auto;top:10px;right:10px;font-size:10px;padding:3px 8px}.search{max-width:none}}

@@ -6,6 +6,8 @@ The new NGL Club Hub: one login, one menu, every pathway inside. Built in this s
 - **Live today:** clubs still use club.nationalgymnasticsleague.co.uk and the Rec, Schools, Pre-School and General League hubs, unchanged.
 - **Switch-over:** when Dave signs it off, club.nationalgymnasticsleague.co.uk points at this app.
 
+Design rules: `DESIGN.md` (modelled on Shopify admin / Polaris, Stripe for money screens, Linear for polish). Live examples: `styleguide.html`.
+
 ## Structure
 - `index.html`: the shell (side menu, search, page).
 - `css/app.css`: NGL brand styles (navy #28225c, red #c6152e, the 7 pathway colours).
