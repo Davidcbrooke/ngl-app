@@ -30,15 +30,17 @@ function rehearse(){
   const norm = n => String(n || '').toLowerCase().replace(/&/g, 'and').replace(/\b(gymnastics?|gym|club|academy|ltd|limited|c\.?i\.?c\.?|and|tumbling|trampoline|the)\b/g, '').replace(/[^a-z0-9]/g, '');
   const nameIndex = {}; clubs.forEach(c => { const k = norm(c.data.name); if (k) (nameIndex[k] = nameIndex[k] || []).push(c.id); });
   // One account per club (Dave, 25 Nov): duplicate accounts fold into the one on this email; their licences, schools, orders and places move with them
-  const KEEP = {saadi: 'reception@saadigymnastics.co.uk'};
+  const KEEP = {saadi: {email: 'reception@saadigymnastics.co.uk'}, elite: {name: 'elite gymnastics academy'}};
+  // Booking names that mean a registered club with a longer name, e.g. {short: 'longer'} (none confirmed yet; "Salto" stays separate until Dave checks)
+  const ALIAS = {};
   const mergedInto = {}; report.merged = [];
-  Object.keys(KEEP).forEach(k => { const ids = nameIndex[k] || [], keeper = clubs.find(c => ids.includes(c.id) && String(c.data.email || '').trim().toLowerCase() === KEEP[k]);
-    if (!keeper) { if (ids.length) report.merged.push('NOT MERGED ' + k + ': no account on ' + KEEP[k]); return; }
-    ids.filter(id => id !== keeper.id).forEach(id => { mergedInto[id] = keeper.id; report.merged.push(mask(clubs.find(c => c.id === id).data.email || '') + ' -> ' + mask(KEEP[k])); });
+  Object.keys(KEEP).forEach(k => { const ids = nameIndex[k] || [], keeper = clubs.find(c => ids.includes(c.id) && (KEEP[k].email ? String(c.data.email || '').trim().toLowerCase() === KEEP[k].email : String(c.data.name || '').trim().toLowerCase() === KEEP[k].name));
+    if (!keeper) { if (ids.length) report.merged.push('NOT MERGED ' + k + ': no account on ' + (KEEP[k].email || KEEP[k].name)); return; }
+    ids.filter(id => id !== keeper.id).forEach(id => { mergedInto[id] = keeper.id; report.merged.push((clubs.find(c => c.id === id).data.name || '') + ' (' + mask(clubs.find(c => c.id === id).data.email || '') + ') -> ' + (keeper.data.name || '') + ' (' + mask(keeper.data.email || '') + ')'); });
     nameIndex[k] = [keeper.id]; });
   const home = id => mergedInto[id] || id;
   Object.keys(emailIndex).forEach(e => { emailIndex[e] = home(emailIndex[e]); });
-  const byName = n => { const ids = nameIndex[norm(n)] || []; return ids.length === 1 ? ids[0] : null; };
+  const byName = n => { const k = norm(n), ids = nameIndex[ALIAS[k] || k] || []; return ids.length === 1 ? ids[0] : null; };
   const dupNames = Object.keys(nameIndex).filter(k => nameIndex[k].length > 1).map(k => nameIndex[k].map(id => clubs.find(c => c.id === id).data.name + ' (' + mask(clubs.find(c => c.id === id).data.email || '') + ')'));
   report.duplicateClubs = dupNames;
 
