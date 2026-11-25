@@ -1,0 +1,50 @@
+rules_version = '2';
+// NGL Club Hub (one app): security rules. Staging project ngl-club-hub-staging.
+// A club can only see and change its own data. Licence status, payment status
+// and prices are only changed by NGL admins (or the card-payments script).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && request.auth.token.email_verified == true &&
+        request.auth.token.email in ['admin@nationalgymnasticsleague.co.uk', 'bookingoffice@saadigymnastics.co.uk'];
+    }
+    function own(clubId) { return signedIn() && request.auth.uid == clubId; }
+    function unchanged(fields) { return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields); }
+
+    // Club account: one document per club, id = the club's login uid
+    match /clubs/{clubId} {
+      allow read: if own(clubId) || isAdmin();
+      allow create: if own(clubId) && !request.resource.data.keys().hasAny(['licences', 'isAdmin']);
+      allow update: if isAdmin() || (own(clubId) && unchanged(['licences', 'isAdmin']));
+      allow delete: if isAdmin();
+    }
+
+    // Orders: a club places them unpaid; only admins mark them paid or sent
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.clubId == request.auth.uid
+                    && request.resource.data.status == 'awaiting-payment';
+      allow update, delete: if isAdmin();
+    }
+
+    // Competition reservations and floor music records
+    match /reservations/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.clubId == request.auth.uid;
+      allow update: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid && unchanged(['clubId', 'status']));
+      allow delete: if isAdmin();
+    }
+    match /music/{id} {
+      allow read, write: if isAdmin() || (signedIn() && resource == null ? request.resource.data.clubId == request.auth.uid : resource.data.clubId == request.auth.uid);
+    }
+
+    // Shared content every signed-in club can read: competitions calendar, products, rules
+    match /competitions/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /products/{id}     { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /resources/{id}    { allow read: if signedIn(); allow write: if isAdmin(); }
+
+    // Everything else is closed
+    match /{document=**} { allow read, write: if false; }
+  }
+}
