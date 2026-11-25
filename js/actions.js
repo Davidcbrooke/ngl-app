@@ -5,6 +5,7 @@ import { modal, toast, esc, gbp } from './ui.js';
 import { showInvoice, emailInvoice } from './invoice.js';
 import { ADM } from './admin-actions.js';
 import { PS } from './pathways/preschool-actions.js';
+import { REC } from './pathways/rec-actions.js';
 
 const rerender = () => window.NGL_RENDER && window.NGL_RENDER();
 export const basket = {
@@ -137,6 +138,6 @@ document.addEventListener('change', async e => {
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
-  const f = ACT[b.dataset.act] || ADM[b.dataset.act] || PS[b.dataset.act]; if (!f) return;
+  const f = ACT[b.dataset.act] || ADM[b.dataset.act] || PS[b.dataset.act] || REC[b.dataset.act]; if (!f) return;
   e.preventDefault(); f(b);
 });

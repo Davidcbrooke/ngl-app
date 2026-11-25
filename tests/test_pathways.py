@@ -57,3 +57,45 @@ def test_preschool_licence_for_new_club(account):
     assert pg.p.locator("[data-act=ps-buy]").count() == 4
     assert pg.p.locator("[data-act=ps-pack]").count() == 0
     assert "Available once your licence is live" in pg.p.inner_text("#page")
+
+
+# ---------- Recreational ----------
+@pytest.mark.parametrize("tab", ["", "/teach", "/teach/plan", "/teach/warmups", "/teach/club", "/awards", "/compete", "/families", "/licence"])
+def test_recreational_tabs_open(page, tab):
+    page.go(f"#/programmes/recreational{tab}", demo=True)
+    page.p.wait_for_timeout(1500)
+    t = page.p.inner_text("#page")
+    assert "couldn’t load" not in t and "PROGRAMMES" in page.p.inner_text("#page h1").upper()
+
+
+def test_recreational_lesson_plan_ladder(page):
+    """Fortnight → apparatus → set-up photos → skill ladder, with the four rungs."""
+    page.go("#/programmes/recreational/teach/plan", demo=True)
+    page.p.click("[data-act=rec-block] >> nth=0", timeout=20000)
+    page.p.click("[data-act=rec-piece] >> nth=0")
+    page.p.wait_for_selector(".setgrid img[src]", timeout=15000)          # set-up photos load
+    page.p.click("[data-act=rec-pstep][data-v=ladder]")
+    t = page.p.inner_text("#page").upper()
+    assert "BEGINNER" in t and "ADVANCED" in t and "STATION 1" in t
+
+
+def test_recreational_run_your_class(page):
+    page.go("#/programmes/recreational/teach", demo=True)
+    page.p.click("[data-act=rec-run-set][data-k=startCode] >> nth=0", timeout=20000)
+    page.p.click("[data-act=rec-run-start]")
+    page.p.wait_for_selector(".stephead >> text=Warm-up", timeout=10000)
+    page.p.click("[data-act=rec-run-next]")
+    assert "ROTATE TO" in page.p.inner_text(".stephead").upper()
+
+
+def test_recreational_competition_routines(page):
+    page.go("#/programmes/recreational/compete", demo=True)
+    page.p.wait_for_selector("text=Routines by level", timeout=20000)
+    assert page.p.locator(".kick").count() == 4          # Ruby, Pink, Teal, Indigo
+
+
+def test_recreational_new_club_sees_seven_bands(account):
+    pg = account["page"]
+    pg.route("#/programmes/recreational/licence")
+    pg.p.wait_for_selector("[data-act=rec-buy]", timeout=20000)
+    assert pg.p.locator("[data-act=rec-buy]").count() == 7

@@ -4,9 +4,10 @@ import { PATHWAYS } from '../config.js';
 import { esc, tabs, head } from '../ui.js';
 import { PTABS, licenceBanner } from '../pathways/index.js';
 import preschool from '../pathways/preschool.js';
+import recreational from '../pathways/recreational.js';
 import standard from '../pathways/standard.js';
 
-const MODULES = {preschool};
+const MODULES = {preschool, recreational};
 
 export default async function programmes([k = 'preschool', tab = 'overview', sub]){
   const lic = await api.licences(), p = PATHWAYS.find(x => x.k === k) || PATHWAYS[0], L = lic[p.k] || {};

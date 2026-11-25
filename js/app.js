@@ -44,6 +44,7 @@ async function render(){
   const html = await view(parts.slice(1), CTX);
   if (stale()) return;
   $('#page').innerHTML = html;
+  document.dispatchEvent(new CustomEvent('ngl:rendered'));
   document.title = (key === 'home' ? '' : (key === 'admin' ? 'NGL Admin' : NAV.find(n => n[0] === key)[1]) + ' · ') + 'NGL Club Hub';
 }
 

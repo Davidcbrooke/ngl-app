@@ -12,7 +12,7 @@ const DEF = {
     awards: 'The NGL Schools Awards Book with Bronze, Silver and Gold certificates all year.',
     families: 'One family app code for all your Schools families: routines, videos and events.',
     licence: 'One yearly Club Licence, banded by how many Schools gymnasts you coach. From £150 a year + VAT.'},
-  recreational: {today: 'https://nglrecreational.co.uk/',
+  recreational_old: {today: 'https://nglrecreational.co.uk/',
     overview: 'A complete recreational programme from first forward roll to Indigo: lesson plans, warm-ups, award books and competitions that line up.',
     teach: 'Your club plan, built around your apparatus and term length; Run your class on an iPad; warm-ups; class rotations.',
     awards: 'Four award books, Ruby to Indigo, 16 levels assessed at the end of each term, and medals.',
