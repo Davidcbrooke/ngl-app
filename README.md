@@ -15,6 +15,14 @@ Design rules: `DESIGN.md` (modelled on Shopify admin / Polaris, Stripe for money
 - `js/app.js`: menu and routes (`#/competitions/music`, `#/programmes/recreational/books` …). `js/search.js`: site-wide search (press `/`).
 - `js/views/`: one file per menu item: Home, Competitions, Rules & resources, Programmes, Shop & orders, My club, Help.
 
+## Tests
+`python -m pytest tests -q` (about 80 seconds). GitHub runs the same suite on every push (Actions → Tests).
+- `test_screens.py`: every screen opens with no errors; 7-item menu; search; invoice; phone layout (no sideways scroll, 44px buttons).
+- `test_club_journey.py`: a fresh test club on the staging database registers, reserves, changes, adds to calendar, cancels, orders, opens the invoice, logs out and in.
+- `test_security.py`: 11 things a club must never be able to do (switch on its own licence, mark an order paid, read other clubs' data…). Each must be refused.
+- `test_accessibility.py`: axe-core finds no serious or critical problems (WCAG AA contrast, labels, keyboard).
+Test clubs are named AUTOTEST and use example.com addresses, so no emails go out; the test login is deleted at the end.
+
 ## Build plan
 1. Shell, Home with Getting started, Rules & resources, Help, search. **Done (sample data).**
 2. Real sign-in and data against the staging database (ngl-club-hub-staging, London). **Done:** register, log in, log out, reset password; reserve places; one shop basket and orders; edit club details. Security rules tested: a club cannot switch on its own licence, mark its own order paid or read other clubs' data. Add `?demo` to the address for sample data.

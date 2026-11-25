@@ -136,3 +136,9 @@ a.card:hover{border-color:#cfcde3}.nav a{color:#dcdcf2}.nav a.on{color:var(--nav
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 .upbar{height:6px;background:var(--wash);border-radius:99px;overflow:hidden;margin-top:6px;max-width:260px}.upbar i{display:block;height:100%;width:0;background:var(--ok);transition:width .2s}
+[hidden]{display:none!important}
+/* Contrast fixes (axe, WCAG AA): darker success green, navy text on orange, readable locked items */
+:root{--ok:#17703d}
+.pill.ok{background:#e1f2e7;color:#145f34}
+.paths a.on[style*="--rec"],.paths a.on[style*="--sch"]{color:var(--navy)}
+.lock{opacity:1;background:var(--wash)}.lock .ic{filter:grayscale(1);opacity:.55}.lock b{color:var(--muted)}
