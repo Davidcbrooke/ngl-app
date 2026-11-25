@@ -15,23 +15,25 @@ export default async function home(){
   const [c, lic, comps, orders, music] = await Promise.all([api.club(), api.licences(), api.competitions(), api.orders(), api.music()]);
   const unpaid = orders.filter(o => o.status === 'awaiting-payment'), due = unpaid.reduce((a, o) => a + o.total, 0);
   const mine = comps.filter(x => x.reserved), places = mine.reduce((a, x) => a + x.reserved, 0), next = mine[0];
-  const needMusic = music.gymnasts.filter(g => !g.file).length, mc = comps.find(x => x.id === music.comp);
+  const mc = comps.find(x => x.id === music.comp), needMusic = mc ? music.gymnasts.filter(g => !g.file).length : 0;
+  const nextAny = next || comps[0], buy = mine.find(x => x.buyBy);
   const done = Object.assign({reg: 1, res: mine.length ? 1 : 0}, JSON.parse(localStorage.ngl_done || '{}'));
   const n = CHECK.filter(x => done[x[0]]).length;
   const live = PATHWAYS.filter(p => ['live', 'waived'].includes(lic[p.k].status));
   const attn = [
     unpaid.length && [`${unpaid.length} order${unpaid.length > 1 ? 's' : ''} awaiting payment`, `${gbp(due)} · pay by card or bank transfer`, '#/shop/orders', 'Pay now', 1],
     needMusic && [`${needMusic} gymnasts need floor music`, `${esc(mc.name)} · by ${date(mc.musicBy, {day:'numeric', month:'short'})}`, '#/competitions/music', 'Upload'],
-    [`Buy your places on JustGo`, `${esc(mine[0].name)} · buy by ${date(mine[0].buyBy)}`, '#/competitions/places', 'View']
+    buy && [`Buy your places on JustGo`, `${esc(buy.name)} · buy by ${date(buy.buyBy)}`, '#/competitions/places', 'View'],
+    !mine.length && ['Reserve places for 2027', 'Competitions are filling fast: reserving is free', '#/competitions', 'Reserve']
   ].filter(Boolean);
-  return `<h1>Welcome back, ${esc(c.name)}</h1><p class="lead">Everything your club does with the NGL, in one place.</p>
+  return `<h1>Welcome, ${esc(c.name)}</h1><p class="lead">Everything your club does with the NGL, in one place.</p>
   <div class="grid g4" style="margin-bottom:16px">
-    <a class="card stat" href="#/shop/orders"><b>${gbp(due)}</b><span>Awaiting payment · ${unpaid.length} orders</span></a>
+    <a class="card stat" href="#/shop/orders"><b>${gbp(due)}</b><span>Awaiting payment · ${unpaid.length} order${unpaid.length === 1 ? '' : 's'}</span></a>
     <a class="card stat" href="#/competitions/places"><b>${places}</b><span>Competition places reserved</span></a>
-    <a class="card stat" href="#/competitions"><b>${date(next.date, {day:'numeric', month:'short'})}</b><span>Next: ${esc(next.name)}</span></a>
+    <a class="card stat" href="#/competitions"><b>${date(nextAny.date, {day:'numeric', month:'short'})}</b><span>${next ? 'Your next' : 'Next'}: ${esc(nextAny.name)}</span></a>
     <a class="card stat" href="#/programmes"><b>${live.length}</b><span>Programmes active</span></a></div>
   <div class="grid g2">
-    <div class="card attn"><h2>Needs your attention</h2>${attn.map(a => `<div class="row"><div class="grow"><b>${a[0]}</b><small>${a[1]}</small></div><a class="btn sm ${a[4] ? '' : 'ghost'}" href="${a[2]}">${a[3]}</a></div>`).join('')}</div>
+    <div class="card attn"><h2>Needs your attention</h2>${attn.length ? '' : '<p class="empty">All done. Nothing needs you right now.</p>'}${attn.map(a => `<div class="row"><div class="grow"><b>${a[0]}</b><small>${a[1]}</small></div><a class="btn sm ${a[4] ? '' : 'ghost'}" href="${a[2]}">${a[3]}</a></div>`).join('')}</div>
     <div class="card check"><h2>Getting started</h2><div class="prog"><i style="width:${n / CHECK.length * 100}%"></i></div><small style="color:var(--muted)">${n} of ${CHECK.length} done</small>
       ${CHECK.map(x => `<a class="row ${done[x[0]] ? 'done' : ''}" href="${x[3]}" data-tick="${x[0]}"><div class="tick">✓</div><div class="grow"><b>${x[1]}</b><small>${x[2]}</small></div><span style="color:var(--muted)">›</span></a>`).join('')}</div></div>
   <h2 style="margin-top:24px">Your programmes</h2>

@@ -15,7 +15,7 @@ The new NGL Club Hub: one login, one menu, every pathway inside. Built in this s
 
 ## Build plan
 1. Shell, Home with Getting started, Rules & resources, Help, search. **Done (sample data).**
-2. Real sign-in and data against the staging database (project ngl-club-hub-staging: created, London, Email/Password on, rules published). **Next.**
+2. Real sign-in and data against the staging database (ngl-club-hub-staging, London). **Done:** register, log in, log out, reset password; reserve places; one shop basket and orders; edit club details. Security rules tested: a club cannot switch on its own licence, mark its own order paid or read other clubs' data. Add `?demo` to the address for sample data.
 3. Competitions: reserve, my places, floor music upload, results (from the Club Hub and General League hub).
 4. Shop & orders: one basket for every programme, invoices, Pay by card (card-pay Apps Script).
 5. Programmes, one pathway at a time: Pre-School, Recreational, Schools, General League.

@@ -1,6 +1,10 @@
 // Data layer. Every screen asks this file for data, never Firebase directly,
 // so the sandbox (sample data) and live (Firebase) run exactly the same screens.
-import { DATA, RULES_BASE } from './config.js';
+import { RULES_BASE } from './config.js';
+import { fb } from './firebase.js';
+
+// Sample data when the address has ?demo, otherwise the staging database.
+export const MODE = new URLSearchParams(location.search).has('demo') ? 'demo' : 'firebase';
 
 const demo = {
   club: {name:'SAADI Gymnastics', contact:'Dave Brooke', email:'demo@club.example', bgNumber:'BG123456'},
@@ -29,14 +33,16 @@ const demo = {
     {id:'ORD-K3M7Q', date:'2026-10-26', path:'schools', details:'Schools Club Licence 250–399', total:950, status:'paid'},
     {id:'ORD-R7Y3J', date:'2026-09-26', path:'recreational', details:'190 medals, 12 t-shirts', total:619, status:'paid'}
   ],
+  // Prices to clubs, from context/03 (physical products table)
   products: [
     {k:'gbook', path:'general', n:'General Skills Book', d:'Levels 1–4 · RRP £8', price:4},
-    {k:'recbook', path:'recreational', n:'Recreational award books', d:'Ruby, Pink, Teal, Indigo', price:5, needs:'recreational'},
-    {k:'recmedal', path:'recreational', n:'Recreational medals', d:'Every gymnast medals', price:2.5, needs:'recreational'},
-    {k:'schbook', path:'schools', n:'Schools Awards Books', d:'Bronze, Silver, Gold', price:3, needs:'schools'},
-    {k:'schcert', path:'schools', n:'Schools certificates', d:'All six levels', price:0.5, needs:'schools'},
-    {k:'pspass', path:'preschool', n:'Pre-School passports', d:'Book 1 and Book 2', price:4, needs:'preschool'},
-    {k:'psmedal', path:'preschool', n:'Pre-School country medals', d:'20 countries', price:2.5, needs:'preschool'},
+    {k:'recbook', path:'recreational', n:'Recreational award books', d:'Ruby, Pink, Teal, Indigo · RRP £10', price:5, needs:'recreational'},
+    {k:'recmedal', path:'recreational', n:'Recreational medals', d:'Every gymnast medals · RRP £5', price:3, needs:'recreational'},
+    {k:'schbook', path:'schools', n:'Schools Awards Books', d:'One book for the whole programme · RRP £10', price:5, needs:'schools'},
+    {k:'schcert', path:'schools', n:'Schools certificates', d:'Bronze, Silver and Gold', price:0.1, needs:'schools'},
+    {k:'pspass', path:'preschool', n:'Pre-School passports', d:'Book 1 and Book 2 · RRP £10', price:5, needs:'preschool'},
+    {k:'psmedal', path:'preschool', n:'Pre-School country medals', d:'20 countries · RRP £4', price:2, needs:'preschool'},
+    {k:'tshirt', path:'recreational', n:'Children’s NGL t-shirt', d:'RRP £17–20', price:12, needs:'recreational'},
     {k:'kit', path:null, n:'Group Buying: staff kit', d:'Your logo, ordered every quarter', price:null}
   ]
 };
@@ -72,14 +78,105 @@ export const FAQ = [
   {id:'contact', q:'Who do I talk to?', a:'Chat with us, email admin@nationalgymnasticsleague.co.uk, or book a call with Dave.', go:'#/help'}
 ];
 
-// Async API: the live version will read the same shapes from Firestore.
-const api = {
+// ---------- Shared NGL content (same for every club) ----------
+// The competition calendar and products are NGL content; they will move into the
+// database (competitions, products collections) when the admin screens are built.
+const CALENDAR = demo.competitions.map(({reserved, ref, buyBy, waiting, ...c}) => c);
+const PRODUCTS = demo.products;
+const DEFAULT_LICENCES = {
+  preschool:   {status:'explore', label:'Explore free', price:'from £150 a year + VAT'},
+  schools:     {status:'explore', label:'Explore free', price:'from £150 a year + VAT'},
+  recreational:{status:'explore', label:'Explore free', price:'from £200 a year + VAT'},
+  general:     {status:'waived', label:'Fee waived for 2027'},
+  performance: {status:'soon', label:'Coming 2027'},
+  university:  {status:'soon', label:'Coming soon'},
+  masters:     {status:'soon', label:'Coming soon'}
+};
+const code = p => p + '-' + Array.from(crypto.getRandomValues(new Uint8Array(5)), b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 31]).join('');
+const iso = d => (d && d.toDate ? d.toDate() : d instanceof Date ? d : new Date(d || Date.now())).toISOString().slice(0, 10);
+const minusMonths = (isoDate, m) => { const d = new Date(isoDate + 'T12:00'); d.setMonth(d.getMonth() - m); return iso(d); };
+
+// ---------- Sample-data backend ----------
+const demoApi = {
+  mode: 'demo',
+  async user(){ return {uid: 'demo', email: demo.club.email}; },
   async club(){ return demo.club; },
   async licences(){ return demo.licences; },
   async competitions(){ return demo.competitions; },
   async music(){ return demo.music; },
   async orders(){ return demo.orders; },
-  async products(){ return demo.products; }
+  async products(){ return demo.products; },
+  async reserve(){ throw new Error('Sample data: nothing is saved. Remove ?demo from the address to use the test database.'); },
+  async placeOrder(){ throw new Error('Sample data: nothing is saved.'); },
+  async updateClub(){ throw new Error('Sample data: nothing is saved.'); },
+  async signOut(){ location.replace(location.pathname); }
 };
-if (DATA !== 'demo') console.warn('Only sample data is wired up so far.');
+
+// ---------- Staging database backend ----------
+let CLUB = null;
+const fbApi = {
+  mode: 'firebase',
+  async user(){
+    const {auth, A} = await fb();
+    return new Promise(res => { const off = auth.onAuthStateChanged(A, u => { off(); res(u); }); });
+  },
+  async club(){
+    if (CLUB) return CLUB;
+    const {fs, A, D} = await fb(), u = A.currentUser;
+    const snap = await fs.getDoc(fs.doc(D, 'clubs', u.uid));
+    CLUB = {email: u.email, ...(snap.exists() ? snap.data() : {name: 'Your club', contact: ''})};
+    return CLUB;
+  },
+  async licences(){ const c = await this.club(); return {...DEFAULT_LICENCES, ...(c.licences || {})}; },
+  async reservations(){
+    const {fs, A, D} = await fb();
+    const q = await fs.getDocs(fs.query(fs.collection(D, 'reservations'), fs.where('clubId', '==', A.currentUser.uid)));
+    return q.docs.map(d => ({id: d.id, ...d.data()}));
+  },
+  async competitions(){
+    const res = await this.reservations();
+    return CALENDAR.map(c => { const r = res.find(x => x.compId === c.id);
+      return r ? {...c, reserved: r.status === 'waiting' ? 0 : r.places, waiting: r.status === 'waiting', ref: r.ref, buyBy: minusMonths(c.date, 3)} : c; });
+  },
+  async music(){ return {comp: null, gymnasts: []}; },
+  async orders(){
+    const {fs, A, D} = await fb();
+    const q = await fs.getDocs(fs.query(fs.collection(D, 'orders'), fs.where('clubId', '==', A.currentUser.uid)));
+    return q.docs.map(d => { const o = d.data();
+      return {id: d.id, date: iso(o.createdAt), path: o.path, details: o.details, total: o.total, status: o.status, lines: o.lines}; })
+      .sort((a, b) => b.date.localeCompare(a.date));
+  },
+  async products(){ return PRODUCTS; },
+  async reserve(compId, places){
+    const {fs, A, D} = await fb(), c = await this.club();
+    const ref = code('NGL');
+    await fs.setDoc(fs.doc(D, 'reservations', ref), {clubId: A.currentUser.uid, clubName: c.name || '', compId, places: Number(places), status: 'reserved', ref, createdAt: fs.serverTimestamp()});
+    return ref;
+  },
+  async placeOrder(lines, delivery){
+    const {fs, A, D} = await fb(), c = await this.club();
+    const id = code('ORD'), total = lines.reduce((a, l) => a + l.qty * l.unit, 0);
+    const paths = [...new Set(lines.map(l => l.path).filter(Boolean))];
+    await fs.setDoc(fs.doc(D, 'orders', id), {clubId: A.currentUser.uid, clubName: c.name || '', path: paths.length === 1 ? paths[0] : 'general',
+      details: lines.map(l => `${l.qty} × ${l.n}`).join(', '), lines, total, delivery, status: 'awaiting-payment', createdAt: fs.serverTimestamp()});
+    return {id, total};
+  },
+  async updateClub(fields){
+    const {fs, A, D} = await fb();
+    await fs.setDoc(fs.doc(D, 'clubs', A.currentUser.uid), fields, {merge: true});
+    CLUB = null;
+  },
+  // Account
+  async signIn(email, pw){ const {auth, A} = await fb(); CLUB = null; return auth.signInWithEmailAndPassword(A, email, pw); },
+  async register(d){
+    const {auth, fs, A, D} = await fb(); CLUB = null;
+    const cred = await auth.createUserWithEmailAndPassword(A, d.email, d.password);
+    await fs.setDoc(fs.doc(D, 'clubs', cred.user.uid), {name: d.name, contact: d.contact, bgNumber: d.bgNumber || '', phone: d.phone || '', createdAt: fs.serverTimestamp()});
+    return cred;
+  },
+  async reset(email){ const {auth, A} = await fb(); return auth.sendPasswordResetEmail(A, email); },
+  async signOut(){ const {auth, A} = await fb(); CLUB = null; window.removeEventListener('hashchange', window.NGL_ONHASH); await auth.signOut(A); location.replace(location.pathname); }
+};
+
+const api = MODE === 'demo' ? demoApi : fbApi;
 export default api;

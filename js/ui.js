@@ -26,3 +26,17 @@ export const pill = (text, kind = '') => `<span class="pill ${kind}">${esc(text)
 export const tabs = (items, active, base, accent) => `<div class="sub" style="${accent ? '--c:' + accent : ''}">${items.map(([k, l]) =>
   `<a class="${k === active ? 'on' : ''}" href="${base}${k ? '/' + k : ''}">${esc(l)}</a>`).join('')}</div>`;
 export const head = (title, lead) => `<h1>${esc(title)}</h1>${lead ? `<p class="lead">${lead}</p>` : ''}`;
+
+// Pop-up dialog. Returns the dialog element; any [data-close] closes it.
+export function modal(html){
+  const bg = document.createElement('div'); bg.className = 'modal-bg';
+  bg.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${html}</div>`;
+  bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('[data-close]')) bg.remove(); });
+  document.body.appendChild(bg);
+  const f = bg.querySelector('input,select,textarea,button'); if (f) f.focus();
+  return bg;
+}
+export function toast(msg, ok = true){
+  const t = document.createElement('div'); t.className = 'toast ' + (ok ? 'ok' : 'bad'); t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 4200);
+}

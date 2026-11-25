@@ -1,7 +1,9 @@
 // NGL Club Hub: the app shell. One menu, one search, hash routes (#/section/sub)
 // so every screen has its own link that can be shared or bookmarked.
 import { ENV } from './config.js';
-import api from './data.js';
+import api, { MODE } from './data.js';
+import { showAuth } from './views/auth.js';
+import './actions.js';
 import { svg, esc } from './ui.js';
 import { SEARCH } from './search.js';
 import home from './views/home.js';
@@ -37,12 +39,20 @@ async function render(){
 }
 
 async function start(){
+  if (MODE === 'firebase') {
+    let u = null;
+    try { u = await api.user(); } catch (e) { console.error(e); }
+    if (!u) return showAuth();
+  }
   const c = await api.club(), lic = await api.licences();
   const live = Object.entries(lic).filter(([, v]) => v.status === 'live' || v.status === 'waived').length;
-  $('#clubCard').innerHTML = `<b>${esc(c.name)}</b><span>${live} programmes active</span>`;
-  $('#who').innerHTML = `<span>${esc(c.contact)}</span><div class="av">${esc(c.contact.split(' ').map(w => w[0]).join(''))}</div>`;
-  if (ENV === 'sandbox') $('#sandbox').hidden = false;
-  window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+  $('#clubCard').innerHTML = `<b>${esc(c.name)}</b><span>${live} programme${live === 1 ? '' : 's'} active</span>`;
+  const who = c.contact || c.name || '';
+  $('#who').innerHTML = `<span>${esc(who)}</span><div class="av">${esc(who.split(' ').map(w => w[0]).join('').slice(0, 2))}</div><button class="btn sm ghost" data-act="signout">${MODE === 'demo' ? 'Leave sample data' : 'Log out'}</button>`;
+  if (ENV === 'sandbox') { $('#sandbox').hidden = false; $('#sandbox').textContent = 'SANDBOX · ' + (MODE === 'demo' ? 'sample data' : 'test database'); }
+  window.NGL_RENDER = render;
+  window.NGL_ONHASH = () => { render(); window.scrollTo(0, 0); };
+  window.addEventListener('hashchange', window.NGL_ONHASH);
   SEARCH($('#q'), $('#res'));
   // Getting started ticks (saved on this device for now)
   document.addEventListener('click', e => { const a = e.target.closest('[data-tick]'); if (a) { const d = JSON.parse(localStorage.ngl_done || '{}'); d[a.dataset.tick] = 1; localStorage.ngl_done = JSON.stringify(d); } });
