@@ -50,6 +50,7 @@ class Page:
 
     def route(self, hash_):
         self.p.evaluate(f"location.hash = {hash_!r}")
+        self.p.wait_for_function("h => location.hash === h && !document.querySelector('#page').dataset.loading", arg=hash_, timeout=15000)
         self.p.wait_for_timeout(700)
         self.p.wait_for_selector("#page h1", timeout=15000)
 

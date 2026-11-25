@@ -50,6 +50,7 @@ def test_basket_order_goes_straight_to_payment(account):
     pg.p.go_back()
     pg.p.wait_for_selector("#page h1", timeout=20000)
     pg.route("#/shop/orders")
+    pg.p.wait_for_selector("#page >> text=Finish payment", timeout=20000)
     page_text = pg.p.inner_text("#page")
     assert "Not paid" in page_text and "Finish payment" in page_text and "£44" in page_text
 
