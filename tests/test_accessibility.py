@@ -2,7 +2,7 @@
 import pytest
 
 AXE = "https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.2/axe.min.js"
-SCREENS = ["#/home", "#/competitions", "#/rules", "#/programmes/recreational", "#/shop", "#/shop/orders", "#/club", "#/help"]
+SCREENS = ["#/programmes/performance", "#/programmes/university", "#/programmes/masters", "#/programmes/general", "#/programmes/schools", "#/home", "#/competitions", "#/rules", "#/programmes/recreational", "#/programmes/preschool", "#/programmes/preschool/teach", "#/programmes/preschool/teach/plans", "#/programmes/preschool/licence", "#/admin", "#/shop", "#/shop/orders", "#/club", "#/help"]
 
 
 @pytest.mark.parametrize("hash_", SCREENS)

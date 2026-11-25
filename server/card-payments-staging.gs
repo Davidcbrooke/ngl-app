@@ -101,9 +101,14 @@ function activate_(sessionId) {
     if (o.kind === 'licence' && o.licPath) {                             // one-app model: club.licences[pathway]
       const lic = club.licences || {}, cur = lic[o.licPath] || {};
       const exp = expiry_({expires: cur.renews}, false);
-      lic[o.licPath] = {status: 'live', label: 'Licence live', band: o.band || cur.band || '', renews: Utilities.formatDate(exp, 'Europe/London', 'yyyy-MM-dd')};
+      lic[o.licPath] = {status: 'live', label: 'Licence live', band: o.band || cur.band || '', renews: Utilities.formatDate(exp, 'Europe/London', 'yyyy-MM-dd'), packs: cur.packs || {}};
       adminPatch_('clubs/' + o.clubId, {licences: lic});
       switched = 'Your licence is now switched on.';
+    } else if (o.kind === 'pack' && o.licPath && o.pack) {               // a pack on top of a live licence (e.g. Pre-School Lesson Plan Pack)
+      const lic = club.licences || {}, cur = lic[o.licPath] || {};
+      cur.packs = cur.packs || {}; cur.packs[o.pack] = true; lic[o.licPath] = cur;
+      adminPatch_('clubs/' + o.clubId, {licences: lic});
+      switched = 'Your pack is now unlocked.';
     }
     if (!switched) switched = 'We will post your order shortly.';
     return {ok: true, ret: ret, switched: switched};

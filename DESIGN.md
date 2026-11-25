@@ -95,6 +95,24 @@ Live examples of every component: `styleguide.html` (open it from the sandbox).
 
 **Icons**: simple line icons in rounded coloured squares, like the NGL apps. Never emoji or clip art.
 
+## 6a. Pathways: one model for all seven (agreed 25 Nov 2026)
+Every pathway inside Programmes is built from the same template (`js/pathways/`), so a coach who knows one knows them all. Only the pathway colour and the content change.
+
+| Tab | Always answers | Example (Pre-School) |
+|---|---|---|
+| **Overview** | Where are we, what's this week, is it switched on? | This week's theme and sticker skills; licence status |
+| **Teach** | What do my coaches deliver, and when? | Term planner, 40 lesson plans, Seasonal Pack |
+| **Awards** | What does each gymnast work towards and get? | Passport books, 20 country medals, A1 poster |
+| **Compete** | Where do gymnasts show what they've learnt? | Graduation |
+| **Families** | What do parents get, and how do I share it? | Family app link, QR poster, flyers |
+| **Licence** | What does it cost, what's included, how do I buy or renew? | Bands, Lesson Plan Packs, Seasonal Pack |
+
+- Same six tabs, same order, same names, for every pathway. Never add a seventh; fit new tools inside one of these.
+- A tab with nothing yet shows a standard "Coming" card, never disappears.
+- Locked content (no licence or pack) is visible but faded, with what unlocks it and the price.
+- Buying (licences, packs, books, medals) always goes through the same checkout (section 7).
+- Products ordered from a pathway's Awards tab are the same products as in Shop.
+
 ## 7. Money screens (Stripe model)
 - Every order has one reference (ORD-XXXXX), one total and one status.
 - Prices to clubs exclude VAT; licence fees show "+ VAT". Books, medals and t-shirts carry no VAT.

@@ -9,7 +9,7 @@ export const MODE = new URLSearchParams(location.search).has('demo') ? 'demo' : 
 const demo = {
   club: {name:'SAADI Gymnastics', contact:'Dave Brooke', email:'demo@club.example', bgNumber:'BG123456'},
   licences: {
-    preschool:   {status:'explore', label:'Explore free', price:'from £150 a year + VAT'},
+    preschool:   {status:'live', label:'Licence live', renews:'2027-09-01', band:'25–49 Pre-School gymnasts', packs:{pack2:true}},
     schools:     {status:'live', label:'Licence live', renews:'2027-10-25', band:'250–399 gymnasts', code:'SAADI-7K4P'},
     recreational:{status:'live', label:'Licence live', renews:'2027-04-02', band:'100–249 gymnasts', code:'SAADI-R9TQ'},
     general:     {status:'waived', label:'Fee waived for 2027'},
@@ -211,12 +211,12 @@ const fbApi = {
     await fs.setDoc(fs.doc(D, 'reservations', ref), {clubId: A.currentUser.uid, clubName: c.name || '', compId, places: Number(places), status: 'reserved', ref, createdAt: fs.serverTimestamp()});
     return ref;
   },
-  async placeOrder(lines, delivery){
+  async placeOrder(lines, delivery, extra = {}){
     const {fs, A, D} = await fb(), c = await this.club();
     const id = code('ORD'), total = lines.reduce((a, l) => a + l.qty * l.unit, 0);
     const paths = [...new Set(lines.map(l => l.path).filter(Boolean))];
     await fs.setDoc(fs.doc(D, 'orders', id), {clubId: A.currentUser.uid, clubName: c.name || '', path: paths.length === 1 ? paths[0] : 'general',
-      details: lines.map(l => `${l.qty} × ${l.n}`).join(', '), lines, total, delivery, status: 'awaiting-payment', createdAt: fs.serverTimestamp()});
+      details: lines.filter(l => l.k !== 'vat').map(l => `${l.qty} × ${l.n}`).join(', '), lines, total, delivery, status: 'awaiting-payment', createdAt: fs.serverTimestamp(), ...extra});
     return {id, total};
   },
   async updateClub(fields){
