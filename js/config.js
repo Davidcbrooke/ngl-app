@@ -17,6 +17,8 @@ export const FIREBASE_STAGING = {
 export const INVOICE = {name: 'SAADI Gymnastics Ltd trading as National Gymnastics League', address: ['66 Waveney Road', 'Harpenden', 'Hertfordshire', 'AL5 4QZ'],
   company: '10702099', vat: 'GB 255 4614 03', termsDays: 14, email: 'admin@nationalgymnasticsleague.co.uk',
   bank: {accountName: 'National Gymnastics League', sortCode: '60-84-64', accountNumber: '93416867'}};
+// Invoice emails: same EmailJS service and template as today's hubs (sends from admin@nationalgymnasticsleague.co.uk).
+export const EMAILJS = {serviceId: 'service_3qlufgh', templateId: 'template_8i40iia', publicKey: 'ZSjEpECoOMHkWNB1D'};
 // Card payments: the STAGING copy of the "NGL card payments" Apps Script (Stripe TEST mode, staging database).
 export const CARD_PAY_URL = 'https://script.google.com/macros/s/AKfycbzhIP9CZydepNQ05-rwfN4RqcURJIi-00qVZAJJBe9C-r7Mdu7r_-eamCZFYjzImRH-vw/exec';
 export const CONTACT_EMAIL = 'admin@nationalgymnasticsleague.co.uk';

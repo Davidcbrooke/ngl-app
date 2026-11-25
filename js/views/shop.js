@@ -53,6 +53,7 @@ async function orderPage(id){
     <div><div class="card" style="margin-bottom:16px"><h2>${unpaid ? 'Pay' : 'Payment'}</h2>
       ${unpaid ? `<button class="btn" style="width:100%;justify-content:center" data-act="pay" data-order="${esc(o.id)}">Pay ${gbp(tot)} by card</button>
         <p class="lead" style="font-size:13px;margin:10px 0 0">Or by bank transfer: the details are on the invoice.</p>` : '<p class="lead" style="margin:0">Paid. Thank you.</p>'}
-      <button class="btn ghost" style="width:100%;justify-content:center;margin-top:10px" data-act="invoice" data-order="${esc(o.id)}">${unpaid ? 'Invoice' : 'Receipt'} (PDF)</button></div>
+      <button class="btn ghost" style="width:100%;justify-content:center;margin-top:10px" data-act="invoice" data-order="${esc(o.id)}">${unpaid ? 'Invoice' : 'Receipt'} (PDF)</button>
+      <button class="btn ghost" style="width:100%;justify-content:center;margin-top:10px" data-act="email-invoice" data-order="${esc(o.id)}">Email it to me</button></div>
     <div class="card"><h2>Timeline</h2><ul class="timeline">${steps.map(s => `<li class="${s[2] ? 'done' : ''}"><div><b>${s[0]}</b><small>${esc(s[1])}</small></div></li>`).join('')}</ul></div></div></div>`;
 }

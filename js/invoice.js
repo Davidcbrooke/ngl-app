@@ -1,6 +1,6 @@
 // Invoice: one layout for every programme. Shown full-screen; "Download PDF" uses the
 // browser's print-to-PDF, with print styles that show only the invoice.
-import { INVOICE, BRAND } from './config.js';
+import { INVOICE, BRAND, EMAILJS, ENV } from './config.js';
 import { esc, gbp, date, path } from './ui.js';
 
 const total = o => (o.lines || []).reduce((a, l) => a + l.qty * l.unit, 0);
@@ -33,4 +33,34 @@ export function showInvoice(o, c){
   bg.querySelector('[data-print]').onclick = () => { const t = document.title; document.title = 'NGL invoice ' + o.id; window.print(); document.title = t; };
   bg.querySelector('[data-shut]').onclick = () => bg.remove();
   document.body.appendChild(bg);
+}
+
+// Email version: inline styles only (email apps ignore stylesheets).
+function emailHTML(o, c){
+  const td = 'padding:8px 10px;border-bottom:1px solid #e4e3ee;font-size:14px;color:#1b1840;', B = INVOICE.bank, tot = total(o);
+  const bar = ['#e84187','#fbd43a','#e8822f','#0073b3','#00aeb7','#6ba526','#8f286b'].map(x => `<td style="height:6px;background:${x}"></td>`).join('');
+  return `<div style="font-family:Roboto,Arial,Helvetica,sans-serif;background:#f4f4f9;padding:20px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">
+<tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${bar}</tr></table></td></tr>
+<tr><td style="background:#28225c;padding:18px 24px;color:#fff;font-size:20px;font-weight:bold">National Gymnastics League · Invoice ${esc(o.id)}</td></tr>
+<tr><td style="padding:24px"><p style="margin:0 0 14px;font-size:15px;color:#1b1840">Hello${c.contact ? ' ' + esc(c.contact.split(' ')[0]) : ''},</p>
+<p style="margin:0 0 18px;font-size:15px;color:#1b1840">Thank you for your order. Invoice <b>${esc(o.id)}</b> is below.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:18px"><tr style="background:#28225c;color:#fff;font-size:11px"><td style="padding:8px 10px">ITEM</td><td align="right" style="padding:8px 10px">QTY</td><td align="right" style="padding:8px 10px">AMOUNT</td></tr>
+${(o.lines || []).map(l => `<tr><td style="${td}">${esc(l.n)}</td><td align="right" style="${td}">${l.qty}</td><td align="right" style="${td}">${gbp(l.qty * l.unit)}</td></tr>`).join('')}
+<tr style="font-size:16px;font-weight:bold;color:#28225c"><td colspan="2" align="right" style="padding:10px">Total due</td><td align="right" style="padding:10px">${gbp(tot)}</td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f9;border-left:4px solid #c6152e"><tr><td style="padding:12px 14px;font-size:14px;color:#1b1840">
+<b>Pay by card:</b> open this order in your Club Hub (Shop &amp; orders) and choose Pay by card.<br><br>
+<b>Or by bank transfer within ${INVOICE.termsDays} days</b><br>${esc(B.accountName)} · sort code ${esc(B.sortCode)} · account ${esc(B.accountNumber)}<br>Reference: <b>${esc(o.id)}</b></td></tr></table>
+<p style="margin:18px 0 0;font-size:13px;color:#5f5b80">You can download a PDF copy at any time from Shop &amp; orders in your Club Hub.</p></td></tr>
+<tr><td style="padding:14px 24px;background:#f4f4f9;text-align:center;font-size:11px;color:#5f5b80">${esc(INVOICE.name)} · Company no. ${esc(INVOICE.company)} · VAT no. ${esc(INVOICE.vat)}</td></tr></table></div>`;
+}
+// Sends through EmailJS. Made-up test addresses (example.com etc.) are skipped so nothing bounces.
+export async function emailInvoice(o, c){
+  if (!c.email) throw new Error('No email address on your club account.');
+  if (/@example\.(com|org|net)$/i.test(c.email)) return 'skipped';
+  const sandbox = ENV === 'sandbox' ? '[SANDBOX TEST] ' : '';
+  const r = await fetch('https://api.emailjs.com/api/v1.0/email/send', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({service_id: EMAILJS.serviceId, template_id: EMAILJS.templateId, user_id: EMAILJS.publicKey,
+      template_params: {to_email: c.email, to_name: c.contact || c.name || '', subject: `${sandbox}NGL invoice ${o.id}: ${gbp(total(o))}`, invoice_html: emailHTML(o, c)}})});
+  if (!r.ok) throw new Error('Email failed (' + r.status + ')');
+  return 'sent';
 }

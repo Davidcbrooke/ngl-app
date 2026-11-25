@@ -2,7 +2,7 @@
 // edit club details, sign out. Every write goes through the data layer.
 import api from './data.js';
 import { modal, toast, esc, gbp } from './ui.js';
-import { showInvoice } from './invoice.js';
+import { showInvoice, emailInvoice } from './invoice.js';
 
 const rerender = () => window.NGL_RENDER && window.NGL_RENDER();
 export const basket = {
@@ -47,8 +47,11 @@ const ACT = {
         const all = [...lines, {k: 'postage', n: 'Postage', unit: t.post, qty: 1}];
         const o = await api.placeOrder(all, addr); api.updateClub({deliveryAddress: addr}).catch(() => {});
         basket.set([]); m.remove();
-        modal(`<h2>Order ${esc(o.id)} placed</h2><p class="lead">${gbp(o.total)}. Pay now by card, or by bank transfer quoting <b>${esc(o.id)}</b>. We post it as soon as payment arrives.</p>
-          <div class="btn-row"><button class="btn" data-act="pay" data-order="${esc(o.id)}">Pay by card</button><a class="btn ghost" href="#/shop/orders/${esc(o.id)}" data-close>View order</a></div>`);
+        const done = modal(`<h2>Order ${esc(o.id)} placed</h2><p class="lead">${gbp(o.total)}. Pay now by card, or by bank transfer quoting <b>${esc(o.id)}</b>. We post it as soon as payment arrives.</p>
+          <div class="btn-row"><button class="btn" data-act="pay" data-order="${esc(o.id)}">Pay by card</button><a class="btn ghost" href="#/shop/orders/${esc(o.id)}" data-close>View order</a></div>
+          <p class="lead" id="mailNote" style="font-size:13px;margin:12px 0 0">Emailing your invoice to ${esc(c.email || '')}…</p>`);
+        api.order(o.id).then(full => emailInvoice(full, c)).then(r => { const n = done.querySelector('#mailNote'); if (n) n.textContent = r === 'sent' ? '✓ Invoice emailed to ' + c.email : 'Test address: no email sent.'; })
+          .catch(e => { console.error(e); const n = done.querySelector('#mailNote'); if (n) n.textContent = 'We couldn’t email the invoice just now. You can email it again from the order page.'; });
         rerender();
       } catch (x) { m.querySelector('#err').textContent = x.message.startsWith('Sample') ? x.message : 'Couldn’t place the order. Please try again.'; console.error(x); btn.disabled = false; } });
   },
@@ -75,6 +78,14 @@ const ACT = {
   async invoice(b){
     const [o, c] = await Promise.all([api.order(b.dataset.order), api.club()]);
     if (o) showInvoice(o, c); else toast('Couldn’t open that invoice.', false);
+  },
+
+  async 'email-invoice'(b){
+    b.disabled = true; const label = b.textContent; b.textContent = 'Sending…';
+    try { const [o, c] = await Promise.all([api.order(b.dataset.order), api.club()]); const r = await emailInvoice(o, c);
+      toast(r === 'sent' ? 'Invoice emailed to ' + c.email : 'Test address: no email sent.'); }
+    catch (x) { console.error(x); toast('Couldn’t send the email. Please try again.', false); }
+    b.disabled = false; b.textContent = label;
   },
 
   async 'reset-pw'(){
