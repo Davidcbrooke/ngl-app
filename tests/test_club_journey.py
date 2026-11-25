@@ -65,4 +65,5 @@ def test_log_out_and_back_in(account):
     pg.p.click("#f button")
     pg.p.wait_for_selector("#page h1", timeout=20000)
     pg.route("#/shop/orders")
-    assert "ORD-" in pg.p.inner_text("#page")
+    pg.p.wait_for_selector("#page >> text=Orders & receipts", timeout=20000)
+    pg.p.wait_for_selector("#page table >> text=ORD-", timeout=20000)

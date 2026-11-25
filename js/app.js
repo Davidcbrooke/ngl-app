@@ -27,16 +27,23 @@ const NAV = [
 const $ = s => document.querySelector(s);
 const CTX = {isAdmin: false, needsVerify: false};
 
+// Only the newest screen request is drawn: if a club clicks again while a slow screen is
+// still loading, the older one is dropped instead of replacing the screen they asked for.
+let RENDER_SEQ = 0;
 async function render(){
+  const my = ++RENDER_SEQ, stale = () => my !== RENDER_SEQ;
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   const key = parts[0] === 'admin' ? 'admin' : NAV.some(n => n[0] === parts[0]) ? parts[0] : 'home';
   const unpaid = (await api.orders()).filter(o => o.status === 'awaiting-payment').length;
+  if (stale()) return;
   $('#nav').innerHTML = NAV.map(([k, l, i]) => {
     const badge = (k === 'shop' && unpaid) ? `<span class="badge">${unpaid}</span>` : '';
     return `<a href="#/${k}" class="${k === key ? 'on' : ''}" ${k === key ? 'aria-current="page"' : ''}>${svg(i)}<span>${l}</span>${badge}</a>`;
   }).join('') + (CTX.isAdmin ? `<a href="#/admin" class="admin-link ${key === 'admin' ? 'on' : ''}">${svg('club')}<span>NGL Admin</span></a>` : '');
   const view = key === 'admin' ? admin : NAV.find(n => n[0] === key)[3];
-  $('#page').innerHTML = await view(parts.slice(1), CTX);
+  const html = await view(parts.slice(1), CTX);
+  if (stale()) return;
+  $('#page').innerHTML = html;
   document.title = (key === 'home' ? '' : (key === 'admin' ? 'NGL Admin' : NAV.find(n => n[0] === key)[1]) + ' · ') + 'NGL Club Hub';
 }
 
