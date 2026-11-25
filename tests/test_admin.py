@@ -2,7 +2,7 @@
 import pytest
 
 ADMIN = ["#/admin", "#/admin/clubs", "#/admin/clubs/demo", "#/admin/orders", "#/admin/orders/unpaid", "#/admin/orders/all",
-         "#/admin/competitions", "#/admin/competitions/c1", "#/admin/music", "#/admin/music/c1"]
+         "#/admin/competitions", "#/admin/competitions/c1", "#/admin/music", "#/admin/music/c1", "#/admin/team"]
 
 
 @pytest.mark.parametrize("hash_", ADMIN)
@@ -48,3 +48,23 @@ def test_admin_has_every_app(page):
     page.p.click("text=Ticket sales")
     page.p.wait_for_selector("iframe.appframe", timeout=15000)
     assert "NGL_Ticket_Sales.html" in page.p.get_attribute("iframe.appframe", "src")
+
+
+def test_admin_team_grid(page):
+    page.go("#/admin/team", demo=True)
+    page.p.wait_for_selector("input[data-team]", timeout=15000)
+    assert page.p.locator("input[data-team]").count() == 3 * 20          # 3 people x 20 apps
+    assert page.p.locator("input[data-team='christine@example.com']:checked").count() == 4
+    assert "CHRISTINE" in page.p.inner_text("#page").upper()
+
+
+def test_team_member_sees_only_their_apps(page):
+    page.p.goto(page.base + "?demo&staff#/admin")
+    page.p.wait_for_selector(".appt", timeout=20000)
+    names = [n.upper() for n in page.p.locator(".appt b").all_inner_texts()]
+    assert names == ["COMPETITIONS", "TICKET SALES", "FLOOR MUSIC", "COMPETITION MUSIC PLAYER"], names
+    tabs = page.p.inner_text(".sub").upper()
+    assert "COMPETITIONS" in tabs and "CLUBS" not in tabs and "TEAM" not in tabs
+    page.p.evaluate("location.hash = '#/admin/clubs'")
+    page.p.wait_for_timeout(1500)
+    assert "don’t have access" in page.p.inner_text("#page")

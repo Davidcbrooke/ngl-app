@@ -1,43 +1,63 @@
 rules_version = '2';
 // NGL Club Hub (one app): security rules. Staging project ngl-club-hub-staging.
 // A club can only see and change its own data. Licence status, payment status
-// and prices are only changed by NGL admins (or the card-payments script).
+// and prices are only changed by NGL (owners, or team members ticked for that app) or the card-payments script.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    // Owners: the two NGL accounts, plus anyone an owner marks as owner in the team list
     function isAdmin() {
-      return signedIn() && request.auth.token.email_verified == true &&
-        request.auth.token.email in ['admin@nationalgymnasticsleague.co.uk', 'bookingoffice@saadigymnastics.co.uk'];
+      return verified() && (request.auth.token.email in ['admin@nationalgymnasticsleague.co.uk', 'bookingoffice@saadigymnastics.co.uk']
+        || (staff() && me().owner == true));
     }
+    // NGL team (NGL Admin > Team): adminUsers/{lower-case email} = {name, owner, sections: [app ids]}
+    function teamDoc() { return /databases/$(database)/documents/adminUsers/$(request.auth.token.email.lower()); }
+    function staff() { return verified() && exists(teamDoc()); }
+    function me() { return get(teamDoc()).data; }
+    function canAny(apps) { return isAdmin() || (staff() && me().sections.hasAny(apps)); }
+    function clubsTeam() { return canAny(['clubs', 'schools-lic', 'rec-lic', 'ps-lic']); }
+    function ordersTeam() { return canAny(['orders', 'schools-lic', 'rec-lic', 'ps-lic', 'finance']); }
+    function compsTeam() { return canAny(['competitions']); }
+    function musicTeam() { return canAny(['music']); }
+
     function own(clubId) { return signedIn() && request.auth.uid == clubId; }
     // The signed-in user's own email, once they've confirmed it by clicking the link we email them
-    function emailIs(e) { return signedIn() && request.auth.token.email_verified == true && e is string && e != '' && request.auth.token.email.lower() == e; }
+    function emailIs(e) { return verified() && e is string && e != '' && request.auth.token.email.lower() == e; }
     function unchanged(fields) { return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields); }
+
+    // The NGL team list: owners manage it; each person can read their own entry
+    match /adminUsers/{email} {
+      allow read: if isAdmin() || (verified() && request.auth.token.email.lower() == email);
+      allow write: if isAdmin();
+    }
 
     // Club account: one document per club, id = the club's login uid
     match /clubs/{clubId} {
-      allow read: if own(clubId) || isAdmin();
+      allow read: if own(clubId) || clubsTeam();
       allow create: if own(clubId) && !request.resource.data.keys().hasAny(['licences', 'isAdmin']);
-      allow update: if isAdmin() || (own(clubId) && unchanged(['licences', 'isAdmin']));
+      allow update: if clubsTeam() || (own(clubId) && unchanged(['licences', 'isAdmin']));
       allow delete: if isAdmin();
     }
 
-    // Orders: a club places them unpaid; only admins mark them paid or sent
+    // Orders: a club places them unpaid; owners change anything; the team can only mark paid orders as posted
     match /orders/{orderId} {
-      allow read: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow read: if ordersTeam() || (signedIn() && resource.data.clubId == request.auth.uid);
       allow create: if signedIn() && request.resource.data.clubId == request.auth.uid
                     && request.resource.data.status == 'awaiting-payment';
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin() || (ordersTeam() && resource.data.status == 'paid' && request.resource.data.status == 'sent'
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'sentAt']));
+      allow delete: if isAdmin();
     }
 
     // Competition reservations and floor music records
     match /reservations/{id} {
-      allow read: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow read: if compsTeam() || (signedIn() && resource.data.clubId == request.auth.uid);
       // A club books places as 'reserved', or brings in places booked with its confirmed email before it joined (pendingPlaces, same id).
-      allow create: if isAdmin() || (signedIn() && request.resource.data.clubId == request.auth.uid
+      allow create: if compsTeam() || (signedIn() && request.resource.data.clubId == request.auth.uid
                     && (request.resource.data.status == 'reserved' || claimsPending(id)));
       // A club can change its places or cancel while still 'reserved'; only NGL moves places to the waiting list or bought.
-      allow update: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid && resource.data.status == 'reserved'
+      allow update: if compsTeam() || (signedIn() && resource.data.clubId == request.auth.uid && resource.data.status == 'reserved'
                     && unchanged(['clubId', 'compId', 'ref']) && request.resource.data.status in ['reserved', 'cancelled']);
       allow delete: if isAdmin();
     }
@@ -47,17 +67,17 @@ service cloud.firestore {
     }
     // Places booked before the club had an account. The club sees and claims them once its email is confirmed; NGL attaches the rest by hand.
     match /pendingPlaces/{id} {
-      allow read, delete: if isAdmin() || emailIs(resource.data.email);
+      allow read, delete: if compsTeam() || emailIs(resource.data.email);
       allow create, update: if isAdmin();
     }
     // Floor music: NGL adds each club's gymnasts per competition (musicEntries/{compId}_{clubId});
     // the club uploads one record per gymnast (musicUploads/{compId}_{gymnastId}).
     match /musicEntries/{id} {
-      allow read: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid);
-      allow write: if isAdmin();
+      allow read: if musicTeam() || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow write: if musicTeam();
     }
     match /musicUploads/{id} {
-      allow read: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow read: if musicTeam() || (signedIn() && resource.data.clubId == request.auth.uid);
       allow create, update: if signedIn() && request.resource.data.clubId == request.auth.uid
                             && (resource == null || resource.data.clubId == request.auth.uid)
                             && id == request.resource.data.compId + '_' + request.resource.data.gymnastId
@@ -66,15 +86,15 @@ service cloud.firestore {
     }
 
     // Shared content every signed-in club can read: competitions calendar, products, rules
-    match /competitions/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /competitions/{id} { allow read: if signedIn(); allow write: if compsTeam(); }
     match /products/{id}     { allow read: if signedIn(); allow write: if isAdmin(); }
     match /resources/{id}    { allow read: if signedIn(); allow write: if isAdmin(); }
 
-    // The full Recreational programme: clubs with a live Recreational licence, and NGL admins
+    // The full Recreational programme: clubs with a live Recreational licence, and NGL owners
     function recLicensed() { return signedIn() && get(/databases/$(database)/documents/clubs/$(request.auth.uid)).data.licences.recreational.status == 'live'; }
     match /recContent/{id} { allow read: if isAdmin() || recLicensed(); allow write: if isAdmin(); }
     match /recShared/{key}/docs/{id} { allow read: if isAdmin() || recLicensed(); allow write: if isAdmin(); }
-    // Data move report (rehearsal and switch-over): NGL admins only
+    // Data move report (rehearsal and switch-over): NGL owners only
     match /migration/{id} { allow read: if isAdmin(); allow write: if false; }
 
     // Everything else is closed

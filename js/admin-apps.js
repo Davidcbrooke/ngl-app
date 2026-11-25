@@ -36,6 +36,7 @@ export const APPS = [
  {
   "group": "comps",
   "id": "sales",
+  "access": "finance",
   "name": "Ticket sales",
   "desc": "Gymnasts and spectators sold on JustGo for each competition, and places left",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/NGL_Ticket_Sales.html",
@@ -52,6 +53,7 @@ export const APPS = [
  {
   "group": "comps",
   "id": "planning",
+  "access": "staffing",
   "name": "Competition planning",
   "desc": "Every job for each competition with its due date: what's due this week and what's overdue",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/NGL_Comp_Planning.html",
@@ -114,6 +116,7 @@ export const APPS = [
  {
   "group": "money",
   "id": "projection",
+  "access": "finance",
   "name": "Projected P&L",
   "desc": "10-year licensing projection: change the variables and save scenarios",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/NGL_Projection.html",
@@ -139,6 +142,7 @@ export const APPS = [
  {
   "group": "comps",
   "id": "musicplayer",
+  "access": "music",
   "name": "Competition music player",
   "desc": "Play floor music in running order on the day, offline, with announcements",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/NGL_Music_Admin.html#play",
@@ -164,6 +168,7 @@ export const APPS = [
  {
   "group": "clubs",
   "id": "gl-hub",
+  "access": "results",
   "colour": "#0071B3",
   "name": "General League Hub: view as gymnast",
   "desc": "Search any gymnast and see their General League Hub exactly as their family will, read-only",
@@ -179,3 +184,13 @@ export const APPS = [
   "icon": "<path d=\"M20 12a8 8 0 1 1-2.3-5.7\"/><path d=\"M20 4v5h-5\"/>"
  }
 ];
+
+// Which ticks open each rebuilt screen (must match clubsTeam(), ordersTeam() ... in firestore.rules)
+export const SCREENS = {
+  clubs: ['clubs', 'schools-lic', 'rec-lic', 'ps-lic'],
+  orders: ['orders', 'schools-lic', 'rec-lic', 'ps-lic', 'finance'],
+  competitions: ['competitions'],
+  music: ['music']
+};
+export const can = (me, ids) => !!me && (!!me.owner || [].concat(ids).some(i => (me.sections || []).includes(i)));
+export const canApp = (me, a) => can(me, a.id === 'orders' ? SCREENS.orders : [a.id].concat(a.access ? [a.access] : []));

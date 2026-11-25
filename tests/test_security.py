@@ -30,6 +30,10 @@ ATTEMPTS = {
         "await fs.getDocs(fs.collection(D, 'pendingPlaces'));",
     "create a booking already marked bought":
         "await fs.setDoc(fs.doc(D, 'reservations', 'NGL-HACK1'), {clubId: me, compId: 'x', places: 5, status: 'bought', ref: 'NGL-HACK1'});",
+    "read the NGL team list":
+        "await fs.getDocs(fs.collection(D, 'adminUsers'));",
+    "add itself to the NGL team":
+        "await fs.setDoc(fs.doc(D, 'adminUsers', A.currentUser.email.toLowerCase()), {name: 'Hack', owner: true, sections: ['clubs']});",
     "write to an unknown collection":
         "await fs.setDoc(fs.doc(D, 'anything', 'x'), {a: 1});",
 }

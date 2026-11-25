@@ -25,7 +25,7 @@ const NAV = [
   ['help', 'Help', 'help', help]
 ];
 const $ = s => document.querySelector(s);
-const CTX = {isAdmin: false, needsVerify: false};
+const CTX = {isAdmin: false, admin: null, needsVerify: false, staffOnly: false};
 
 // Only the newest screen request is drawn: if a club clicks again while a slow screen is
 // still loading, the older one is dropped instead of replacing the screen they asked for.
@@ -33,15 +33,16 @@ let RENDER_SEQ = 0;
 async function render(){
   const my = ++RENDER_SEQ, stale = () => my !== RENDER_SEQ;
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
-  const key = parts[0] === 'admin' ? 'admin' : NAV.some(n => n[0] === parts[0]) ? parts[0] : 'home';
-  const unpaid = (await api.orders()).filter(o => o.status === 'awaiting-payment').length;
+  let key = parts[0] === 'admin' ? 'admin' : NAV.some(n => n[0] === parts[0]) ? parts[0] : 'home';
+  if (CTX.staffOnly && !['admin', 'help'].includes(key)) key = 'admin';   // NGL team login with no club
+  const unpaid = CTX.staffOnly ? 0 : (await api.orders()).filter(o => o.status === 'awaiting-payment').length;
   if (stale()) return;
-  $('#nav').innerHTML = NAV.map(([k, l, i]) => {
+  $('#nav').innerHTML = NAV.filter(n => !CTX.staffOnly || n[0] === 'help').map(([k, l, i]) => {
     const badge = (k === 'shop' && unpaid) ? `<span class="badge">${unpaid}</span>` : '';
     return `<a href="#/${k}" class="${k === key ? 'on' : ''}" ${k === key ? 'aria-current="page"' : ''}>${svg(i)}<span>${l}</span>${badge}</a>`;
   }).join('') + (CTX.isAdmin ? `<a href="#/admin" class="admin-link ${key === 'admin' ? 'on' : ''}">${svg('club')}<span>NGL Admin</span></a>` : '');
   const view = key === 'admin' ? admin : NAV.find(n => n[0] === key)[3];
-  const html = await view(parts.slice(1), CTX);
+  const html = await view(key === parts[0] ? parts.slice(1) : [], CTX);
   if (stale()) return;
   $('#page').innerHTML = html;
   document.dispatchEvent(new CustomEvent('ngl:rendered'));
@@ -56,10 +57,10 @@ async function start(){
   }
   const c = await api.club(), lic = await api.licences();
   let claimed = 0; try { claimed = await api.claimPending(); } catch (e) { console.warn('Earlier places not brought in', e.code || e); }
-  CTX.isAdmin = await api.isAdmin(); CTX.needsVerify = await api.needsVerify();
+  CTX.admin = await api.adminMe(); CTX.isAdmin = !!CTX.admin; CTX.needsVerify = await api.needsVerify(); CTX.staffOnly = !!c.none;
   const live = Object.entries(lic).filter(([, v]) => v.status === 'live' || v.status === 'waived').length;
-  $('#clubCard').innerHTML = `<b>${esc(c.name)}</b><span>${live} programme${live === 1 ? '' : 's'} active</span>`;
-  const who = c.contact || c.name || '';
+  $('#clubCard').innerHTML = CTX.staffOnly ? `<b>NGL team</b><span>${esc(c.email)}</span>` : `<b>${esc(c.name)}</b><span>${live} programme${live === 1 ? '' : 's'} active</span>`;
+  const who = CTX.staffOnly ? ((CTX.admin && CTX.admin.name) || c.email) : (c.contact || c.name || '');
   $('#who').innerHTML = `<span>${esc(who)}</span><div class="av">${esc(who.split(' ').map(w => w[0]).join('').slice(0, 2))}</div><button class="btn sm ghost" data-act="signout">${MODE === 'demo' ? 'Leave sample data' : 'Log out'}</button>`;
   if (ENV === 'sandbox') { $('#sandbox').hidden = false; $('#sandbox').textContent = 'SANDBOX · ' + (MODE === 'demo' ? 'sample data' : 'test database'); }
   window.NGL_RENDER = render;

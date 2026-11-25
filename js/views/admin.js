@@ -1,52 +1,83 @@
 // NGL Admin: for Dave and Christine. Clubs, licences, orders to post, the competition
 // calendar and reservations, and floor music entries. Shown only to verified NGL admins.
 import adm, { nameKey } from '../admin-data.js';
-import { GROUPS, APPS } from '../admin-apps.js';
+import { GROUPS, APPS, SCREENS, can, canApp } from '../admin-apps.js';
 import { PATHWAYS } from '../config.js';
 import { esc, gbp, date, dot, pill, tabs, head, path } from '../ui.js';
 
-const SUB = [['', 'Overview'], ['clubs', 'Clubs'], ['orders', 'Orders'], ['competitions', 'Competitions'], ['music', 'Floor music']];
+const SUB = [['', 'Overview'], ['clubs', 'Clubs'], ['orders', 'Orders'], ['competitions', 'Competitions'], ['music', 'Floor music'], ['team', 'Team']];
+const allowed = (me, k) => k === '' || (k === 'team' ? !!me.owner : can(me, SCREENS[k]));
+const NO_ACCESS = '<div class="card empty">You don’t have access to this area. Ask Dave to tick it for you in NGL Admin → Team.</div>';
 const on = L => L && ['live', 'waived'].includes(L.status);
 const statusPill = o => o.status === 'sent' ? pill('Posted', 'ok') : o.status === 'paid' ? pill('Paid · to post', 'warn') : pill('Not paid', 'red');
 
 export default async function admin([sub = '', id], ctx = {}){
-  if (!ctx.isAdmin) return head('NGL Admin') + `<div class="card empty">This area is for NGL admins only.</div>`;
-  if (sub === 'app') return appFrame(id);
-  const body = await ({'': overview, clubs, orders, competitions, music}[sub] || overview)(id);
-  return head('NGL Admin', 'Run the league: clubs, licences, orders, competitions and floor music.') + tabs(SUB, SUB.some(s => s[0] === sub) ? sub : '', '#/admin') + body;
+  const me = ctx.admin;
+  if (!me) return head('NGL Admin') + (ctx.needsVerify && ctx.staffOnly   // an invited NGL team login that hasn't confirmed its email yet
+    ? `<div class="card attn"><div class="row" style="border:0"><div class="grow"><b>Confirm your email to open NGL Admin</b><small>We’ll email you a link. Click it, then log out and in again.</small></div><button class="btn sm" data-act="verify">Send link</button></div></div>`
+    : `<div class="card empty">This area is for NGL admins only.</div>`);
+  if (sub === 'app') return appFrame(id, me);
+  const known = SUB.some(s => s[0] === sub) ? sub : '';
+  const body = !allowed(me, known) ? NO_ACCESS : known === '' ? await overview(me) : await ({clubs, orders, competitions, music, team}[known])(id);
+  return head('NGL Admin', me.owner ? 'Run the league: every NGL admin app in one place.' : `Hello${me.name ? ' ' + esc(me.name) : ''}. These are the apps Dave has given you.`)
+    + tabs(SUB.filter(s => allowed(me, s[0])), known, '#/admin') + body;
 }
 
-// All admin apps on one board: same groups, colours and icons as the original Admin Hub
-function board(){
-  return GROUPS.map(g => { const list = APPS.filter(a => a.group === g.id);
+// All admin apps on one board: same groups, colours and icons as the original Admin Hub; each person sees the apps ticked for them
+function board(me){
+  return GROUPS.map(g => { const list = APPS.filter(a => a.group === g.id && canApp(me, a)); if (!list.length) return '';
     return `<section class="appgrp" style="--c:${g.colour}"><h3><i></i>${esc(g.name)}</h3><div class="appgrid">${list.map(a => `<a class="card appt" href="${a.to || '#/admin/app/' + a.id}">
       <span class="ic" style="background:${a.colour || g.colour}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${a.icon}</svg></span>
-      <span class="grow"><b>${esc(a.name)}</b><small>${esc(a.desc)}</small>${a.to ? '' : '<em class="livetag">Live tool</em>'}</span></a>`).join('')}</div></section>`; }).join('');
+      <span class="grow"><b>${esc(a.name)}</b><small>${esc(a.desc)}</small>${a.to ? '' : '<em class="livetag">Live tool</em>'}</span></a>`).join('')}</div></section>`; }).join('')
+    || '<div class="card empty">No apps ticked for you yet. Ask Dave to give you access in NGL Admin → Team.</div>';
 }
 
 // An existing tool, opened inside the app (same as the original Admin Hub viewer)
-function appFrame(id){
-  const a = APPS.find(x => x.id === id); if (!a || a.to) return head('NGL Admin') + '<div class="card empty">App not found. <a href="#/admin">All apps</a></div>';
+function appFrame(id, me){
+  const a = APPS.find(x => x.id === id);
+  if (!a || a.to) return head('NGL Admin') + '<div class="card empty">App not found. <a href="#/admin">All apps</a></div>';
+  if (!canApp(me, a)) return head('NGL Admin') + NO_ACCESS;
   const src = a.url + (a.url.includes('?') ? '&' : '?') + 'v=' + Date.now();
   return `<div class="appbar"><a class="btn sm ghost" href="#/admin">← All apps</a><h1 style="margin:0;font-size:22px" class="grow">NGL Admin · ${esc(a.name)}</h1><span class="livetag">Live tool · real data</span><a class="btn sm ghost" href="${esc(a.url)}" target="_blank" rel="noopener">Open in new tab ↗</a></div>
   <iframe class="appframe" title="${esc(a.name)}" src="${esc(src)}" allow="fullscreen; screen-wake-lock; autoplay; clipboard-write" allowfullscreen></iframe>`;
 }
 
-async function overview(){
-  const [cl, ord, res] = await Promise.all([adm.clubs(), adm.orders(), adm.reservations()]);
+async function overview(me){
+  const cC = can(me, SCREENS.clubs), cO = can(me, SCREENS.orders), cR = can(me, SCREENS.competitions);
+  const [cl, ord, res] = await Promise.all([cC ? adm.clubs() : [], cO ? adm.orders() : [], cR ? adm.reservations() : []]);
   const week = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
   const toPost = ord.filter(o => o.status === 'paid'), paid = ord.filter(o => ['paid', 'sent'].includes(o.status));
   const yearStart = new Date().getFullYear() + '-01-01';
-  return `<div class="grid g4" style="margin-bottom:16px">
-    <a class="card stat" href="#/admin/clubs"><b>${cl.length}</b><span>Clubs · ${cl.filter(c => c.createdAt >= week).length} new this week</span></a>
-    <a class="card stat" href="#/admin/orders"><b>${toPost.length}</b><span>Orders to post</span></a>
-    <a class="card stat" href="#/admin/orders"><b>${gbp(paid.filter(o => o.date >= yearStart).reduce((a, o) => a + o.total, 0))}</b><span>Taken this year (paid orders)</span></a>
-    <a class="card stat" href="#/admin/competitions"><b>${res.filter(r => r.status === 'reserved').reduce((a, r) => a + r.places, 0)}</b><span>Places reserved</span></a></div>
-  ${board()}
-  <div class="grid g2"><div class="card attn"><h2>To do</h2>
+  const stats = [
+    cC && `<a class="card stat" href="#/admin/clubs"><b>${cl.length}</b><span>Clubs · ${cl.filter(c => c.createdAt >= week).length} new this week</span></a>`,
+    cO && `<a class="card stat" href="#/admin/orders"><b>${toPost.length}</b><span>Orders to post</span></a>`,
+    cO && `<a class="card stat" href="#/admin/orders"><b>${gbp(paid.filter(o => o.date >= yearStart).reduce((a, o) => a + o.total, 0))}</b><span>Taken this year (paid orders)</span></a>`,
+    cR && `<a class="card stat" href="#/admin/competitions"><b>${res.filter(r => r.status === 'reserved').reduce((a, r) => a + r.places, 0)}</b><span>Places reserved</span></a>`
+  ].filter(Boolean);
+  const lower = [
+    cO && `<div class="card attn"><h2>To do</h2>
     ${toPost.length ? toPost.slice(0, 6).map(o => `<div class="row"><div class="grow"><b>Post ${esc(o.id)}</b><small>${esc(o.clubName)} · ${esc(o.details)}</small></div><button class="btn sm" data-act="adm-sent" data-order="${esc(o.id)}">Mark posted</button></div>`).join('')
-      : '<p class="empty">Nothing to post. Paid orders appear here automatically.</p>'}</div>
-    <div class="card"><h2>Newest clubs</h2>${cl.slice(0, 6).map(c => `<a class="row" href="#/admin/clubs/${esc(c.id)}"><div class="grow"><b>${esc(c.name)}</b><small>${esc(c.contact || '')} · joined ${c.createdAt ? date(c.createdAt) : '–'}</small></div><span style="color:var(--muted)">›</span></a>`).join('')}</div></div>`;
+      : '<p class="empty">Nothing to post. Paid orders appear here automatically.</p>'}</div>`,
+    cC && `<div class="card"><h2>Newest clubs</h2>${cl.slice(0, 6).map(c => `<a class="row" href="#/admin/clubs/${esc(c.id)}"><div class="grow"><b>${esc(c.name)}</b><small>${esc(c.contact || '')} · joined ${c.createdAt ? date(c.createdAt) : '–'}</small></div><span style="color:var(--muted)">›</span></a>`).join('')}</div>`
+  ].filter(Boolean);
+  return (stats.length ? `<div class="grid g4" style="margin-bottom:16px">${stats.join('')}</div>` : '') + board(me)
+    + (lower.length ? `<div class="grid g2">${lower.join('')}</div>` : '');
+}
+
+// Team access (owners only): tick the apps each person can open. The database rules check the same ticks.
+async function team(){
+  const list = await adm.team();
+  const tick = (u, a) => `<td class="c"><input type="checkbox" data-team="${esc(u.email)}" data-app="${esc(a.id)}" aria-label="${esc((u.name || u.email) + ': ' + a.name)}" ${u.owner || u.sections.includes(a.id) ? 'checked' : ''} ${u.owner ? 'disabled' : ''}></td>`;
+  return `<div class="card"><p class="lead" style="margin-top:0">Tick the apps each person can open. Owners see everything. Changes apply the next time they open NGL Admin.</p>
+  <div class="teamwrap"><table class="teamt"><thead><tr><th>Person</th>${APPS.map(a => `<th class="c"><span>${esc(a.name)}</span></th>`).join('')}<th></th></tr></thead><tbody>
+  ${list.map(u => `<tr><td class="who"><b>${esc(u.name || u.email)}</b>${u.owner ? ' ' + pill('Owner', 'ok') : ''}<br><small style="color:var(--muted)">${esc(u.email)}</small></td>${APPS.map(a => tick(u, a)).join('')}
+    <td>${u.owner ? '' : `<button class="btn sm ghost" data-act="adm-team-remove" data-email="${esc(u.email)}" data-name="${esc(u.name || u.email)}">Remove</button>`}</td></tr>`).join('')}</tbody></table></div></div>
+  <div class="card" style="margin-top:16px"><h2>Add someone</h2><form id="teamAdd">
+    <div class="grid g2"><label class="field"><span>Name</span><input id="tName" required autocomplete="off"></label><label class="field"><span>Email</span><input id="tEmail" type="email" required autocomplete="off"></label></div>
+    <p style="margin:14px 0 6px;font-weight:700">What they can open</p>
+    <div class="teampick">${GROUPS.map(g => `<div><b style="color:${g.colour}">${esc(g.name)}</b>${APPS.filter(a => a.group === g.id).map(a => `<label><input type="checkbox" name="tApp" value="${esc(a.id)}"> ${esc(a.name)}</label>`).join('')}</div>`).join('')}</div>
+    <div class="btn-row"><button class="btn">Send invite</button></div></form>
+    <p class="lead" style="font-size:13px;margin:10px 0 0">They get an email to set their own password, then see only the apps you ticked.</p></div>`;
 }
 
 async function clubs(id){

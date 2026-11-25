@@ -23,6 +23,11 @@ export const ADM = {
       try { await adm.setLicence(club, path, {status: 'live', label: 'Licence live', band: v('band'), renews: v('renews'), note: v('note'), setBy: 'admin'}); m.remove(); toast(p.n + ' licence switched on'); rerender(); } catch (x) { fail(x); } });
   },
 
+  async 'adm-team-remove'(b){
+    const m = modal(`<h2>Remove ${esc(b.dataset.name)}?</h2><p>They lose access to every NGL Admin app straight away. You can invite them again later.</p><div class="btn-row"><button class="btn" id="rmYes">Remove access</button><button class="btn ghost" type="button" data-close>Cancel</button></div>`);
+    m.querySelector('#rmYes').addEventListener('click', async () => { try { await adm.removeMember(b.dataset.email); m.remove(); toast('Access removed'); rerender(); } catch (x) { fail(x); } });
+  },
+
   async 'adm-attach'(b){
     const sel = document.getElementById('att-' + b.dataset.key), id = sel && sel.value; if (!id) return toast('Choose the club first.', false);
     try { const club = (await adm.clubs()).find(c => c.id === id); const n = await adm.attachPending(b.dataset.ids.split(','), club);
@@ -77,3 +82,21 @@ export const ADM = {
 document.addEventListener('input', e => { const f = e.target.closest('[data-filter]'); if (!f) return; const q = f.value.toLowerCase();
   document.querySelectorAll(f.dataset.filter).forEach(r => { r.hidden = !!q && !r.dataset.text.includes(q); }); });
 document.addEventListener('change', e => { const s = e.target.closest('select[data-go]'); if (s) location.hash = s.dataset.go + s.value; });
+
+// Team access: each tick saves straight away; the invite form makes their login and emails a set-password link
+document.addEventListener('change', async e => {
+  const cb = e.target.closest && e.target.closest('input[data-team]'); if (!cb) return;
+  const row = [...document.querySelectorAll(`input[data-team="${CSS.escape(cb.dataset.team)}"]`)];
+  try { await adm.setAccess(cb.dataset.team, row.filter(x => x.checked).map(x => x.dataset.app)); toast('Access updated'); }
+  catch (x) { cb.checked = !cb.checked; fail(x); }
+});
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'teamAdd') return; e.preventDefault();
+  const name = document.getElementById('tName').value.trim(), email = document.getElementById('tEmail').value.trim().toLowerCase();
+  const picked = [...document.querySelectorAll('input[name=tApp]:checked')].map(x => x.value);
+  if (!picked.length) return toast('Tick at least one app they can open.', false);
+  const btn = e.target.querySelector('button'); btn.disabled = true;
+  try { if ((await adm.team()).some(u => u.email === email)) { btn.disabled = false; return toast('They’re already on the team.', false); }
+    await adm.invite(name, email, picked); toast(`Invite sent to ${name}`); rerender(); }
+  catch (x) { btn.disabled = false; fail(x); }
+});

@@ -104,7 +104,9 @@ const minusMonths = (isoDate, m) => { const d = new Date(isoDate + 'T12:00'); d.
 const demoApi = {
   mode: 'demo',
   async user(){ return {uid: 'demo', email: demo.club.email}; },
-  async isAdmin(){ return true; },                       // sample data shows the admin screens too
+  // Sample data shows the admin screens as an owner; ?demo&staff shows them as a team member with three apps ticked
+  async adminMe(){ return new URLSearchParams(location.search).has('staff') ? {email: 'christine@example.com', name: 'Christine', owner: false, sections: ['competitions', 'sales', 'music']} : {email: 'admin@nationalgymnasticsleague.co.uk', name: 'Dave Brooke', owner: true, sections: []}; },
+  async isAdmin(){ return true; },
   async needsVerify(){ return false; },
   async claimPending(){ return 0; },
   async club(){ return demo.club; },
@@ -125,7 +127,7 @@ const demoApi = {
 };
 
 // ---------- Staging database backend ----------
-let CLUB = null;
+let CLUB = null, ADMIN_ME;
 const fbApi = {
   mode: 'firebase',
   async user(){
@@ -136,11 +138,21 @@ const fbApi = {
     if (CLUB) return CLUB;
     const {fs, A, D} = await fb(), u = A.currentUser;
     const snap = await fs.getDoc(fs.doc(D, 'clubs', u.uid));
-    CLUB = {email: u.email, ...(snap.exists() ? snap.data() : {name: 'Your club', contact: ''})};
+    CLUB = {email: u.email, ...(snap.exists() ? snap.data() : {name: 'Your club', contact: '', none: true})};   // none = an NGL team login with no club
     return CLUB;
   },
   async licences(){ const c = await this.club(); return {...DEFAULT_LICENCES, ...(c.licences || {})}; },
-  async isAdmin(){ const {A} = await fb(), u = A.currentUser; return !!(u && u.emailVerified && ADMIN_EMAILS.includes(String(u.email).toLowerCase())); },
+  // NGL owner (ADMIN_EMAILS) or team member (adminUsers/{email}, set in NGL Admin > Team). Email must be confirmed.
+  async adminMe(){
+    if (ADMIN_ME !== undefined) return ADMIN_ME;
+    const {fs, A, D} = await fb(), u = A.currentUser; if (!u || !u.emailVerified) return (ADMIN_ME = null);
+    const email = String(u.email).toLowerCase();
+    if (ADMIN_EMAILS.includes(email)) return (ADMIN_ME = {email, name: '', owner: true, sections: []});
+    try { const s = await fs.getDoc(fs.doc(D, 'adminUsers', email)); ADMIN_ME = s.exists() ? {email, name: s.data().name || '', owner: !!s.data().owner, sections: s.data().sections || []} : null; }
+    catch (_) { ADMIN_ME = null; }
+    return ADMIN_ME;
+  },
+  async isAdmin(){ return !!(await this.adminMe()); },
   async needsVerify(){ const {A} = await fb(), u = A.currentUser; return !!(u && !u.emailVerified); },
   // Places booked (on the old booking form) with this email before the club joined: brought in once the email is confirmed.
   async claimPending(){
@@ -254,9 +266,9 @@ const fbApi = {
     CLUB = null;
   },
   // Account
-  async signIn(email, pw){ const {auth, A} = await fb(); CLUB = null; return auth.signInWithEmailAndPassword(A, email, pw); },
+  async signIn(email, pw){ const {auth, A} = await fb(); CLUB = null; ADMIN_ME = undefined; return auth.signInWithEmailAndPassword(A, email, pw); },
   async register(d){
-    const {auth, fs, A, D} = await fb(); CLUB = null;
+    const {auth, fs, A, D} = await fb(); CLUB = null; ADMIN_ME = undefined;
     const cred = await auth.createUserWithEmailAndPassword(A, d.email, d.password);
     await fs.setDoc(fs.doc(D, 'clubs', cred.user.uid), {name: d.name, contact: d.contact, email: d.email, bgNumber: d.bgNumber || '', phone: d.phone || '', createdAt: fs.serverTimestamp()});
     // Confirm-your-email link (made-up test addresses are skipped)

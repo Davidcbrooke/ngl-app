@@ -1,7 +1,8 @@
 // NGL admin data layer. Only verified NGL admin emails can use these: the database rules
 // (firestore.rules, isAdmin) refuse everyone else, whatever the screen shows.
 import { MODE, CALENDAR, demo, DEFAULT_LICENCES, iso } from './data.js';
-import { fb } from './firebase.js';
+import { fb, inviteLogin } from './firebase.js';
+import { ADMIN_EMAILS } from './config.js';
 
 const SAMPLE = 'Sample data: nothing is saved.';
 const demoClubs = [
@@ -19,7 +20,14 @@ const demoPending = [{id: 'P-SEGC1', clubName: 'SEGC', nameKey: 'segc', email: '
 // Club names compared without 'gymnastics', 'club', 'academy' and so on (same as the data move)
 export const nameKey = n => String(n || '').toLowerCase().replace(/&/g, 'and').replace(/\b(gymnastics?|gym|club|academy|ltd|limited|c\.?i\.?c\.?|and|tumbling|trampoline|the)\b/g, '').replace(/[^a-z0-9]/g, '');
 
+const demoTeam = [{email: 'admin@nationalgymnasticsleague.co.uk', name: 'Dave Brooke', owner: true, sections: []},
+  {email: 'christine@example.com', name: 'Christine', owner: false, sections: ['competitions', 'sales', 'music', 'clubs']},
+  {email: 'judge.lead@example.com', name: 'Sam Taylor', owner: false, sections: ['judging', 'staffing']}];
+const ownersFirst = (a, b) => (b.owner - a.owner) || String(a.name || a.email).localeCompare(String(b.name || b.email));
+
 const demoAdmin = {
+  async team(){ return demoTeam; },
+  async setAccess(){ throw new Error(SAMPLE); }, async invite(){ throw new Error(SAMPLE); }, async removeMember(){ throw new Error(SAMPLE); },
   async pending(){ return demoPending; },
   async attachPending(){ throw new Error(SAMPLE); },
   async clubs(){ return demoClubs; },
@@ -35,6 +43,17 @@ const demoAdmin = {
 
 const all = async coll => { const {fs, D} = await fb(); const q = await fs.getDocs(fs.collection(D, coll)); return q.docs.map(d => ({id: d.id, ...d.data()})); };
 const fbAdmin = {
+  // NGL team: the two owner accounts plus adminUsers/{email}
+  async team(){
+    const docs = (await all('adminUsers')).map(d => ({email: d.id, name: d.name || '', owner: !!d.owner, sections: d.sections || []}));
+    const owners = ADMIN_EMAILS.filter(e => !docs.some(d => d.email === e)).map(e => ({email: e, name: e.startsWith('admin@') ? 'NGL admin account' : 'Booking office', owner: true, sections: []}));
+    return [...owners, ...docs].sort(ownersFirst);
+  },
+  async setAccess(email, sections){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'adminUsers', email), {sections, updatedAt: fs.serverTimestamp()}); },
+  async invite(name, email, sections){ const {fs, D} = await fb();
+    await fs.setDoc(fs.doc(D, 'adminUsers', email), {name, owner: false, sections, invitedAt: fs.serverTimestamp()});
+    await inviteLogin(email); },
+  async removeMember(email){ const {fs, D} = await fb(); await fs.deleteDoc(fs.doc(D, 'adminUsers', email)); },
   async clubs(){
     return (await all('clubs')).map(c => ({...c, createdAt: c.createdAt ? iso(c.createdAt) : '', licences: {...DEFAULT_LICENCES, ...(c.licences || {})}}))
       .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));

@@ -248,3 +248,9 @@ a.card:hover{border-color:#cfcde3}.nav a{color:#dcdcf2}.nav a.on{color:var(--nav
 .livetag{display:inline-block;margin-top:6px;font:700 11px Roboto,Arial,sans-serif;font-style:normal;letter-spacing:.04em;text-transform:uppercase;color:#8a1020;background:#fde8eb;border-radius:4px;padding:2px 6px}
 .appbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px}
 .appframe{width:100%;height:calc(100vh - 150px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:#fff}
+
+/* Team access grid */
+.teamwrap{overflow-x:auto}.teamt{border-collapse:collapse;min-width:100%}.teamt th,.teamt td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:bottom}
+.teamt th.c{height:150px;white-space:nowrap;font-size:12px;font-weight:600;color:var(--muted)}.teamt th.c span{display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg)}
+.teamt td.c{text-align:center;vertical-align:middle}.teamt td.who{min-width:200px;vertical-align:middle}.teamt input{width:18px;height:18px;accent-color:var(--navy)}
+.teampick{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.teampick label{display:flex;gap:8px;align-items:center;padding:3px 0;font-size:14px}

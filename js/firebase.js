@@ -28,3 +28,16 @@ export function authMessage(e){
   if (/network/.test(c)) return 'No connection. Check your internet and try again.';
   return 'Something went wrong. Please try again, or email admin@nationalgymnasticsleague.co.uk.';
 }
+
+// NGL team invite: make their login on a second app instance (so the owner stays signed in),
+// then email them a link to set their own password. Made-up example.com addresses get no email.
+export async function inviteLogin(email){
+  const {auth, A} = await fb();
+  const app = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+  const a2 = app.getApps().find(x => x.name === 'invite') || app.initializeApp(FIREBASE_STAGING, 'invite');
+  const A2 = auth.getAuth(a2);
+  try { await auth.createUserWithEmailAndPassword(A2, email, crypto.randomUUID() + 'Aa1!'); }
+  catch (e) { if (e.code !== 'auth/email-already-in-use') throw e; }
+  await auth.signOut(A2);
+  if (!/@example\.com$/i.test(email)) await auth.sendPasswordResetEmail(A, email);
+}

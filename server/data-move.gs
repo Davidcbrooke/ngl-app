@@ -19,6 +19,7 @@ function rehearse(){
   const clubs = listAll(LIVE, 'clubs'), schoolsOrders = listAll(LIVE, 'orders'), recOrders = listAll(LIVE, 'recOrders');
   const events = listAll(LIVE, 'events'), musicEvents = listAll(LIVE, 'musicEvents'), musicUploads = listAll(LIVE, 'musicUploads');
   const comps = listAll(BOOK, 'ngl_competitions'), bookings = listAll(BOOK, 'ngl_bookings'), contacts = listAll(BOOK, 'ngl_booking_contacts');
+  const team = listAll(BOOK, 'ngl_admin_users');   // the original Admin Hub's team list (same app ids)
   const contactEmail = {}; contacts.forEach(c => { if (c.data.email) contactEmail[c.id] = String(c.data.email).trim().toLowerCase(); });
   clubs.forEach(c => { c.data.schoolsSub = listAll(LIVE, 'clubs/' + c.id + '/schools').map(s => ({id: s.id, name: s.data.name || '', children: Number(s.data.children) || 0})); });
   report.counts.live = {clubs: clubs.length, schoolsOrders: schoolsOrders.length, recOrders: recOrders.length, events: events.length, musicEvents: musicEvents.length, musicUploads: musicUploads.length, competitions: comps.length, bookings: bookings.length};
@@ -119,6 +120,10 @@ function rehearse(){
       schools: d.schoolsSub.length, graduations: evs.length, orders: (ordByClub[c.id] || []).length, unpaid: (ordByClub[c.id] || []).filter(o => o.status === 'awaiting-payment').length,
       reservations: (resByClub[c.id] || []).length}); });
 
+  // NGL team: same ticks as the original Admin Hub
+  team.forEach(t => writes.push(doc('adminUsers/' + String(t.id).toLowerCase(), {name: t.data.name || '', owner: !!t.data.owner, sections: t.data.sections || [], movedFrom: 'saadi-rotation/ngl_admin_users/' + t.id})));
+  report.team = team.map(t => (t.data.name || '') + ' (' + mask(t.id) + ')' + (t.data.owner ? ' owner' : ': ' + (t.data.sections || []).length + ' apps'));
+
   // 3. WRITE to staging (batches of 400)
   Object.keys(mergedInto).forEach(id => writes.push({delete: base(STAGING).replace('https://firestore.googleapis.com/v1/', '') + '/clubs/' + id}));   // staging only: remove accounts folded into another
   for (let i = 0; i < writes.length; i += 400) commit(STAGING, writes.slice(i, i + 400));
@@ -130,6 +135,7 @@ function rehearse(){
   const um = {}; report.unmatched.reservations.forEach(r => { const k = norm(r.club) || '(no name)'; um[k] = um[k] || {names: [], places: 0}; um[k].places += r.places; if (!um[k].names.includes(r.club)) um[k].names.push(r.club); });
   Logger.log('Reservations matched by club name: ' + (report.matchedByName || 0) + ' · still unmatched (places by club): ' + JSON.stringify(um));
   Logger.log('Waiting places with a booking email (join automatically): ' + (report.pendingWithEmail || 0) + ' of ' + report.unmatched.reservations.length);
+  Logger.log('NGL team: ' + JSON.stringify(report.team));
   Logger.log('Merged accounts: ' + JSON.stringify(report.merged));
   Logger.log('Club names with more than one account: ' + JSON.stringify(report.duplicateClubs));
   Logger.log('Clubs: ' + report.clubs.length + ' · unmatched reservations: ' + report.unmatched.reservations.length + ' · unmatched music: ' + report.unmatched.music.length + ' · orders with no club: ' + report.unmatched.orders.length);
