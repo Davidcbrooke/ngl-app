@@ -32,11 +32,24 @@ service cloud.firestore {
     match /reservations/{id} {
       allow read: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid);
       allow create: if signedIn() && request.resource.data.clubId == request.auth.uid;
-      allow update: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid && unchanged(['clubId', 'status']));
+      // A club can change its places or cancel while still 'reserved'; only NGL moves places to the waiting list or bought.
+      allow update: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid && resource.data.status == 'reserved'
+                    && unchanged(['clubId', 'compId', 'ref']) && request.resource.data.status in ['reserved', 'cancelled']);
       allow delete: if isAdmin();
     }
-    match /music/{id} {
-      allow read, write: if isAdmin() || (signedIn() && resource == null ? request.resource.data.clubId == request.auth.uid : resource.data.clubId == request.auth.uid);
+    // Floor music: NGL adds each club's gymnasts per competition (musicEntries/{compId}_{clubId});
+    // the club uploads one record per gymnast (musicUploads/{compId}_{gymnastId}).
+    match /musicEntries/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+    match /musicUploads/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow create, update: if signedIn() && request.resource.data.clubId == request.auth.uid
+                            && (resource == null || resource.data.clubId == request.auth.uid)
+                            && id == request.resource.data.compId + '_' + request.resource.data.gymnastId
+                            && exists(/databases/$(database)/documents/musicEntries/$(request.resource.data.compId + '_' + request.auth.uid));
+      allow delete: if isAdmin();
     }
 
     // Shared content every signed-in club can read: competitions calendar, products, rules

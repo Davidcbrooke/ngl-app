@@ -80,6 +80,32 @@ const ACT = {
     if (o) showInvoice(o, c); else toast('Couldn’t open that invoice.', false);
   },
 
+  // Calendar file (.ics) for one competition or all reserved ones: opens in Google, Outlook or Apple Calendar.
+  async ics(b){
+    const comps = (await api.competitions()).filter(c => c.reserved || c.waiting), c0 = await api.club();
+    const list = b.dataset.comp === 'all' ? comps : comps.filter(c => c.id === b.dataset.comp);
+    const e = s => String(s || '').replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
+    const day = d => d.replace(/-/g, ''), next = d => { const x = new Date(d + 'T12:00'); x.setDate(x.getDate() + 1); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
+    const ev = list.flatMap(c => ['BEGIN:VEVENT', 'UID:' + c.id + '-' + (c.ref || 'ngl') + '@nationalgymnasticsleague.co.uk', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z',
+      'DTSTART;VALUE=DATE:' + day(c.date), 'DTEND;VALUE=DATE:' + next(c.date), 'SUMMARY:' + e('NGL: ' + c.name), 'LOCATION:' + e(c.where),
+      'DESCRIPTION:' + e(`${c.who}. ${c.waiting ? 'Waiting list.' : c.reserved + ' places reserved (ref ' + c.ref + '). Buy on JustGo by ' + c.buyBy + '.'}`), 'END:VEVENT']);
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NGL Club Hub//EN', 'X-WR-CALNAME:' + e((c0.name || 'NGL') + ' competitions'), ...ev, 'END:VCALENDAR'].join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], {type: 'text/calendar'}));
+    a.download = (list.length === 1 ? 'NGL ' + list[0].name : 'NGL competitions').replace(/[^\w ]+/g, '').trim() + '.ics'; a.click();
+    toast('Calendar file downloaded: open it to add to your calendar');
+  },
+
+  async 'change-res'(b){
+    const c = (await api.competitions()).find(x => x.id === b.dataset.comp);
+    const m = modal(`<h2>Change your reservation</h2><p class="lead"><b>${esc(c.name)}</b> · ref ${esc(c.ref)}</p>
+      <form><label class="field"><span>Gymnast places</span><input id="n" type="number" min="1" max="200" value="${c.reserved}" required></label>
+      <p class="err" id="err"></p><div class="btn-row"><button class="btn">Save</button><button class="btn ghost" type="button" data-cancel>Cancel reservation</button><button class="btn ghost" type="button" data-close>Close</button></div></form>`);
+    const go = async places => { try { await api.changeReservation(c.ref, places); m.remove(); toast(places ? 'Reservation changed to ' + places + ' places' : 'Reservation cancelled'); rerender(); }
+      catch (x) { console.error(x); m.querySelector('#err').textContent = x.message.startsWith('Sample') ? x.message : 'Couldn’t save. Please try again.'; } };
+    m.querySelector('form').addEventListener('submit', e => { e.preventDefault(); go(Number(m.querySelector('#n').value)); });
+    m.querySelector('[data-cancel]').addEventListener('click', () => { if (m.querySelector('[data-cancel]').dataset.sure) go(0); else { const x = m.querySelector('[data-cancel]'); x.dataset.sure = 1; x.textContent = 'Tap again to cancel'; x.style.color = 'var(--red)'; } });
+  },
+
   async 'email-invoice'(b){
     b.disabled = true; const label = b.textContent; b.textContent = 'Sending…';
     try { const [o, c] = await Promise.all([api.order(b.dataset.order), api.club()]); const r = await emailInvoice(o, c);
@@ -93,6 +119,19 @@ const ACT = {
     try { await api.reset(c.email); toast('We’ve emailed a reset link to ' + c.email); } catch (x) { toast('Couldn’t send the email. Please try again.', false); }
   }
 };
+
+// Floor music: picking a file uploads it straight away, with a progress bar.
+document.addEventListener('change', async e => {
+  const inp = e.target.closest('input[data-music]'); if (!inp || !inp.files[0]) return;
+  const f = inp.files[0], compId = inp.dataset.music, gid = inp.dataset.gym;
+  if (!/\.mp3$/i.test(f.name) && f.type !== 'audio/mpeg') { toast('Please choose an MP3 file.', false); inp.value = ''; return; }
+  if (f.size > 15 * 1024 * 1024) { toast('That file is over 15MB. Please use a smaller MP3.', false); inp.value = ''; return; }
+  const m = (await api.music()).find(x => x.ev.id === compId), g = m && m.gymnasts.find(x => x.id === gid);
+  const bar = document.getElementById(`up-${compId}-${gid}`); if (bar) bar.hidden = false;
+  try { await api.uploadMusic(compId, g, f, p => { if (bar) bar.firstElementChild.style.width = Math.round(p * 100) + '%'; }); toast('Music uploaded for ' + g.n); rerender(); }
+  catch (x) { console.error(x); if (bar) bar.hidden = true; toast(x.message.startsWith('Sample') ? x.message : 'Upload failed. Please try again.', false); }
+  inp.value = '';
+});
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;

@@ -135,3 +135,4 @@ a.card:hover{border-color:#cfcde3}.nav a{color:#dcdcf2}.nav a.on{color:var(--nav
   .inv-tools{display:none}.inv{border:0;max-width:none;padding:0 0 10px}.inv-bar{margin:0 0 18px;border-radius:0}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+.upbar{height:6px;background:var(--wash);border-radius:99px;overflow:hidden;margin-top:6px;max-width:260px}.upbar i{display:block;height:100%;width:0;background:var(--ok);transition:width .2s}

@@ -25,7 +25,9 @@ const demo = {
     {id:'c5', date:'2027-04-24', path:'performance', name:'Performance League Grades', where:'TBC', who:'Classic Challenge preparation', waiting:true},
     {id:'c6', date:'2027-10-24', path:'general', name:'NGL National Finals 2027', where:'TBC', who:'By qualification', waiting:true}
   ],
-  music: {comp:'c1', gymnasts:[{n:'Amelia R', level:1, file:'amelia-floor.mp3'}, {n:'Isla T', level:1}, {n:'Grace W', level:2}, {n:'Ruby K', level:2}]},
+  // Floor music: one entry per competition the club has gymnasts in (from the start lists)
+  music: [{ev: {id: 'c1', title: 'General League · East Region', date: '2027-02-07', deadline: '2027-01-24'},
+    gymnasts: [{id: 'g1', n: 'Amelia R', level: 1, file: 'amelia-floor.mp3'}, {id: 'g2', n: 'Isla T', level: 1}, {id: 'g3', n: 'Grace W', level: 2}, {id: 'g4', n: 'Ruby K', level: 2}]}],
   orders: [
     {id:'ORD-R2M6F', date:'2026-11-24', path:'recreational', details:'40 books, 200 medals', total:800, status:'awaiting-payment'},
     {id:'ORD-G2X9B', date:'2026-11-23', path:'schools', details:'Graduation: 64 graduates', total:320, status:'awaiting-payment'},
@@ -110,6 +112,8 @@ const demoApi = {
   async payByCard(){ throw new Error('Sample data: nothing is charged.'); },
   async products(){ return demo.products; },
   async reserve(){ throw new Error('Sample data: nothing is saved. Remove ?demo from the address to use the test database.'); },
+  async changeReservation(){ throw new Error('Sample data: nothing is saved.'); },
+  async uploadMusic(){ throw new Error('Sample data: nothing is uploaded.'); },
   async placeOrder(){ throw new Error('Sample data: nothing is saved.'); },
   async updateClub(){ throw new Error('Sample data: nothing is saved.'); },
   async signOut(){ location.replace(location.pathname); }
@@ -134,14 +138,41 @@ const fbApi = {
   async reservations(){
     const {fs, A, D} = await fb();
     const q = await fs.getDocs(fs.query(fs.collection(D, 'reservations'), fs.where('clubId', '==', A.currentUser.uid)));
-    return q.docs.map(d => ({id: d.id, ...d.data()}));
+    return q.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.status !== 'cancelled');
   },
   async competitions(){
     const res = await this.reservations();
     return CALENDAR.map(c => { const r = res.find(x => x.compId === c.id);
       return r ? {...c, reserved: r.status === 'waiting' ? 0 : r.places, waiting: r.status === 'waiting', ref: r.ref, buyBy: minusMonths(c.date, 3)} : c; });
   },
-  async music(){ return {comp: null, gymnasts: []}; },
+  // Floor music. NGL admin adds musicEntries/{compId}_{clubId} from the start lists (gymnast id, name, level);
+  // the club uploads one MP3 per gymnast to Storage music/{compId}/{clubId}/{gymnastId}.mp3 and a musicUploads record.
+  async music(){
+    const {fs, A, D} = await fb(), uid = A.currentUser.uid;
+    const [ents, ups] = await Promise.all([
+      fs.getDocs(fs.query(fs.collection(D, 'musicEntries'), fs.where('clubId', '==', uid))),
+      fs.getDocs(fs.query(fs.collection(D, 'musicUploads'), fs.where('clubId', '==', uid)))]);
+    const up = Object.fromEntries(ups.docs.map(d => [d.id, d.data()]));
+    return ents.docs.map(d => d.data()).filter(e => e.status !== 'closed').map(e => ({
+      ev: {id: e.compId, title: e.title, date: e.date, deadline: e.deadline},
+      gymnasts: (e.gymnasts || []).map(g => { const u = up[e.compId + '_' + g.id]; return {...g, file: u && u.fileName, url: u && u.url}; })
+    })).sort((a, b) => String(a.ev.date).localeCompare(String(b.ev.date)));
+  },
+  async uploadMusic(compId, g, file, onProgress){
+    const {fs, A, D} = await fb(), uid = A.currentUser.uid, c = await this.club();
+    const st = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js');
+    const {getApp} = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const path = `music/${compId}/${uid}/${g.id}.mp3`, ref = st.ref(st.getStorage(getApp()), path);
+    const task = st.uploadBytesResumable(ref, file, {contentType: 'audio/mpeg', customMetadata: {club: c.name || '', gymnast: g.n}});
+    await new Promise((res, rej) => task.on('state_changed', s => onProgress && onProgress(s.bytesTransferred / s.totalBytes), rej, res));
+    const url = await st.getDownloadURL(ref);
+    await fs.setDoc(fs.doc(D, 'musicUploads', compId + '_' + g.id), {clubId: uid, clubName: c.name || '', compId, gymnastId: g.id, gymnastName: g.n, level: g.level,
+      fileName: file.name, size: file.size, path, url, uploadedAt: fs.serverTimestamp()});
+  },
+  async changeReservation(ref, places){
+    const {fs, D} = await fb();
+    await fs.updateDoc(fs.doc(D, 'reservations', ref), places > 0 ? {places: Number(places), changedAt: fs.serverTimestamp()} : {status: 'cancelled', cancelledAt: fs.serverTimestamp()});
+  },
   async orders(){
     const {fs, A, D} = await fb();
     const q = await fs.getDocs(fs.query(fs.collection(D, 'orders'), fs.where('clubId', '==', A.currentUser.uid)));

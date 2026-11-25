@@ -15,14 +15,15 @@ export default async function home(){
   const [c, lic, comps, orders, music] = await Promise.all([api.club(), api.licences(), api.competitions(), api.orders(), api.music()]);
   const unpaid = orders.filter(o => o.status === 'awaiting-payment'), due = unpaid.reduce((a, o) => a + o.total, 0);
   const mine = comps.filter(x => x.reserved), places = mine.reduce((a, x) => a + x.reserved, 0), next = mine[0];
-  const mc = comps.find(x => x.id === music.comp), needMusic = mc ? music.gymnasts.filter(g => !g.file).length : 0;
+  const musicDue = music.map(m => ({...m, missing: m.gymnasts.filter(g => !g.file).length})).filter(m => m.missing);
+  const needMusic = musicDue.reduce((a, m) => a + m.missing, 0), mc = musicDue[0];
   const nextAny = next || comps[0], buy = mine.find(x => x.buyBy);
   const done = Object.assign({reg: 1, res: mine.length ? 1 : 0}, JSON.parse(localStorage.ngl_done || '{}'));
   const n = CHECK.filter(x => done[x[0]]).length;
   const live = PATHWAYS.filter(p => ['live', 'waived'].includes(lic[p.k].status));
   const attn = [
     unpaid.length && [`${unpaid.length} order${unpaid.length > 1 ? 's' : ''} awaiting payment`, `${gbp(due)} · pay by card or bank transfer`, '#/shop/orders', 'Pay now', 1],
-    needMusic && [`${needMusic} gymnasts need floor music`, `${esc(mc.name)} · by ${date(mc.musicBy, {day:'numeric', month:'short'})}`, '#/competitions/music', 'Upload'],
+    needMusic && [`${needMusic} gymnast${needMusic === 1 ? '' : 's'} need${needMusic === 1 ? 's' : ''} floor music`, `${esc(mc.ev.title)} · by ${date(mc.ev.deadline, {day:'numeric', month:'short'})}${musicDue.length > 1 ? ' · and ' + (musicDue.length - 1) + ' more' : ''}`, '#/competitions/music', 'Upload'],
     buy && [`Buy your places on JustGo`, `${esc(buy.name)} · buy by ${date(buy.buyBy)}`, '#/competitions/places', 'View'],
     !mine.length && ['Reserve places for 2027', 'Competitions are filling fast: reserving is free', '#/competitions', 'Reserve']
   ].filter(Boolean);
