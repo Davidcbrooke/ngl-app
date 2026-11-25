@@ -7,7 +7,9 @@ import { fb } from './firebase.js';
 export const MODE = new URLSearchParams(location.search).has('demo') ? 'demo' : 'firebase';
 
 const demo = {
-  club: {name:'SAADI Gymnastics', contact:'Dave Brooke', email:'demo@club.example', bgNumber:'BG123456'},
+  club: {name:'SAADI Gymnastics', contact:'Dave Brooke', email:'demo@club.example', bgNumber:'BG123456',
+    schoolsList: [{id:'s1', name:'Redbourn Primary School', children:140}, {id:'s2', name:'Harpenden Junior School', children:165}],
+    schoolEvents: [{id:'e1', title:'NGL Schools Graduation', date:'2027-07-10', time:'10:00', venue:'SAADI Gymnastics, Harpenden', schoolName:'', medals:0}]},
   licences: {
     preschool:   {status:'live', label:'Licence live', renews:'2027-09-01', band:'25–49 Pre-School gymnasts', packs:{pack2:true}},
     schools:     {status:'live', label:'Licence live', renews:'2027-10-25', band:'250–399 gymnasts', code:'SAADI-7K4P'},

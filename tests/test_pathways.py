@@ -99,3 +99,39 @@ def test_recreational_new_club_sees_seven_bands(account):
     pg.route("#/programmes/recreational/licence")
     pg.p.wait_for_selector("[data-act=rec-buy]", timeout=20000)
     assert pg.p.locator("[data-act=rec-buy]").count() == 7
+
+
+# ---------- Schools ----------
+@pytest.mark.parametrize("tab", ["", "/teach", "/teach/secondary", "/teach/profit", "/awards", "/compete", "/families", "/licence"])
+def test_schools_tabs_open(page, tab):
+    page.go(f"#/programmes/schools{tab}", demo=True)
+    page.p.wait_for_timeout(1200)
+    assert "couldn’t load" not in page.p.inner_text("#page")
+
+
+def test_schools_profit_planner_updates(page):
+    page.go("#/programmes/schools/teach/profit", demo=True)
+    page.p.wait_for_selector("#pl_out .stat", timeout=15000)
+    before = page.p.inner_text("#pl_out .stat >> nth=0")
+    page.p.fill("#pl_form [data-k=o2Fee]", "12")
+    page.p.wait_for_timeout(300)
+    assert page.p.inner_text("#pl_out .stat >> nth=0") != before
+
+
+def test_schools_secondary_planner_builds_lessons(page):
+    page.go("#/programmes/schools/teach/secondary", demo=True)
+    t = page.p.wait_for_selector("#sec_out", timeout=15000).inner_text()
+    assert "Lesson 1" in t and "Assessment" in t
+
+
+def test_schools_overview_lists_schools(page):
+    page.go("#/programmes/schools", demo=True)
+    t = page.p.wait_for_selector("text=Redbourn Primary School", timeout=15000)
+    assert "305" in page.p.inner_text("#page")          # 140 + 165 children
+
+
+def test_schools_new_club_sees_seven_bands(account):
+    pg = account["page"]
+    pg.route("#/programmes/schools/licence")
+    pg.p.wait_for_selector("[data-act=sch-buy]", timeout=20000)
+    assert pg.p.locator("[data-act=sch-buy]").count() == 7

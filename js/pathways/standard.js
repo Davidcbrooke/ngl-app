@@ -6,7 +6,7 @@ import { esc, date, pill } from '../ui.js';
 import { coming } from './index.js';
 
 const DEF = {
-  schools: {today: 'https://nglschools.co.uk/club/',
+  schools_old: {today: 'https://nglschools.co.uk/club/',
     overview: 'A ready-to-deliver gymnastics programme your club takes into local schools: you own the relationships, deliver the coaching and keep the income.',
     teach: 'Six progressive levels across Floor, Bench and Vault, plus the Profit planner and Secondary planner.',
     awards: 'The NGL Schools Awards Book with Bronze, Silver and Gold certificates all year.',
