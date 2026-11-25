@@ -18,7 +18,7 @@ const DEF = {
     awards: 'Four award books, Ruby to Indigo, 16 levels assessed at the end of each term, and medals.',
     families: 'One family app code so parents see this fortnight’s skills and where they lead.',
     licence: 'One yearly Club Licence, banded by how many Recreational gymnasts you have. From £200 a year + VAT.'},
-  general: {today: 'https://club.nationalgymnasticsleague.co.uk/general/',
+  general_old: {today: 'https://club.nationalgymnasticsleague.co.uk/general/',
     overview: 'The NGL General League for gymnasts training 2–10 hours a week: compete locally, score nationally, qualify for the National Finals.',
     teach: 'The Training League: 13 conditioning challenges filmed in training that build every gymnast’s NGL Profile Card.',
     awards: 'The NGL General Skills Book: one book for Levels 1–4 with Bronze, Silver and Gold execution. £4 a book (RRP £8).',

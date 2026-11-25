@@ -135,3 +135,31 @@ def test_schools_new_club_sees_seven_bands(account):
     pg.route("#/programmes/schools/licence")
     pg.p.wait_for_selector("[data-act=sch-buy]", timeout=20000)
     assert pg.p.locator("[data-act=sch-buy]").count() == 7
+
+
+# ---------- General League ----------
+@pytest.mark.parametrize("tab", ["", "/teach", "/awards", "/compete", "/families", "/licence"])
+def test_general_tabs_open(page, tab):
+    page.go(f"#/programmes/general{tab}", demo=True)
+    page.p.wait_for_timeout(1200)
+    assert "couldn’t load" not in page.p.inner_text("#page")
+
+
+def test_general_rules_switch_gender_and_level(page):
+    page.go("#/programmes/general/compete", demo=True)
+    page.p.click("[data-act=gl-gender][data-v=boys]", timeout=15000)
+    page.p.click("[data-act=gl-level][data-v='3']")
+    imgs = page.p.locator("figure img").evaluate_all("els => els.map(e => e.getAttribute('src'))")
+    assert all("general-mag/page-0" in s for s in imgs) and imgs[0].endswith("page-05.jpg")
+
+
+def test_general_skills_book_total(page):
+    page.go("#/programmes/general/awards", demo=True)
+    page.p.fill("#glQty", "25", timeout=15000)
+    page.p.wait_for_timeout(200)
+    assert "Total £108" in page.p.inner_text("#glTotal")       # 25 x £4 + £8 postage
+
+
+def test_general_family_qr(page):
+    page.go("#/programmes/general/families", demo=True)
+    page.p.wait_for_selector("#glQR svg", timeout=15000)
