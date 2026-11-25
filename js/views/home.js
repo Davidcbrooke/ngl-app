@@ -11,7 +11,7 @@ const CHECK = [
   ['par', 'Share with parents', 'One link and QR code for each programme', '#/club']
 ];
 
-export default async function home(){
+export default async function home(_, ctx = {}){
   const [c, lic, comps, orders, music] = await Promise.all([api.club(), api.licences(), api.competitions(), api.orders(), api.music()]);
   const unpaid = orders.filter(o => o.status === 'awaiting-payment'), due = unpaid.reduce((a, o) => a + o.total, 0);
   const mine = comps.filter(x => x.reserved), places = mine.reduce((a, x) => a + x.reserved, 0), next = mine[0];
@@ -22,6 +22,7 @@ export default async function home(){
   const n = CHECK.filter(x => done[x[0]]).length;
   const live = PATHWAYS.filter(p => ['live', 'waived'].includes(lic[p.k].status));
   const attn = [
+    ctx.needsVerify && ['Confirm your email', 'Brings in any competition places booked before you joined', '#/club', 'Confirm'],
     unpaid.length && [`${unpaid.length} order${unpaid.length > 1 ? 's' : ''} not paid yet`, `${gbp(due)} · finish payment to confirm`, '#/shop/orders', 'Finish payment', 1],
     needMusic && [`${needMusic} gymnast${needMusic === 1 ? '' : 's'} need${needMusic === 1 ? 's' : ''} floor music`, `${esc(mc.ev.title)} · by ${date(mc.ev.deadline, {day:'numeric', month:'short'})}${musicDue.length > 1 ? ' · and ' + (musicDue.length - 1) + ' more' : ''}`, '#/competitions/music', 'Upload'],
     buy && [`Buy your places on JustGo`, `${esc(buy.name)} · buy by ${date(buy.buyBy)}`, '#/competitions/places', 'View'],

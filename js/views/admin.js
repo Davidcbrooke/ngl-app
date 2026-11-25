@@ -1,6 +1,6 @@
 // NGL Admin: for Dave and Christine. Clubs, licences, orders to post, the competition
 // calendar and reservations, and floor music entries. Shown only to verified NGL admins.
-import adm from '../admin-data.js';
+import adm, { nameKey } from '../admin-data.js';
 import { PATHWAYS } from '../config.js';
 import { esc, gbp, date, dot, pill, tabs, head, path } from '../ui.js';
 
@@ -68,18 +68,34 @@ async function orders(filter = 'post'){
 }
 
 async function competitions(compId){
-  const [cal, res, saved] = await Promise.all([adm.calendar(), adm.reservations(), adm.calendarIsSaved ? adm.calendarIsSaved() : true]);
+  if (compId === 'waiting') return waiting();
+  const [cal, res, saved, pend] = await Promise.all([adm.calendar(), adm.reservations(), adm.calendarIsSaved ? adm.calendarIsSaved() : true, adm.pending()]);
   if (compId) { const c = cal.find(x => x.id === compId); const rs = res.filter(r => r.compId === compId);
     return `<p style="margin:0 0 6px"><a href="#/admin/competitions">← All competitions</a></p><h2 style="font-size:24px">${esc(c.name)}</h2><p class="lead">${date(c.date)} · ${esc(c.where)} · ${esc(c.who)}</p>
     <div class="card">${rs.length ? `<table><tr><th>Club</th><th>Places</th><th>Ref</th><th>Status</th><th></th></tr>${rs.map(r => `<tr><td><a href="#/admin/clubs/${esc(r.clubId)}">${esc(r.clubName)}</a></td><td>${r.places}</td><td>${esc(r.ref || '')}</td><td>${pill(r.status, r.status === 'waiting' ? 'warn' : 'ok')}</td>
       <td style="white-space:nowrap">${r.status !== 'bought' ? `<button class="btn sm" data-act="adm-res" data-ref="${esc(r.ref)}" data-to="bought">Bought on JustGo</button> ` : ''}${r.status === 'reserved' ? `<button class="btn sm ghost" data-act="adm-res" data-ref="${esc(r.ref)}" data-to="waiting">To waiting list</button>` : r.status === 'waiting' ? `<button class="btn sm ghost" data-act="adm-res" data-ref="${esc(r.ref)}" data-to="reserved">Give places</button>` : ''}</td></tr>`).join('')}</table>`
       : '<p class="empty">No reservations yet.</p>'}</div>`; }
   return `${saved ? '' : `<div class="card attn" style="margin-bottom:16px"><div class="row" style="border:0"><div class="grow"><b>The calendar isn’t in the database yet</b><small>Clubs see the built-in 2027 list. Save it to the database to edit dates and add competitions.</small></div><button class="btn sm" data-act="adm-import-cal">Save calendar</button></div></div>`}
+  ${pend.length ? `<div class="card attn" style="margin-bottom:16px"><div class="row" style="border:0"><div class="grow"><b>${pend.reduce((a, p) => a + p.places, 0)} places waiting for a club</b><small>Booked before the club had a Club Hub account. They join automatically when the club confirms the same email; attach the rest here.</small></div><a class="btn sm" href="#/admin/competitions/waiting">Review</a></div></div>` : ''}
   <div class="btn-row" style="margin:0 0 12px"><button class="btn" data-act="adm-comp">Add a competition</button></div>
   <div class="card"><table><tr><th>Date</th><th>Competition</th><th>Places</th><th>Clubs</th><th></th></tr>${cal.map(c => { const rs = res.filter(r => r.compId === c.id);
     return `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td>
       <td>${rs.filter(r => r.status !== 'waiting').reduce((a, r) => a + r.places, 0)}${rs.some(r => r.status === 'waiting') ? ' + waiting' : ''}</td><td>${rs.length}</td>
       <td style="white-space:nowrap"><a class="btn sm ghost" href="#/admin/competitions/${esc(c.id)}">Reservations</a> <button class="btn sm ghost" data-act="adm-comp" data-comp="${esc(c.id)}">Edit</button></td></tr>`; }).join('')}</table></div>`;
+}
+
+// Places booked before the club registered, grouped by the club name on the booking, with the likely club suggested
+async function waiting(){
+  const [pend, cl, cal] = await Promise.all([adm.pending(), adm.clubs(), adm.calendar()]);
+  const groups = {}; pend.forEach(p => { const k = p.nameKey || nameKey(p.clubName) || p.id; (groups[k] = groups[k] || []).push(p); });
+  return `<p style="margin:0 0 6px"><a href="#/admin/competitions">← All competitions</a></p><h2 style="font-size:24px">Places waiting for a club</h2>
+  <p class="lead">Booked before the club had a Club Hub account. When a club registers and confirms the email it booked with, its places join automatically. If it registered with a different email, choose the club and attach them here.</p>
+  ${Object.keys(groups).length ? Object.entries(groups).map(([k, ps]) => { const sug = cl.filter(c => nameKey(c.name) === k), names = [...new Set(ps.map(p => p.clubName))].join(' / ');
+    return `<div class="card" style="margin-bottom:12px"><div class="row" style="border:0;padding-top:0"><div class="grow"><h2 style="margin:0">${esc(names || 'No club name')}</h2><small style="color:var(--muted)">${ps.reduce((a, p) => a + p.places, 0)} places · ${ps.length} booking${ps.length === 1 ? '' : 's'}${ps.some(p => p.email) ? ' · joins automatically when they confirm their booking email' : ' · no booking email on record'}</small></div></div>
+      ${ps.map(p => { const c = cal.find(x => x.id === p.compId) || {name: p.compName || p.compId}; return `<div class="row"><div class="grow"><b>${esc(c.name)}</b><small>${p.places} places · ${esc(p.ref || p.id)}</small></div>${pill(p.status, p.status === 'waiting' ? 'warn' : 'ok')}</div>`; }).join('')}
+      <div class="row" style="border:0"><label class="field grow" style="margin:0"><span>Attach to</span><select id="att-${esc(k)}"><option value="">Choose a registered club…</option>${sug.map(c => `<option value="${esc(c.id)}" selected>${esc(c.name)} (suggested)</option>`).join('')}${cl.filter(c => !sug.includes(c)).map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></label>
+      <button class="btn sm" data-act="adm-attach" data-key="${esc(k)}" data-ids="${esc(ps.map(p => p.id).join(','))}">Attach</button></div></div>`; }).join('')
+    : '<div class="card empty">No places waiting. Every booking belongs to a registered club.</div>'}`;
 }
 
 async function music(compId){

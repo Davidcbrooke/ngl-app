@@ -117,7 +117,7 @@ const ACT = {
     b.disabled = false; b.textContent = label;
   },
 
-  async verify(){ try { await api.sendVerify(); toast('Check your inbox for the verification link, then log out and in again.'); } catch (x) { toast('Couldn’t send it. Please try again.', false); } },
+  async verify(){ try { await api.sendVerify(); toast('Check your inbox for the link, then log out and in again.'); } catch (x) { toast('Couldn’t send it. Please try again.', false); } },
 
   async 'reset-pw'(){
     const c = await api.club();

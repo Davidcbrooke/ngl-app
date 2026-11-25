@@ -14,7 +14,14 @@ const demoOrders = demo.orders.map(o => ({...o, clubId: 'demo', clubName: demo.c
 const demoRes = demo.competitions.filter(c => c.reserved || c.waiting).map(c => ({id: c.ref || 'W-' + c.id, ref: c.ref, compId: c.id, clubId: 'demo', clubName: demo.club.name,
   places: c.reserved || 6, status: c.waiting ? 'waiting' : 'reserved', date: '2026-10-01'}));
 
+const demoPending = [{id: 'P-SEGC1', clubName: 'SEGC', nameKey: 'segc', email: '', compId: 'c1', places: 30, status: 'reserved', ref: 'P-SEGC1'},
+  {id: 'P-RAANS1', clubName: 'Raans Gymnastics', nameKey: 'raans', email: '', compId: 'c2', places: 15, status: 'reserved', ref: 'P-RAANS1'}];
+// Club names compared without 'gymnastics', 'club', 'academy' and so on (same as the data move)
+export const nameKey = n => String(n || '').toLowerCase().replace(/&/g, 'and').replace(/\b(gymnastics?|gym|club|academy|ltd|limited|c\.?i\.?c\.?|and|tumbling|trampoline|the)\b/g, '').replace(/[^a-z0-9]/g, '');
+
 const demoAdmin = {
+  async pending(){ return demoPending; },
+  async attachPending(){ throw new Error(SAMPLE); },
   async clubs(){ return demoClubs; },
   async orders(){ return demoOrders; },
   async reservations(){ return demoRes; },
@@ -37,6 +44,14 @@ const fbAdmin = {
       .sort((a, b) => b.date.localeCompare(a.date));
   },
   async reservations(){ return (await all('reservations')).map(r => ({...r, date: r.createdAt ? iso(r.createdAt) : ''})).filter(r => r.status !== 'cancelled'); },
+  async pending(){ return (await all('pendingPlaces')).sort((a, b) => String(a.clubName).localeCompare(String(b.clubName))); },
+  // Move waiting places onto a club: one reservation (same id), and the waiting record goes
+  async attachPending(ids, club){
+    const {fs, D} = await fb(), b = fs.writeBatch(D), list = (await all('pendingPlaces')).filter(p => ids.includes(p.id));
+    list.forEach(p => { b.set(fs.doc(D, 'reservations', p.id), {clubId: club.id, clubName: club.name || '', compId: p.compId, places: p.places, status: p.status, ref: p.ref || p.id,
+      createdAt: p.createdAt || fs.serverTimestamp(), attachedAt: fs.serverTimestamp(), attachedBy: 'admin', movedFrom: p.movedFrom || ''}); b.delete(fs.doc(D, 'pendingPlaces', p.id)); });
+    await b.commit(); return list.length;
+  },
   async calendar(){ const list = await all('competitions'); return (list.length ? list : CALENDAR).sort((a, b) => String(a.date).localeCompare(String(b.date))); },
   async calendarIsSaved(){ return (await all('competitions')).length > 0; },
   async importCalendar(){ const {fs, D} = await fb(); for (const c of CALENDAR) await fs.setDoc(fs.doc(D, 'competitions', c.id), {...c, status: 'open'}); },

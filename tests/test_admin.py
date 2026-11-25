@@ -31,3 +31,11 @@ def test_club_has_no_admin(account):
     assert pg.p.locator(".admin-link").count() == 0
     pg.route("#/admin")
     assert "admins only" in pg.p.inner_text("#page")
+
+
+
+def test_admin_places_waiting_for_a_club(page):
+    page.go("#/admin/competitions/waiting", demo=True)
+    page.p.wait_for_selector("[data-act=adm-attach]", timeout=15000)
+    t = page.p.inner_text("#page").upper()
+    assert "SEGC" in t and "RAANS" in t

@@ -18,7 +18,8 @@ function rehearse(){
   // 1. READ live (GET only)
   const clubs = listAll(LIVE, 'clubs'), schoolsOrders = listAll(LIVE, 'orders'), recOrders = listAll(LIVE, 'recOrders');
   const events = listAll(LIVE, 'events'), musicEvents = listAll(LIVE, 'musicEvents'), musicUploads = listAll(LIVE, 'musicUploads');
-  const comps = listAll(BOOK, 'ngl_competitions'), bookings = listAll(BOOK, 'ngl_bookings');
+  const comps = listAll(BOOK, 'ngl_competitions'), bookings = listAll(BOOK, 'ngl_bookings'), contacts = listAll(BOOK, 'ngl_booking_contacts');
+  const contactEmail = {}; contacts.forEach(c => { if (c.data.email) contactEmail[c.id] = String(c.data.email).trim().toLowerCase(); });
   clubs.forEach(c => { c.data.schoolsSub = listAll(LIVE, 'clubs/' + c.id + '/schools').map(s => ({id: s.id, name: s.data.name || '', children: Number(s.data.children) || 0})); });
   report.counts.live = {clubs: clubs.length, schoolsOrders: schoolsOrders.length, recOrders: recOrders.length, events: events.length, musicEvents: musicEvents.length, musicUploads: musicUploads.length, competitions: comps.length, bookings: bookings.length};
 
@@ -54,7 +55,12 @@ function rehearse(){
   // Reservations, linked to clubs by email
   const resByClub = {};
   bookings.forEach(b => { const d = b.data, key = d.email ? String(d.email).trim().toLowerCase() : d.emailHash, byEmail = emailIndex[key] || emailIndex[d.emailHash], club = byEmail || byName(d.club || d.clubName);
-    if (!club) { report.unmatched.reservations.push({id: b.id, club: d.club || d.clubName || '', compName: d.compName || d.compId, places: Number(d.spaces) || 0}); return; }
+    if (!club) { report.unmatched.reservations.push({id: b.id, club: d.club || d.clubName || '', compName: d.compName || d.compId, places: Number(d.spaces) || 0});
+      // Waits in pendingPlaces: joins the club automatically when it registers and confirms this email, or NGL attaches it in NGL Admin
+      const pref = d.reference || b.id, em = (d.email ? String(d.email).trim().toLowerCase() : '') || contactEmail[b.id] || '';
+      writes.push(doc('pendingPlaces/' + safeId(pref), {clubName: d.club || d.clubName || '', nameKey: norm(d.club || d.clubName), email: em, compId: d.compId || '', compName: d.compName || '',
+        places: Number(d.spaces) || 0, status: d.waitlist ? 'waiting' : (d.bought || d.purchased ? 'bought' : 'reserved'), ref: pref, createdAt: d.createdAt || now, movedFrom: 'saadi-rotation/ngl_bookings/' + b.id}));
+      report.pendingWithEmail = (report.pendingWithEmail || 0) + (em ? 1 : 0); return; }
     if (!byEmail) report.matchedByName = (report.matchedByName || 0) + 1;
     const ref = d.reference || b.id, rec = {clubId: club, clubName: (clubs.find(x => x.id === club).data.name || ''), compId: d.compId || '', places: Number(d.spaces) || 0,
       status: d.waitlist ? 'waiting' : (d.bought || d.purchased ? 'bought' : 'reserved'), ref, createdAt: d.createdAt || now, movedFrom: 'saadi-rotation/ngl_bookings/' + b.id};
@@ -123,6 +129,7 @@ function rehearse(){
   Logger.log(JSON.stringify(report.counts));
   const um = {}; report.unmatched.reservations.forEach(r => { const k = norm(r.club) || '(no name)'; um[k] = um[k] || {names: [], places: 0}; um[k].places += r.places; if (!um[k].names.includes(r.club)) um[k].names.push(r.club); });
   Logger.log('Reservations matched by club name: ' + (report.matchedByName || 0) + ' · still unmatched (places by club): ' + JSON.stringify(um));
+  Logger.log('Waiting places with a booking email (join automatically): ' + (report.pendingWithEmail || 0) + ' of ' + report.unmatched.reservations.length);
   Logger.log('Merged accounts: ' + JSON.stringify(report.merged));
   Logger.log('Club names with more than one account: ' + JSON.stringify(report.duplicateClubs));
   Logger.log('Clubs: ' + report.clubs.length + ' · unmatched reservations: ' + report.unmatched.reservations.length + ' · unmatched music: ' + report.unmatched.music.length + ' · orders with no club: ' + report.unmatched.orders.length);

@@ -23,6 +23,12 @@ export const ADM = {
       try { await adm.setLicence(club, path, {status: 'live', label: 'Licence live', band: v('band'), renews: v('renews'), note: v('note'), setBy: 'admin'}); m.remove(); toast(p.n + ' licence switched on'); rerender(); } catch (x) { fail(x); } });
   },
 
+  async 'adm-attach'(b){
+    const sel = document.getElementById('att-' + b.dataset.key), id = sel && sel.value; if (!id) return toast('Choose the club first.', false);
+    try { const club = (await adm.clubs()).find(c => c.id === id); const n = await adm.attachPending(b.dataset.ids.split(','), club);
+      toast(`${n} booking${n === 1 ? '' : 's'} attached to ${club.name}`); rerender(); } catch (x) { fail(x); }
+  },
+
   async 'adm-res'(b){
     const lbl = {bought: 'marked bought on JustGo', waiting: 'moved to the waiting list', reserved: 'given places'};
     try { await adm.setReservation(b.dataset.ref, b.dataset.to); toast(b.dataset.ref + ' ' + lbl[b.dataset.to]); rerender(); } catch (x) { fail(x); }

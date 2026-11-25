@@ -4,7 +4,7 @@ import { ENV } from './config.js';
 import api, { MODE } from './data.js';
 import { showAuth } from './views/auth.js';
 import './actions.js';
-import { svg, esc } from './ui.js';
+import { svg, esc, toast } from './ui.js';
 import { SEARCH } from './search.js';
 import home from './views/home.js';
 import competitions from './views/competitions.js';
@@ -55,6 +55,7 @@ async function start(){
     if (!u) return showAuth();
   }
   const c = await api.club(), lic = await api.licences();
+  let claimed = 0; try { claimed = await api.claimPending(); } catch (e) { console.warn('Earlier places not brought in', e.code || e); }
   CTX.isAdmin = await api.isAdmin(); CTX.needsVerify = await api.needsVerify();
   const live = Object.entries(lic).filter(([, v]) => v.status === 'live' || v.status === 'waived').length;
   $('#clubCard').innerHTML = `<b>${esc(c.name)}</b><span>${live} programme${live === 1 ? '' : 's'} active</span>`;
@@ -68,5 +69,6 @@ async function start(){
   // Getting started ticks (saved on this device for now)
   document.addEventListener('click', e => { const a = e.target.closest('[data-tick]'); if (a) { const d = JSON.parse(localStorage.ngl_done || '{}'); d[a.dataset.tick] = 1; localStorage.ngl_done = JSON.stringify(d); } });
   render();
+  if (claimed) setTimeout(() => toast(`We’ve added ${claimed} competition booking${claimed === 1 ? '' : 's'} your club made before joining. See Competitions → My places.`), 600);
 }
 start();

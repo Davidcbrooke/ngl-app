@@ -106,6 +106,7 @@ const demoApi = {
   async user(){ return {uid: 'demo', email: demo.club.email}; },
   async isAdmin(){ return true; },                       // sample data shows the admin screens too
   async needsVerify(){ return false; },
+  async claimPending(){ return 0; },
   async club(){ return demo.club; },
   async licences(){ return demo.licences; },
   async competitions(){ return demo.competitions; },
@@ -140,7 +141,21 @@ const fbApi = {
   },
   async licences(){ const c = await this.club(); return {...DEFAULT_LICENCES, ...(c.licences || {})}; },
   async isAdmin(){ const {A} = await fb(), u = A.currentUser; return !!(u && u.emailVerified && ADMIN_EMAILS.includes(String(u.email).toLowerCase())); },
-  async needsVerify(){ const {A} = await fb(), u = A.currentUser; return !!(u && !u.emailVerified && ADMIN_EMAILS.includes(String(u.email).toLowerCase())); },
+  async needsVerify(){ const {A} = await fb(), u = A.currentUser; return !!(u && !u.emailVerified); },
+  // Places booked (on the old booking form) with this email before the club joined: brought in once the email is confirmed.
+  async claimPending(){
+    const {fs, A, D} = await fb(), u = A.currentUser; if (!u) return 0;
+    if (!u.emailVerified) { await u.reload(); if (!u.emailVerified) return 0; await u.getIdToken(true); }
+    const email = String(u.email).trim().toLowerCase();
+    const q = await fs.getDocs(fs.query(fs.collection(D, 'pendingPlaces'), fs.where('email', '==', email)));
+    if (q.empty) return 0;
+    const c = await this.club(), b = fs.writeBatch(D);
+    q.docs.forEach(d => { const p = d.data();
+      b.set(fs.doc(D, 'reservations', d.id), {clubId: u.uid, clubName: c.name || '', compId: p.compId, places: p.places, status: p.status, ref: p.ref || d.id,
+        createdAt: p.createdAt || fs.serverTimestamp(), claimedAt: fs.serverTimestamp(), movedFrom: p.movedFrom || ''});
+      b.delete(d.ref); });
+    await b.commit(); return q.size;
+  },
   async sendVerify(){ const {auth, A} = await fb(); return auth.sendEmailVerification(A.currentUser); },
   // The competition calendar: from the database once NGL has added it, otherwise the built-in 2027 list.
   async calendar(){
@@ -244,6 +259,8 @@ const fbApi = {
     const {auth, fs, A, D} = await fb(); CLUB = null;
     const cred = await auth.createUserWithEmailAndPassword(A, d.email, d.password);
     await fs.setDoc(fs.doc(D, 'clubs', cred.user.uid), {name: d.name, contact: d.contact, email: d.email, bgNumber: d.bgNumber || '', phone: d.phone || '', createdAt: fs.serverTimestamp()});
+    // Confirm-your-email link (made-up test addresses are skipped)
+    if (!/@example\.com$/i.test(d.email)) auth.sendEmailVerification(cred.user).catch(e => console.warn('Verification email not sent', e.code || e));
     return cred;
   },
   async reset(email){ const {auth, A} = await fb(); return auth.sendPasswordResetEmail(A, email); },

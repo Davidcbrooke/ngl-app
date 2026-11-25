@@ -26,6 +26,10 @@ ATTEMPTS = {
         "await fs.getDoc(fs.doc(D, 'recContent', 'meta'));",
     "read the data move report":
         "await fs.getDoc(fs.doc(D, 'migration', 'report'));",
+    "list places waiting for other clubs":
+        "await fs.getDocs(fs.collection(D, 'pendingPlaces'));",
+    "create a booking already marked bought":
+        "await fs.setDoc(fs.doc(D, 'reservations', 'NGL-HACK1'), {clubId: me, compId: 'x', places: 5, status: 'bought', ref: 'NGL-HACK1'});",
     "write to an unknown collection":
         "await fs.setDoc(fs.doc(D, 'anything', 'x'), {a: 1});",
 }

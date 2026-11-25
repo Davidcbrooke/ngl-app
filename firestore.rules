@@ -10,6 +10,8 @@ service cloud.firestore {
         request.auth.token.email in ['admin@nationalgymnasticsleague.co.uk', 'bookingoffice@saadigymnastics.co.uk'];
     }
     function own(clubId) { return signedIn() && request.auth.uid == clubId; }
+    // The signed-in user's own email, once they've confirmed it by clicking the link we email them
+    function emailIs(e) { return signedIn() && request.auth.token.email_verified == true && e is string && e != '' && request.auth.token.email.lower() == e; }
     function unchanged(fields) { return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields); }
 
     // Club account: one document per club, id = the club's login uid
@@ -31,11 +33,22 @@ service cloud.firestore {
     // Competition reservations and floor music records
     match /reservations/{id} {
       allow read: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid);
-      allow create: if signedIn() && request.resource.data.clubId == request.auth.uid;
+      // A club books places as 'reserved', or brings in places booked with its confirmed email before it joined (pendingPlaces, same id).
+      allow create: if isAdmin() || (signedIn() && request.resource.data.clubId == request.auth.uid
+                    && (request.resource.data.status == 'reserved' || claimsPending(id)));
       // A club can change its places or cancel while still 'reserved'; only NGL moves places to the waiting list or bought.
       allow update: if isAdmin() || (signedIn() && resource.data.clubId == request.auth.uid && resource.data.status == 'reserved'
                     && unchanged(['clubId', 'compId', 'ref']) && request.resource.data.status in ['reserved', 'cancelled']);
       allow delete: if isAdmin();
+    }
+    function claimsPending(id) {
+      let p = get(/databases/$(database)/documents/pendingPlaces/$(id)).data;
+      return emailIs(p.email) && request.resource.data.status == p.status && request.resource.data.places == p.places && request.resource.data.compId == p.compId;
+    }
+    // Places booked before the club had an account. The club sees and claims them once its email is confirmed; NGL attaches the rest by hand.
+    match /pendingPlaces/{id} {
+      allow read, delete: if isAdmin() || emailIs(resource.data.email);
+      allow create, update: if isAdmin();
     }
     // Floor music: NGL adds each club's gymnasts per competition (musicEntries/{compId}_{clubId});
     // the club uploads one record per gymnast (musicUploads/{compId}_{gymnastId}).
