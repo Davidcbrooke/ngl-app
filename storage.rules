@@ -1,0 +1,21 @@
+rules_version = '2';
+// NGL Club Hub file storage (staging bucket, London). Floor music only for now:
+// music/{competition}/{clubId}/{gymnastId}.mp3. A club can only write to its own folder,
+// MP3 only, up to 15MB. Clubs read their own files; NGL admins read and delete everything.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email_verified == true &&
+        request.auth.token.email in ['admin@nationalgymnasticsleague.co.uk', 'bookingoffice@saadigymnastics.co.uk'];
+    }
+    match /music/{comp}/{clubId}/{file} {
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == clubId);
+      allow create, update: if request.auth != null && request.auth.uid == clubId
+                            && file.matches('[A-Za-z0-9_-]+[.]mp3')
+                            && request.resource.size < 15 * 1024 * 1024
+                            && request.resource.contentType == 'audio/mpeg';
+      allow delete: if isAdmin();
+    }
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}

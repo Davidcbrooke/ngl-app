@@ -35,7 +35,30 @@ def test_club_cannot(account, what, code):
 
 def test_club_cannot_mark_own_order_paid(account):
     r = account["page"].p.evaluate(f"""(async () => {{ {FB}
-        const q = await fs.getDocs(fs.query(fs.collection(D, 'orders'), fs.where('clubId', '==', me)));
-        if (!q.docs.length) return 'no order';
-        try {{ await fs.updateDoc(q.docs[0].ref, {{status: 'paid'}}); return 'ALLOWED'; }} catch (e) {{ return e.code; }} }})()""")
+        const ref = fs.doc(D, 'orders', 'ORD-T' + Math.random().toString(36).slice(2, 7).toUpperCase());
+        await fs.setDoc(ref, {{clubId: me, status: 'awaiting-payment', total: 1, lines: []}});
+        try {{ await fs.updateDoc(ref, {{status: 'paid'}}); return 'ALLOWED'; }} catch (e) {{ return e.code; }} }})()""")
     assert r == "permission-denied"
+
+
+# ---------- File storage (floor music): London bucket, storage.rules ----------
+ST = """const m = await import('./js/firebase.js'); const {A} = await m.fb(); const me = A.currentUser.uid;
+  const st = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js');
+  const {getApp} = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+  const S = st.getStorage(getApp()); const mp3 = new Blob([new Uint8Array([73, 68, 51, 3, 0, 0, 0, 0, 0, 0])], {type: 'audio/mpeg'});
+  const put = async (path, blob, type) => { try { await st.uploadBytes(st.ref(S, path), blob, {contentType: type}); return 'ALLOWED'; } catch (e) { return e.code; } };"""
+
+
+def test_club_can_upload_its_own_music(account):
+    r = account["page"].p.evaluate(f"(async () => {{ {ST} return put('music/autotest/' + me + '/g1.mp3', mp3, 'audio/mpeg'); }})()")
+    assert r == "ALLOWED", r
+
+
+@pytest.mark.parametrize("what,code", {
+    "upload into another club's folder": "put('music/autotest/someone-else/g1.mp3', mp3, 'audio/mpeg')",
+    "upload something that isn't an MP3": "put('music/autotest/' + me + '/g1.mp3', new Blob(['hi'], {type: 'text/html'}), 'text/html')",
+    "upload outside the music folder": "put('anything/' + me + '/x.mp3', mp3, 'audio/mpeg')",
+}.items())
+def test_club_cannot_store(account, what, code):
+    r = account["page"].p.evaluate(f"(async () => {{ {ST} return {code}; }})()")
+    assert r == "storage/unauthorized", f"A club was able to {what}: {r}"
