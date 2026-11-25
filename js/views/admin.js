@@ -1,6 +1,7 @@
 // NGL Admin: for Dave and Christine. Clubs, licences, orders to post, the competition
 // calendar and reservations, and floor music entries. Shown only to verified NGL admins.
 import adm, { nameKey } from '../admin-data.js';
+import { GROUPS, APPS } from '../admin-apps.js';
 import { PATHWAYS } from '../config.js';
 import { esc, gbp, date, dot, pill, tabs, head, path } from '../ui.js';
 
@@ -10,8 +11,25 @@ const statusPill = o => o.status === 'sent' ? pill('Posted', 'ok') : o.status ==
 
 export default async function admin([sub = '', id], ctx = {}){
   if (!ctx.isAdmin) return head('NGL Admin') + `<div class="card empty">This area is for NGL admins only.</div>`;
+  if (sub === 'app') return appFrame(id);
   const body = await ({'': overview, clubs, orders, competitions, music}[sub] || overview)(id);
   return head('NGL Admin', 'Run the league: clubs, licences, orders, competitions and floor music.') + tabs(SUB, SUB.some(s => s[0] === sub) ? sub : '', '#/admin') + body;
+}
+
+// All admin apps on one board: same groups, colours and icons as the original Admin Hub
+function board(){
+  return GROUPS.map(g => { const list = APPS.filter(a => a.group === g.id);
+    return `<section class="appgrp" style="--c:${g.colour}"><h3><i></i>${esc(g.name)}</h3><div class="appgrid">${list.map(a => `<a class="card appt" href="${a.to || '#/admin/app/' + a.id}">
+      <span class="ic" style="background:${a.colour || g.colour}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${a.icon}</svg></span>
+      <span class="grow"><b>${esc(a.name)}</b><small>${esc(a.desc)}</small>${a.to ? '' : '<em class="livetag">Live tool</em>'}</span></a>`).join('')}</div></section>`; }).join('');
+}
+
+// An existing tool, opened inside the app (same as the original Admin Hub viewer)
+function appFrame(id){
+  const a = APPS.find(x => x.id === id); if (!a || a.to) return head('NGL Admin') + '<div class="card empty">App not found. <a href="#/admin">All apps</a></div>';
+  const src = a.url + (a.url.includes('?') ? '&' : '?') + 'v=' + Date.now();
+  return `<div class="appbar"><a class="btn sm ghost" href="#/admin">← All apps</a><h1 style="margin:0;font-size:22px" class="grow">NGL Admin · ${esc(a.name)}</h1><span class="livetag">Live tool · real data</span><a class="btn sm ghost" href="${esc(a.url)}" target="_blank" rel="noopener">Open in new tab ↗</a></div>
+  <iframe class="appframe" title="${esc(a.name)}" src="${esc(src)}" allow="fullscreen; screen-wake-lock; autoplay; clipboard-write" allowfullscreen></iframe>`;
 }
 
 async function overview(){
@@ -24,6 +42,7 @@ async function overview(){
     <a class="card stat" href="#/admin/orders"><b>${toPost.length}</b><span>Orders to post</span></a>
     <a class="card stat" href="#/admin/orders"><b>${gbp(paid.filter(o => o.date >= yearStart).reduce((a, o) => a + o.total, 0))}</b><span>Taken this year (paid orders)</span></a>
     <a class="card stat" href="#/admin/competitions"><b>${res.filter(r => r.status === 'reserved').reduce((a, r) => a + r.places, 0)}</b><span>Places reserved</span></a></div>
+  ${board()}
   <div class="grid g2"><div class="card attn"><h2>To do</h2>
     ${toPost.length ? toPost.slice(0, 6).map(o => `<div class="row"><div class="grow"><b>Post ${esc(o.id)}</b><small>${esc(o.clubName)} · ${esc(o.details)}</small></div><button class="btn sm" data-act="adm-sent" data-order="${esc(o.id)}">Mark posted</button></div>`).join('')
       : '<p class="empty">Nothing to post. Paid orders appear here automatically.</p>'}</div>

@@ -238,3 +238,13 @@ a.card:hover{border-color:#cfcde3}.nav a{color:#dcdcf2}.nav a.on{color:var(--nav
 .rs-strip{display:grid;gap:4px;margin-bottom:8px}.rs-strip div{position:relative}.rs-strip img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}.rs-strip span{position:absolute;left:3px;top:3px;background:#28225c;color:#fff;font-weight:800;padding:0 5px;border-radius:4px;font-size:9pt}
 .rs-star{font-size:8pt;font-weight:700;color:#c8194a;margin-top:2px}.rs-foot{font-size:8pt;color:#5f5b80;margin-top:6px}
 @media(max-width:860px){.grprow{grid-template-columns:1fr 1fr}.bbgrid.three{grid-template-columns:1fr}.rung{grid-template-columns:1fr}.stars{grid-column:1}}
+
+/* NGL Admin app board (same groups and colours as the original Admin Hub) */
+.appgrp{margin:0 0 20px}.appgrp h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font:900 18px var(--cond);text-transform:uppercase;color:var(--navy)}
+.appgrp h3 i{width:12px;height:12px;border-radius:3px;background:var(--c)}
+.appgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.appt{display:flex;gap:12px;align-items:flex-start;text-decoration:none;color:inherit;border-top:3px solid var(--c)}.appt:hover{box-shadow:0 4px 14px rgba(40,34,92,.14)}
+.appt b{display:block;color:var(--navy)}.appt small{display:block;color:var(--muted);font-size:13px;line-height:1.35;margin-top:2px}
+.livetag{display:inline-block;margin-top:6px;font:700 11px Roboto,Arial,sans-serif;font-style:normal;letter-spacing:.04em;text-transform:uppercase;color:#8a1020;background:#fde8eb;border-radius:4px;padding:2px 6px}
+.appbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.appframe{width:100%;height:calc(100vh - 150px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:#fff}

@@ -39,3 +39,12 @@ def test_admin_places_waiting_for_a_club(page):
     page.p.wait_for_selector("[data-act=adm-attach]", timeout=15000)
     t = page.p.inner_text("#page").upper()
     assert "SEGC" in t and "RAANS" in t
+
+
+def test_admin_has_every_app(page):
+    page.go("#/admin", demo=True)
+    page.p.wait_for_selector(".appt", timeout=15000)
+    assert page.p.locator(".appt").count() == 20          # the 19 original Admin Hub apps + Orders
+    page.p.click("text=Ticket sales")
+    page.p.wait_for_selector("iframe.appframe", timeout=15000)
+    assert "NGL_Ticket_Sales.html" in page.p.get_attribute("iframe.appframe", "src")
