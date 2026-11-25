@@ -51,7 +51,7 @@ const demo = {
 
 export const RULES = [
   {group:'General League', path:'general', items:[
-    {t:'Girls (WAG) rules 2027', d:'Levels 1–4: competition rules and common deductions', url:RULES_BASE + 'NGL_General_League_WAG_Rules_2027.pdf'},
+    {t:'General Girls rules 2027', d:'Levels 1–4: competition rules and common deductions', url:RULES_BASE + 'NGL_General_League_WAG_Rules_2027.pdf'},
     {t:'Boys (MAG) rules 2027', d:'Levels 1–4', url:RULES_BASE + 'NGL_General_League_MAG_Rules_2027.pdf'},
     {t:'WAG Element Book 2027', d:'Uncoded and common coded Bars, Beam and Floor elements', url:RULES_BASE + 'NGL_General_League_WAG_Element_Guide_2027.pdf'},
     {t:'FIG Code of Points 2025–2028', d:'The base for NGL rules, except where NGL changes are noted', url:RULES_BASE + 'FIG_WAG_Code_of_Points_2025-2028.pdf'}]},
