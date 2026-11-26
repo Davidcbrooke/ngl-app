@@ -122,6 +122,7 @@ export const APPS = [
  {
   "group": "money",
   "id": "projection",
+  "to": "#/admin/projection",
   "access": "finance",
   "name": "Projected P&L",
   "desc": "10-year licensing projection: change the variables and save scenarios",

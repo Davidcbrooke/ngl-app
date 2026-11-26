@@ -69,6 +69,7 @@ function rehearse(){
 
   // Orders (Schools + Recreational/Pre-School/General) in one list
   const ordByClub = {};
+  const psCodes = [];   // Pre-School family codes made in the clubs loop
   const pushOrder = (o, coll) => { const d = o.data, lines = orderLines(d, coll), total = round2(lines.reduce((a, l) => a + l.qty * l.unit, 0));
     if (!d.clubId) { report.unmatched.orders.push(o.id); return; }
     d.clubId = home(d.clubId);
@@ -115,6 +116,9 @@ function rehearse(){
     if (dups.length) out.mergedFrom = dups.map(x => LIVE + '/clubs/' + x.id);
     ['recTerm', 'rotaJson', 'rotaUpdatedAt', 'projection', 'secPlan', 'interest', 'bookingEmails'].forEach(k => { if (d[k] != null) out[k] = d[k]; });
     if (d.preschoolPlan) out.plans = {preschool: d.preschoolPlan};
+    // Pre-School family code: a short code like the others (stable per club), holding the term plan. Old #p= links still work in the app.
+    if (lic.preschool.status === 'live') { const pc = psCode(d.name, c.id); lic.preschool.code = pc; out.licences = lic;
+      psCodes.push({code: pc, clubId: c.id, clubName: d.name || '', plan: d.preschoolPlan ? (typeof d.preschoolPlan === 'string' ? JSON.parse(d.preschoolPlan) : d.preschoolPlan) : null, packs: lic.preschool.packs}); }
     writes.push(doc('clubs/' + c.id, out));
     report.clubs.push({id: c.id, name: d.name || '', email: mask(d.email || ''), licences: Object.keys(lic).filter(k => lic[k].status === 'live').join(', ') || 'none',
       schools: d.schoolsSub.length, graduations: evs.length, orders: (ordByClub[c.id] || []).length, unpaid: (ordByClub[c.id] || []).filter(o => o.status === 'awaiting-payment').length,
@@ -149,6 +153,23 @@ function rehearse(){
   team.forEach(t => writes.push(doc('adminUsers/' + String(t.id).toLowerCase(), {name: t.data.name || '', owner: !!t.data.owner, sections: t.data.sections || [], movedFrom: 'saadi-rotation/ngl_admin_users/' + t.id})));
   report.team = team.map(t => (t.data.name || '') + ' (' + mask(t.id) + ')' + (t.data.owner ? ' owner' : ': ' + (t.data.sections || []).length + ' apps'));
 
+  // ONE list of family codes for the one app (familyCodes/{CODE}): Schools (accessCodes) and Recreational (recCodes) keep
+  // their codes unchanged; Pre-School codes are new. A code found in both old lists is a clash: reported, Schools kept.
+  const fam = {}, clashes = [];
+  const homeOf = id => home(id);
+  listAll(LIVE, 'accessCodes').forEach(x => { const d = x.data; fam[x.id] = {programme: 'schools', clubId: homeOf(d.clubId || ''), clubName: d.clubName || '', status: d.status || 'inactive', expires: d.expires || null, season: d.season || ''}; });
+  listAll(LIVE, 'recCodes').forEach(x => { const d = x.data;
+    if (fam[x.id]) { clashes.push(x.id); if (fam[x.id].status === 'active' || d.status !== 'active') return; }
+    fam[x.id] = {programme: 'recreational', clubId: homeOf(d.clubId || ''), clubName: d.clubName || '', status: d.status || 'inactive', expires: d.expires || null, key: d.key || '', term: d.term || null}; });
+  psCodes.forEach(p => { if (fam[p.code]) clashes.push(p.code); else fam[p.code] = {programme: 'preschool', clubId: p.clubId, clubName: p.clubName, status: 'active', plan: p.plan, packs: p.packs}; });
+  Object.keys(fam).forEach(k => { const f = fam[k]; Object.keys(f).forEach(j => { if (f[j] === null) delete f[j]; }); writes.push(doc('familyCodes/' + k, f)); });
+  // Parents' data: the clubs' live timetables (Recreational Rotations) and Graduations (Schools)
+  const rota = listAll(LIVE, 'rotaLive'); rota.forEach(x => writes.push(doc('rotaLive/' + home(x.id), x.data)));
+  events.forEach(e => writes.push(doc('familyEvents/' + e.id, Object.assign({}, e.data, {clubId: home(e.data.clubId || '')}))));
+  // Projected P&L scenarios
+  const projRaw = getDoc(BOOK, 'ngl_finance/projection'); if (projRaw) writes.push(doc('finance/projection', fromVal_({mapValue: {fields: projRaw.fields || {}}})));
+  report.family = {codes: Object.keys(fam).length, active: Object.values(fam).filter(f => f.status === 'active').length, preschool: psCodes.length, clashes, rotaLive: rota.length, events: events.length};
+
   // 3. WRITE to staging (batches of 400)
   Object.keys(mergedInto).forEach(id => writes.push({delete: base(STAGING).replace('https://firestore.googleapis.com/v1/', '') + '/clubs/' + id}));   // staging only: remove accounts folded into another
   for (let i = 0; i < writes.length; i += 400) commit(STAGING, writes.slice(i, i + 400));
@@ -160,6 +181,7 @@ function rehearse(){
   const um = {}; report.unmatched.reservations.forEach(r => { const k = norm(r.club) || '(no name)'; um[k] = um[k] || {names: [], places: 0}; um[k].places += r.places; if (!um[k].names.includes(r.club)) um[k].names.push(r.club); });
   Logger.log('Reservations matched by club name: ' + (report.matchedByName || 0) + ' · still unmatched (places by club): ' + JSON.stringify(um));
   Logger.log('Waiting places with a booking email (join automatically): ' + (report.pendingWithEmail || 0) + ' of ' + report.unmatched.reservations.length);
+  Logger.log('Family codes: ' + JSON.stringify(report.family));
   Logger.log('Admin apps: ' + JSON.stringify(report.apps) + ' · music: ' + JSON.stringify(report.music));
   Logger.log('NGL team: ' + JSON.stringify(report.team));
   Logger.log('Merged accounts: ' + JSON.stringify(report.merged));
@@ -232,6 +254,12 @@ const addYear = v => { const d = toDate(v); d.setFullYear(d.getFullYear() + 1); 
 const round2 = x => Math.round(x * 100) / 100;
 const safeId = s => String(s).replace(/[\/#?\s]/g, '-');
 const mask = e => String(e).replace(/^(.).*(@.*)$/, '$1•••$2');
+// A stable Pre-School code per club: club word + 4 characters from the same alphabet as the other codes (no 0/O/1/I/L)
+const CODE_ABC = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+function psCode(name, id){ const stop = /^(GYMNASTICS?|GYM|CLUB|THE|ACADEMY|LTD|LIMITED|CIC|AND|OF)$/;
+  const word = (String(name || 'CLUB').toUpperCase().replace(/[^A-Z ]/g, ' ').split(/\s+/).filter(w => w && !stop.test(w))[0] || 'CLUB').slice(0, 10);
+  const h = sha256('preschool:' + id); let s = ''; for (let i = 0; i < 4; i++) s += CODE_ABC[parseInt(h.substr(i * 2, 2), 16) % CODE_ABC.length];
+  return word + '-' + s; }
 const sha256 = s => Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, s, Utilities.Charset.UTF_8).map(b => ('0' + (b & 0xff).toString(16)).slice(-2)).join('');
 
 /* Run first: checks the account can read both live projects and write to staging. */

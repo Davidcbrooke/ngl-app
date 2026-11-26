@@ -52,10 +52,14 @@ async function render(){
 
 async function start(){
   if (needGate()) return showGate();                 // phones: download the app first
+  // Parents: ?demo&family shows the family side with sample codes; a parent's own codes open it straight away
+  const fam = await import('./views/family.js');
+  if (MODE === 'demo' && new URLSearchParams(location.search).has('family')) { fam.seedDemo(); return fam.showFamily(); }
   if (MODE === 'firebase') {
     let u = null;
     try { u = await api.user(); } catch (e) { console.error(e); }
     if (!u) { let who = ''; try { who = localStorage.getItem('ngl.who') || ''; } catch (_) {}
+      if (fam.isParent()) return fam.showFamily();
       return who === 'club' ? showAuth() : showWelcome(); }   // first screen: Club or Parent
   }
   const c = await api.club(), lic = await api.licences();

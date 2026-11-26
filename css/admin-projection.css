@@ -1,0 +1,96 @@
+/* NGL Admin · Projected P&L (js/admin/projection.js). App colours from css/app.css; every class starts pj- */
+.pj-root{min-width:0}
+.pj-root .card{margin-bottom:16px;min-width:0}
+.pj-hint{color:var(--muted);font-size:13px;margin:10px 0 0}
+.pj-neg{color:var(--red)!important}
+.pj-h{font-size:24px;margin:4px 0 0}
+.pj-sub{margin:0 0 4px;font-size:13px}
+
+/* scenario bar */
+.pj-bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;padding:12px 16px}
+.pj-bar .field{margin:0}
+.pj-scen{min-width:180px;flex:0 1 240px}.pj-new{flex:1 1 200px;min-width:0}
+.pj-barbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pj-save{font-size:12px;color:var(--muted);min-width:60px}
+.pj-live{margin-left:auto}
+
+/* headline figures */
+.pj-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:12px;margin:12px 0 16px}
+.pj-cards .pj-card{margin:0;padding:12px 16px}
+.pj-cards .pj-card b{font-size:26px;line-height:1.1}
+
+/* card heads with buttons */
+.pj-ph{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.pj-ph h2{margin:0 auto 0 0}
+
+/* chart: scrolls inside its card on a phone so the labels stay readable */
+.pj-chartwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pj-chart svg{display:block;width:100%;height:auto;min-width:640px}
+.pj-legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.pj-legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.pj-legend i.ln{height:3px;vertical-align:3px}
+.pj-capnote{margin:10px 4px 0;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.pj-capnote .pj-ghost{color:#8a87a8}
+.pj-capnote.warn{color:var(--warn);font-weight:600}
+.pj-capnote:empty{display:none}
+
+/* tables stay real tables (app.css stacks tables on a phone) and scroll inside their card */
+.pj-root table,.pj-root thead,.pj-root tbody,.pj-root tr,.pj-root td,.pj-root th{display:revert}
+.pj-root table tr:first-child:has(th){display:table-row}
+.pj-wrap,.pj-yrs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pj-pl{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+.pj-root .pj-pl th,.pj-root .pj-pl td{padding:5px 8px;text-align:right;white-space:nowrap;border-top:0;border-bottom:1px solid #eeedf5}
+.pj-root .pj-pl th:first-child,.pj-root .pj-pl td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1;min-width:250px}
+.pj-pl thead th{background:var(--navy);color:#fff;position:sticky;top:0;font-size:13px;text-transform:none;letter-spacing:0}
+.pj-root .pj-pl thead th:first-child{background:var(--navy)}
+.pj-root .pj-pl td.tot,.pj-root .pj-pl th.tot{background:var(--wash);font-weight:700}
+.pj-pl thead th.tot{background:#3a3375;color:#fff}
+.pj-root .pj-pl tr.band td,.pj-root .pj-pl tr.band td:first-child{font:800 13px var(--cond);letter-spacing:.05em;color:#fff;background:var(--c);padding:7px 8px}
+.pj-root .pj-pl tr.band.dark td{color:var(--navy)}
+.pj-pl tr.b td{font-weight:700}
+.pj-root .pj-pl tr.hd td:first-child{padding-top:12px}
+.pj-pl tr.t td{border-top:1px solid #9a97b8}
+.pj-root .pj-pl tr.net td,.pj-root .pj-pl tr.net td:first-child{font:900 16px var(--cond);color:var(--navy);border-top:2px solid var(--navy);background:#f0eff8}
+.pj-pl tr.i td{color:var(--muted)}
+.pj-root .pj-pl td.neg{color:var(--red)}
+.pj-root .pj-pl tr.sub td:first-child{padding-left:22px}
+
+/* variables */
+.pj-vars[hidden]{display:none}
+.pj-vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr));gap:14px}
+.pj-vgrid.in{gap:0 14px}
+.pj-vbox{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:14px;min-width:0}
+.pj-vgrid .pj-vbox{margin-top:0}
+.pj-vbox h3{margin:0 0 8px;font:800 15px var(--cond);text-transform:uppercase;letter-spacing:.04em;color:var(--navy)}
+.pj-vrow{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:8px;align-items:center;margin-bottom:6px;font-size:14px}
+.pj-vrow small,.pj-vt td.lab small{display:block;color:var(--muted);font-size:12px;line-height:1.25}
+.pj-num{width:100%;text-align:right;padding:6px 8px;border:1.5px solid #e6d27a;border-radius:10px;background:#fff8d6;font:inherit;color:var(--ink)}
+.pj-num:focus{outline:none;border-color:var(--navy);background:#fff}
+.pj-unit{position:relative;display:block}
+.pj-unit>span{position:absolute;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);pointer-events:none}
+.pj-unit.pre>span{left:8px}.pj-unit.pre input{padding-left:20px}
+.pj-unit.suf>span{right:8px}.pj-unit.suf input{padding-right:24px}
+.pj-vt{border-collapse:collapse;width:100%;font-size:14px}
+.pj-root .pj-vt th,.pj-root .pj-vt td{padding:4px 6px;border-top:0;border-bottom:1px solid #eeedf5;text-align:right}
+.pj-root .pj-vt th:first-child,.pj-root .pj-vt td:first-child{text-align:left}
+.pj-vt td.lab{min-width:230px}
+.pj-vt .pj-num{min-width:76px}
+.pj-yrs .pj-vt .pj-num{min-width:84px}
+.pj-yrs .pj-vt .pj-unit.pre .pj-num{min-width:104px}
+.pj-vt th{text-transform:none;letter-spacing:0}
+.pj-vt th.p{color:#fff;border-radius:6px 6px 0 0;text-align:center}
+.pj-vt th.p.dark{color:var(--navy)}
+.pj-role{width:100%;padding:6px 8px;border:1.5px solid var(--line);border-radius:10px;font:inherit}
+.pj-role:focus{outline:none;border-color:var(--navy)}
+.pj-x{padding:4px 10px}
+.pj-addrole{margin-top:8px;align-items:center}
+
+@media(max-width:860px){
+  .pj-live{margin-left:0}
+  .pj-cards{grid-template-columns:1fr 1fr}
+  .pj-cards .pj-card b{font-size:22px}
+  .pj-root .pj-pl th:first-child,.pj-root .pj-pl td:first-child{min-width:150px;max-width:170px;white-space:normal}
+  .pj-pl{font-size:13px}
+  .pj-vt td.lab{min-width:170px}
+  .pj-vrow{grid-template-columns:minmax(0,1fr) 110px}
+}

@@ -109,11 +109,15 @@ service cloud.firestore {
     match /ngl_power_league/{id} { allow read: if true; allow write: if canAny(['powerleague']); }
     match /ngl_power_league_private/{id} { allow read: if canAny(['powerleague', 'gl-hub', 'results']); allow write: if canAny(['powerleague']); }
     // NGL P&L: assumptions (settings) and typed actual costs / income targets (actuals)
-    match /finance/{id} { allow read, write: if canAny(['finance']); }
+    match /finance/{id} { allow read, write: if canAny(['finance']) || (id == 'projection' && canAny(['projection'])); }
     // Group purchasing: club orders each quarter (admin invoices, marks paid, sends to the printer); round totals for the public board.
     // Clubs place orders from the live Club Hub until the Shop version is built here.
     match /ngl_groupbuy_orders/{id} { allow read, update: if canAny(['groupbuy', 'finance']); allow delete: if isAdmin(); }
     match /ngl_groupbuy_rounds/{id} { allow read: if true; allow write: if isAdmin(); }
+    // Parents (not signed in): look up ONE family code at a time (never list them), the club's live timetable, Graduations
+    match /familyCodes/{code} { allow get: if true; allow list: if isAdmin(); allow write: if isAdmin() || clubsTeam(); }
+    match /rotaLive/{clubId} { allow read: if true; allow write: if own(clubId) || isAdmin(); }
+    match /familyEvents/{id} { allow read: if true; allow write: if isAdmin() || clubsTeam(); }
     // Judging admin: notifications to judges, and the resources library
     match /ngl_judge_notifications/{id} { allow read, write: if canAny(['judging']); }
     match /ngl_resources/{id} { allow read, write: if canAny(['judging']); }
@@ -126,7 +130,8 @@ service cloud.firestore {
     // The full Recreational programme: clubs with a live Recreational licence, and NGL owners
     function recLicensed() { return signedIn() && get(/databases/$(database)/documents/clubs/$(request.auth.uid)).data.licences.recreational.status == 'live'; }
     match /recContent/{id} { allow read: if isAdmin() || recLicensed(); allow write: if isAdmin(); }
-    match /recShared/{key}/docs/{id} { allow read: if isAdmin() || recLicensed(); allow write: if isAdmin(); }
+    // The content itself is readable by anyone who knows its key (the key is the secret, as on the live site): parents get it from their code
+    match /recShared/{key}/docs/{id} { allow read: if true; allow write: if isAdmin(); }
     // Data move report (rehearsal and switch-over): NGL owners only
     match /migration/{id} { allow read: if isAdmin(); allow write: if false; }
 
