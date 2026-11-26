@@ -10,6 +10,7 @@ export const APPS = [
  {
   "group": "office",
   "id": "email",
+  "to": "#/admin/email",
   "name": "Email assistant",
   "desc": "Replies Claude has drafted for admin@: check, edit and send them. Nothing goes until you press Send",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/NGL_Email_Assistant.html",
@@ -130,6 +131,7 @@ export const APPS = [
  {
   "group": "money",
   "id": "groupbuy",
+  "to": "#/admin/groupbuy",
   "name": "Group purchasing",
   "desc": "Quarterly club orders: staff t-shirts and merchandise, supplier totals and delivery addresses",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/ngl-group-order.html?admin=1",

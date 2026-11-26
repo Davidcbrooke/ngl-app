@@ -110,6 +110,10 @@ service cloud.firestore {
     match /ngl_power_league_private/{id} { allow read: if canAny(['powerleague', 'gl-hub', 'results']); allow write: if canAny(['powerleague']); }
     // NGL P&L: assumptions (settings) and typed actual costs / income targets (actuals)
     match /finance/{id} { allow read, write: if canAny(['finance']); }
+    // Group purchasing: club orders each quarter (admin invoices, marks paid, sends to the printer); round totals for the public board.
+    // Clubs place orders from the live Club Hub until the Shop version is built here.
+    match /ngl_groupbuy_orders/{id} { allow read, update: if canAny(['groupbuy', 'finance']); allow delete: if isAdmin(); }
+    match /ngl_groupbuy_rounds/{id} { allow read: if true; allow write: if isAdmin(); }
     // Judging admin: notifications to judges, and the resources library
     match /ngl_judge_notifications/{id} { allow read, write: if canAny(['judging']); }
     match /ngl_resources/{id} { allow read, write: if canAny(['judging']); }

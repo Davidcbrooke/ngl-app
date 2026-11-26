@@ -24,6 +24,11 @@ service firebase.storage {
                             && ((signedIn() && request.auth.uid == folder) || isAdmin() || team(['music', 'musicplayer']));
       allow delete: if isAdmin() || team(['music', 'musicplayer']);
     }
+    // Group purchasing logos (clubs upload from the live Club Hub for now); the Group purchasing team reads them
+    match /groupbuy/{round}/{order}/{file} {
+      allow read: if isAdmin() || team(['groupbuy', 'finance']);
+      allow write: if false;
+    }
     match /resources/{file} {
       allow read: if signedIn();
       allow write: if isAdmin() || team(['judging']);

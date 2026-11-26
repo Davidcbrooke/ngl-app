@@ -132,7 +132,7 @@ function rehearse(){
     else if (id.indexOf('plan__') === 0) writes.push(doc('compPlans/' + id.slice(6), s.data));
     else writes.push(doc('staffing/' + id, s.data)); });   // Staffing: same doc id (= competition id), same document
   // Judging Pathway lists Staffing reads: same names and doc ids (pw:<assignmentId> links and signupId depend on them)
-  const judging = {}; ['ngl_judge_signups', 'ngl_judging_assignments', 'ngl_judges', 'ngl_judge_notifications', 'ngl_resources', 'ngl_power_league', 'ngl_power_league_private'].forEach(c => { const list = listAll(BOOK, c); judging[c] = list.length; list.forEach(x => writes.push(doc(c + '/' + x.id, x.data))); });
+  const judging = {}; ['ngl_judge_signups', 'ngl_judging_assignments', 'ngl_judges', 'ngl_judge_notifications', 'ngl_resources', 'ngl_power_league', 'ngl_power_league_private', 'ngl_groupbuy_orders', 'ngl_groupbuy_rounds'].forEach(c => { const list = listAll(BOOK, c); judging[c] = list.length; list.forEach(x => writes.push(doc(c + '/' + x.id, x.data))); });
   report.apps = {justgoEvents: jg ? Object.keys(jg.events || {}).length : 0, plans: staffDocs.filter(s => s.id.indexOf('plan__') === 0).length, staffing: staffDocs.filter(s => s.id.indexOf('plan__') !== 0 && s.id !== 'summary__planning').length, judging};
 
   // Floor music: musicEvents (running order, absences, intros, announcements) and _builtin, same ids, from the live Club Hub project

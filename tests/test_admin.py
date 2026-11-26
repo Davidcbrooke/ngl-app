@@ -39,9 +39,9 @@ def test_admin_has_every_app(page):
     page.go("#/admin", demo=True)
     page.p.wait_for_selector(".appt", timeout=15000)
     assert page.p.locator(".appt").count() == 20          # the 19 original Admin Hub apps + Orders
-    page.p.click("text=Email assistant")
+    page.p.click("text=Projected P&L")
     page.p.wait_for_selector("iframe.appframe", timeout=15000)
-    assert "NGL_Email_Assistant.html" in page.p.get_attribute("iframe.appframe", "src")
+    assert "NGL_Projection.html" in page.p.get_attribute("iframe.appframe", "src")
 
 
 def test_admin_team_grid(page):

@@ -1,0 +1,85 @@
+/* NGL Admin · Group purchasing (js/admin/groupbuy.js). App colours from css/app.css; every class starts gb- */
+.gb-root{--gb-gold:#F8D438;--gb-tint:#fafafd}
+.gb-root h3{font:800 16px var(--cond);text-transform:uppercase;color:var(--navy);margin:8px 0}
+.gb-h4{font:700 15px var(--body);color:var(--navy);margin:12px 0 6px}
+.gb-hint{font-size:13px;color:var(--muted);margin:4px 0 0}
+.gb-err{color:var(--red);font-weight:600;font-size:14px;margin:10px 0}
+.gb-sandbox{margin-bottom:14px;font-size:14px}
+
+/* hero */
+.gb-hero{margin:0 0 16px}
+.gb-kick{display:inline-block;font:800 12px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:4px}
+.gb-hero h2{font:900 26px/1.1 var(--cond);margin:0}
+.gb-hero p{margin:6px 0 0;color:var(--muted);max-width:68ch}
+
+/* countdown */
+.gb-countdown{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;background:var(--red);color:#fff;border-radius:16px;padding:16px 20px;margin-bottom:14px}
+.gb-cdl{display:flex;flex-direction:column;gap:2px}
+.gb-cdl .k{font:800 13px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#ffe1e5}
+.gb-cdl .d{font:700 20px var(--cond)}
+.gb-cdt{display:flex;gap:8px}
+.gb-cdt div{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:12px;min-width:74px;padding:6px 8px;text-align:center}
+.gb-cdt b{display:block;font:900 40px/1 var(--cond);font-variant-numeric:tabular-nums}
+.gb-cdt span{font:700 11px var(--body);letter-spacing:.1em;text-transform:uppercase;color:#ffe1e5}
+.gb-cdt.urgent div{background:#fff;color:var(--red)}.gb-cdt.urgent span{color:var(--red)}
+@media(max-width:520px){.gb-cdt{width:100%}.gb-cdt div{min-width:0;flex:1}.gb-cdt b{font-size:30px}}
+
+/* live board */
+.gb-board{background:linear-gradient(160deg,var(--navy),var(--navy3));color:#fff;border-radius:16px;padding:18px;margin-bottom:16px}
+.gb-bhead{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.gb-live{display:inline-flex;align-items:center;gap:8px;font:800 12px var(--body);letter-spacing:.14em;text-transform:uppercase}
+.gb-live i{width:10px;height:10px;border-radius:50%;background:#3BAA4A;box-shadow:0 0 0 0 rgba(59,170,74,.6);animation:gbpulse 1.8s infinite}
+@keyframes gbpulse{70%{box-shadow:0 0 0 10px rgba(59,170,74,0)}100%{box-shadow:0 0 0 0 rgba(59,170,74,0)}}
+@media(prefers-reduced-motion:reduce){.gb-live i{animation:none}}
+.gb-closes{font-size:14px;color:#d9dcf0}.gb-closes b{color:#fff}
+.gb-brow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.gb-minline + .gb-brow{margin-top:14px;padding-top:16px;border-top:1px solid rgba(255,255,255,.14)}
+@media(max-width:820px){.gb-brow{grid-template-columns:1fr 1fr}}
+.gb-tile{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px 14px;min-width:0}
+.gb-tile .l{font:700 11px var(--body);letter-spacing:.12em;text-transform:uppercase;color:#c9cbee}
+.gb-tile .v{font:900 30px/1.1 var(--cond);margin-top:4px;overflow-wrap:anywhere}
+.gb-tile .s{font-size:13px;color:#d9dcf0;margin-top:2px}
+.gb-tile.now{background:var(--red);border-color:var(--red)}.gb-tile.now .l,.gb-tile.now .s{color:#ffe1e5}
+.gb-tile.next .v{color:var(--gb-gold)}
+.gb-prog{margin-top:16px}
+.gb-pbar{position:relative;height:14px;border-radius:99px;background:rgba(255,255,255,.14)}
+.gb-pbar .fill{position:absolute;inset:0 auto 0 0;border-radius:99px;background:linear-gradient(90deg,var(--perf),#3BAA4A);transition:width .2s}
+.gb-ticks{position:relative;height:44px;margin:4px 24px 0 0}
+.gb-tick{position:absolute;top:0;transform:translateX(-50%);text-align:center;font-size:11.5px;color:#c9cbee;white-space:nowrap}
+.gb-tick::before{content:"";display:block;width:2px;height:8px;background:rgba(255,255,255,.35);margin:0 auto 2px}
+.gb-tick.hit{color:#fff;font-weight:700}.gb-tick.hit::before{background:#3BAA4A}
+.gb-tick b{display:block;color:inherit}
+.gb-minline{margin:-4px 0 6px;font-size:14px;color:#ffd9df}.gb-minline b{color:#fff}.gb-minline.ok{color:#9be3a8}
+.gb-bnote{font-size:13px;color:#c9cbee;margin:4px 0 0}
+.gb-berr{font-size:13px;color:#ffd6dc;margin:8px 0 0}
+
+/* admin */
+.gb-admin h2{margin-bottom:2px}
+.gb-tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+.gb-roundpick{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--muted)}
+.gb-roundpick select{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;color:var(--ink);background:#fff;max-width:100%}
+.gb-close{border:1.5px solid var(--red);border-radius:16px;padding:16px;margin:6px 0 18px}
+.gb-close h3{margin-top:0}
+.gb-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 12px}
+@media(max-width:820px){.gb-steps{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.gb-steps{grid-template-columns:1fr}}
+.gb-steps>div{background:var(--wash);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;min-width:0}
+.gb-steps>div>span{color:var(--muted)}.gb-steps b{color:var(--navy)}.gb-steps .btn{align-self:flex-start;margin-top:auto}
+.gb-p.ok{color:var(--ok)}.gb-p.no{color:var(--red)}
+.gb-st{display:inline-block;border-radius:99px;padding:3px 10px;font-size:12.5px;font-weight:700;background:var(--wash);color:var(--navy);white-space:nowrap}
+.gb-st.invoiced{background:#fff3e0;color:var(--warn)}.gb-st.paid{background:#e1f2e7;color:#145f34}.gb-st.sent{background:var(--navy);color:#fff}.gb-st.late{background:var(--red);color:#fff}
+.gb-act{white-space:nowrap}.gb-act .btn{margin:2px 4px 2px 0}
+.gb-msg{min-height:1.4em;margin-top:10px}
+.gb-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.gb-t td{vertical-align:top}
+.gb-t td.n,.gb-t th.n{text-align:right;font-variant-numeric:tabular-nums}
+.gb-t thead th{background:var(--gb-tint)}
+.gb-t .gb-all td{background:var(--gb-tint)}
+.gb-dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid #c9cedb;vertical-align:-1px;margin-right:6px}
+.gb-ftr{text-align:center;color:var(--muted);font-size:13px;margin-top:24px}
+@media(max-width:860px){.gb-board{padding:14px}.gb-close{padding:12px}.gb-tile .v{font-size:24px}}
+.gb-t td.n small{white-space:nowrap}
+/* Supplier totals stay a grid on a phone (scroll sideways inside the card), like the invoice table */
+@media(max-width:860px){.gb-t[data-totals],.gb-t[data-totals] thead,.gb-t[data-totals] tbody,.gb-t[data-totals] tr,.gb-t[data-totals] td,.gb-t[data-totals] th{display:revert}
+  .gb-t[data-totals] thead{display:table-header-group}.gb-t[data-totals] td,.gb-t[data-totals] th{padding:6px 7px}}
+.gb-t[data-totals] td:first-child{white-space:nowrap}

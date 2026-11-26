@@ -1,0 +1,42 @@
+/* NGL Admin · Email assistant (js/admin/email.js). App colours from css/app.css; every class starts em- */
+.em-root{--em-dave-soft:#fdecef;--em-dave-line:#f2b8c2;--em-claude-soft:#fff7e0;--em-claude-line:#f3d98b;--em-claude-ink:#7a5a07;--em-paper:#f7f8fb;max-width:900px}
+.em-head{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.em-head .lead{flex:1;min-width:0;margin-bottom:14px}
+.em-sandbox{border-left:6px solid var(--warn);background:#fff8ec;margin-bottom:14px;font-size:14px}
+.em-sandbox b{color:var(--warn)}
+.em-sandbox a{display:inline-block;margin-top:6px;font-weight:700;text-decoration:none}
+
+/* totals */
+.em-tots{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.em-tot{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:14px;padding:10px 16px}
+.em-tot b{display:block;font:900 30px/1 var(--cond);color:var(--c)}
+.em-tot span{font-size:13px;color:var(--muted)}
+.em-msg{color:var(--muted)}
+.em-msg.err{border-color:var(--em-dave-line);background:var(--em-dave-soft);color:#8a1022}
+
+/* one email */
+.em-card{border-left:7px solid var(--c,var(--gen));margin-bottom:12px;padding:16px 18px}
+.em-card.dave{--c:var(--red)}
+.em-top{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.em-who{margin-right:auto;min-width:0;overflow-wrap:anywhere}
+.em-who b{font-size:16px}
+.em-who small{display:block;color:var(--muted);font-size:12.5px}
+.em-who small.em-addr{display:inline}
+.em-sub{font-weight:700;color:var(--navy);margin-top:1px}
+.em-tag{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--c,var(--gen));border-radius:99px;padding:3px 10px;white-space:nowrap}
+.em-note{margin:10px 0 0;background:var(--em-claude-soft);border:1px solid var(--em-claude-line);border-radius:10px;padding:8px 12px;font-size:14px}
+.em-note b{color:var(--em-claude-ink)}
+.em-note.dave{background:var(--em-dave-soft);border-color:var(--em-dave-line)}.em-note.dave b{color:var(--red)}
+.em-det{margin-top:10px;font-size:14px}
+.em-det summary{cursor:pointer;color:var(--gen);font-weight:700}
+.em-orig{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--em-paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:6px;max-height:340px;overflow:auto;font-size:13.5px}
+.em-earlier{margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+.em-eh{font-size:12.5px;color:var(--muted);margin:6px 0 2px}
+.em-att{font-size:12.5px;color:var(--muted);margin-top:4px}
+.em-rl{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 4px}
+.em-reply{display:block;width:100%;min-height:170px;font:15px/1.5 var(--body);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical}
+.em-reply:focus{outline:none;border-color:var(--navy)}
+.em-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.em-acts a{margin-left:auto;font-size:13.5px;font-weight:700;text-decoration:none}
+.btn.em-send.sure{background:#7d0b1c;box-shadow:0 0 0 3px #f5c5cd}
+@media(max-width:600px){.em-acts a{margin-left:0;width:100%}.em-acts .btn{flex:1;justify-content:center;padding:9px 10px;text-align:center;line-height:1.2}}
