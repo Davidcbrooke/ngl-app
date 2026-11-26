@@ -78,6 +78,7 @@ def test_data_quality_and_apply_fix(page):
     assert "Saved" in page.toast()
     flag = page.p.locator("#rsRoot .rs-flag[data-id='9100102']")
     flag.wait_for(timeout=10000)
+    page.p.wait_for_function("document.querySelectorAll(\"#rsRoot .rs-flag[data-id='9100102'] .rs-value.conflict\").length === 1", timeout=10000)
     assert flag.locator(".rs-value.conflict").count() == 1   # the chosen value is no longer marked as a conflict
     # All Fields shows the gender clash too
     page.p.select_option("#rsDqFilter", "all")
