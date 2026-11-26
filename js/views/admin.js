@@ -2,6 +2,7 @@
 // calendar and reservations, and floor music entries. Shown only to verified NGL admins.
 import adm, { nameKey } from '../admin-data.js';
 import { GROUPS, APPS, SCREENS, can, canApp } from '../admin-apps.js';
+import { APPACTS } from '../admin-registry.js';
 import { PATHWAYS } from '../config.js';
 import { esc, gbp, date, dot, pill, tabs, head, path } from '../ui.js';
 
@@ -11,12 +12,14 @@ const NO_ACCESS = '<div class="card empty">You don’t have access to this area.
 const on = L => L && ['live', 'waived'].includes(L.status);
 const statusPill = o => o.status === 'sent' ? pill('Posted', 'ok') : o.status === 'paid' ? pill('Paid · to post', 'warn') : pill('Not paid', 'red');
 
-export default async function admin([sub = '', id], ctx = {}){
+export default async function admin(parts = [], ctx = {}){
+  const [sub = '', id] = parts;
   const me = ctx.admin;
   if (!me) return head('NGL Admin') + (ctx.needsVerify && ctx.staffOnly   // an invited NGL team login that hasn't confirmed its email yet
     ? `<div class="card attn"><div class="row" style="border:0"><div class="grow"><b>Confirm your email to open NGL Admin</b><small>We’ll email you a link. Click it, then log out and in again.</small></div><button class="btn sm" data-act="verify">Send link</button></div></div>`
     : `<div class="card empty">This area is for NGL admins only.</div>`);
   if (sub === 'app') return appFrame(id, me);
+  if (MODS[sub] !== undefined) return appModule(sub, me, parts.slice(1));
   const known = SUB.some(s => s[0] === sub) ? sub : '';
   const body = !allowed(me, known) ? NO_ACCESS : known === '' ? await overview(me) : await ({clubs, orders, competitions, music, team}[known])(id);
   return head('NGL Admin', me.owner ? 'Run the league: every NGL admin app in one place.' : `Hello${me.name ? ' ' + esc(me.name) : ''}. These are the apps Dave has given you.`)
@@ -30,6 +33,19 @@ function board(me){
       <span class="ic" style="background:${a.colour || g.colour}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${a.icon}</svg></span>
       <span class="grow"><b>${esc(a.name)}</b><small>${esc(a.desc)}</small>${a.to ? '' : '<em class="livetag">Live tool</em>'}</span></a>`).join('')}</div></section>`; }).join('')
     || '<div class="card empty">No apps ticked for you yet. Ask Dave to give you access in NGL Admin → Team.</div>';
+}
+
+// Rebuilt admin apps, each in its own file (js/admin/<id>.js), loaded the first time it's opened. true = has its own stylesheet.
+const MODS = {sales: false, planning: true, staffing: true};
+async function appModule(sub, me, rest){
+  const a = APPS.find(x => x.id === sub);
+  if (!canApp(me, a)) return head('NGL Admin') + NO_ACCESS;
+  if (MODS[sub] && !document.querySelector(`link[data-admin-css="${sub}"]`)) {
+    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = `css/admin-${sub}.css`; l.dataset.adminCss = sub; document.head.appendChild(l); }
+  const bar = `<div class="appbar"><a class="btn sm ghost" href="#/admin">← All apps</a><h1 style="margin:0;font-size:22px" class="grow">NGL Admin · ${esc(a.name)}</h1></div>`;
+  let mod; try { mod = await import(`../admin/${sub}.js`); } catch (e) { console.error(e); return bar + '<div class="card empty">This app couldn’t load. Please refresh the page.</div>'; }
+  for (const [k, v] of Object.entries(mod)) if (k !== 'default' && v && typeof v === 'object' && !Array.isArray(v)) Object.assign(APPACTS, v);
+  return bar + await mod.default(me, rest);
 }
 
 // An existing tool, opened inside the app (same as the original Admin Hub viewer)

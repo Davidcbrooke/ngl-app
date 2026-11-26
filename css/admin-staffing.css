@@ -1,0 +1,143 @@
+/* NGL Admin · Staffing (js/admin/staffing.js). Same layout as NGL_Staffing_Admin.html in the app's look.
+   Navy = NGL role, gold = host club role; red = vacant, amber = awaiting confirmation, green = confirmed or not needed. */
+.stf{--gold:#d9a521;--gold-soft:#fbf1d6;--gold-ink:#7a5a07;--ok-soft:#e1f2e7;--ok-ink:#145f34;--red-soft:#fbe7ea}
+.stf h2{margin:0}
+.stf-status{display:flex;gap:10px;align-items:center;margin:0 0 12px;font-size:12px;color:var(--muted)}
+.stf-loaderr{background:var(--red-soft);border:1px solid var(--red);color:#7a121b;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px}
+.stf-pwissues{background:#fdf3d8;border:1px solid var(--gold);color:#5c4510;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px}
+.stf-hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.stf .btn.stf-danger{color:var(--red);border-color:var(--red)}
+.btn.stf-danger{color:var(--red);border:1.5px solid var(--red);background:#fff}
+.btn.stf-green{background:var(--ok-ink,#145f34);color:#fff}
+
+/* flags (overview counts and key) */
+.stf .flag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.stf .flag.red{background:var(--red-soft);color:var(--red)}
+.stf .flag.amber{background:var(--gold-soft);color:var(--gold-ink)}
+.stf .flag.green{background:var(--ok-soft);color:var(--ok-ink)}
+.stf .fl{width:12px;height:12px;border-radius:3px;flex:none;display:inline-block}
+.stf .fl.red{background:var(--red)}.stf .fl.amber{background:var(--gold)}.stf .fl.green{background:var(--ok)}
+
+/* overview */
+.stf-ovhead{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px}
+.stf-ovhead h2{margin-right:auto;font-size:22px}
+.stf-key{display:flex;gap:14px;font-size:13px;color:var(--muted);flex-wrap:wrap;margin-bottom:14px}
+.stf-key span{display:inline-flex;align-items:center;gap:6px}
+.stf .ov-comp{background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:16px;overflow:hidden}
+.stf .ov-comp>header{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);background:#fafafd}
+.stf .ov-comp h3{font:800 19px var(--cond);text-transform:uppercase;margin:0;color:var(--navy);line-height:1.1}
+.stf .ov-comp .when{font-size:13px;color:var(--muted)}
+.stf .ov-comp .counts{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.stf .ov-comp.all-clear>header{border-left:6px solid var(--ok)}
+.stf .ov-comp.gaps>header{border-left:6px solid var(--red)}
+.stf .ov-body{padding:4px 16px 14px}
+.stf .ov-group{margin-top:10px}
+.stf .ov-group h4{font:800 15px var(--cond);text-transform:uppercase;color:var(--navy);margin:0 0 2px;display:flex;align-items:baseline;gap:8px;border-bottom:2px solid var(--line);padding-bottom:3px}
+.stf .ov-group h4 small{font:600 12.5px var(--body);text-transform:none;color:var(--muted)}
+.stf .ov-group h4 small.gap{color:var(--red)}
+.stf .ov-roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:0 18px}
+.stf .ov-add{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.stf .ov-row{display:flex;align-items:center;gap:10px;padding:7px 4px;border:0;border-bottom:1px solid #eeeef5;background:none;text-align:left;width:100%;font-size:14px;color:var(--ink);min-height:44px}
+.stf .ov-row:hover{background:var(--wash)}
+.stf .ov-row .r{color:var(--muted);font-size:12.5px;display:block;line-height:1.2}
+.stf .ov-row .n{font-weight:700;display:block;line-height:1.25}
+.stf .ov-row.vac .n{color:var(--red)}
+.stf .ov-row.na .n{color:var(--ok-ink);font-weight:500;font-style:italic}
+.stf .ov-row .o{margin-left:auto;font-size:11px;font-weight:700;color:var(--navy);background:#e6e5f2;border-radius:4px;padding:0 6px}
+.stf .ov-row .o.h{background:var(--gold-soft);color:var(--gold-ink)}
+.stf .ov-empty{padding:12px 0;color:var(--ok-ink);font-weight:700;font-size:14px}
+
+/* competition strip */
+.stf-back{margin-bottom:12px}
+.stf .comp-strip{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;margin-bottom:14px}
+.stf .comp-strip h2{font:900 26px/1.05 var(--cond);text-transform:uppercase;color:var(--navy)}
+.stf .comp-strip .meta{color:var(--muted);font-size:14px}
+.stf .tally{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap}
+.stf .tally div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px 12px;min-width:110px}
+.stf .tally b{font:900 22px var(--cond);display:block;line-height:1.1;color:var(--navy)}
+.stf .tally span{font-size:12px;color:var(--muted)}
+.stf .tally .ngl{border-left:5px solid var(--navy)}.stf .tally .host{border-left:5px solid var(--gold)}.stf .tally .req{border-left:5px solid var(--red)}
+.stf .sub a{display:inline-flex;align-items:center;gap:4px}
+.stf-badge{display:inline-block;background:var(--red);color:#fff;border-radius:99px;font-size:11px;font-weight:700;padding:1px 7px}
+
+/* toolbar and export menu */
+.stf-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.stf-toolbar .spacer{flex:1}
+.stf-menu{position:relative}
+.stf-menu-list{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(6,10,40,.15);min-width:230px;z-index:30;padding:4px}
+.stf-menu-list button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 12px;border-radius:8px;color:var(--ink);font-weight:600}
+.stf-menu-list button:hover{background:var(--wash)}
+.stf-menu-list small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+
+/* board */
+.stf .group{margin-bottom:22px}
+.stf .group h3{font:800 17px var(--cond);text-transform:uppercase;color:var(--navy);margin:0 0 8px}
+.stf .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.stf .stations{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.stf .station{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.stf .station header{background:var(--navy);color:#fff;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.stf .station header strong{font:800 17px var(--cond);text-transform:uppercase;letter-spacing:.3px}
+.stf .station header span{margin-left:auto;font-size:12px;opacity:.85}
+.stf .station .list{padding:8px;display:grid;gap:6px}
+.stf .station .addj{background:none;border:1px dashed var(--line);border-radius:8px;padding:8px;color:var(--muted);font-size:13px;min-height:38px}
+.stf .slot{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-left:6px solid var(--navy);border-radius:8px;padding:8px 10px;color:var(--ink)}
+.stf .slot:hover{border-color:#cfcde3;border-left-color:var(--navy)}
+.stf .slot.owner-Host,.stf .slot.owner-Host:hover{border-left-color:var(--gold)}
+.stf .slot.st-vacant{border-style:dashed;border-left-style:solid;background:#fafafd}
+.stf .slot .role{font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.stf .slot .who{display:block;font-weight:700;font-size:15px;margin-top:1px}
+.stf .slot.st-vacant .who{color:var(--red)}
+.stf .slot .ssub{display:block;font-size:12.5px;color:var(--muted)}
+.stf .own{font-size:11px;font-weight:700;padding:0 6px;border-radius:4px;background:#e6e5f2;color:var(--navy)}
+.stf .owner-Host .own{background:var(--gold-soft);color:var(--gold-ink)}
+.stf .sdot{width:12px;height:12px;border-radius:3px;display:inline-block;margin-left:auto;flex:none}
+.stf .st-vacant .sdot{background:var(--red)}.stf .st-pending .sdot{background:var(--gold)}
+.stf .st-confirmed .sdot,.stf .st-na .sdot{background:var(--ok)}
+.stf .slot.st-na{background:#f3faf6}
+.stf .slot.st-na .who{color:var(--ok-ink);font-weight:500;font-style:italic}
+.stf .src{font-size:11px;color:var(--red);font-weight:700}
+
+/* judge requests */
+.stf .req-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:10px;display:grid;gap:6px}
+.stf .req-card .rtop{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.stf .req-card .name{font-weight:700;font-size:16px}
+.stf .req-card .tier{font-size:12px;background:#e6e5f2;color:var(--navy);padding:1px 7px;border-radius:4px;font-weight:700}
+.stf .req-card .rpill{margin-left:auto}
+.stf .req-card .rsub{color:var(--muted);font-size:13px}
+.stf .req-card .apps{display:flex;gap:4px;flex-wrap:wrap}
+.stf .req-card .apps span{font-size:12px;border:1px solid var(--line);border-radius:4px;padding:0 6px}
+.stf .req-card .assigned{font-size:13px;color:var(--ok-ink);font-weight:700}
+.stf .req-card .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+
+/* set-up */
+.stf .panel{max-width:640px;margin-bottom:14px}
+.stf .panel h3{font:800 17px var(--cond);text-transform:uppercase;margin:0 0 6px;color:var(--navy)}
+.stf .panel p{margin:0 0 12px;color:var(--muted);font-size:14px}
+.stf .two,.stf-dlg .two{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.stf .two .field,.stf-dlg .two .field{margin:8px 0}
+
+/* dialogs */
+.stf-modal .modal{width:min(560px,100%)}
+.stf-dlg .field{margin:10px 0}
+.stf-dlg textarea{min-height:70px;resize:vertical}
+.stf-dlg-foot{display:flex;gap:8px;flex-wrap:wrap;padding-top:14px;margin-top:8px;border-top:1px solid var(--line)}
+.stf-dlg-foot .left{margin-right:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+@media(max-width:860px){
+  .stf .tally{margin-left:0}
+  .stf .two,.stf-dlg .two{grid-template-columns:1fr}
+  .stf .ov-comp .counts{margin-left:0}
+  .stf-dlg-foot .left{margin-right:0;width:100%}
+}
+
+/* print: the A4 sign-in sheet (inside the app's shared #printArea) */
+.stf-print{font:11px/1.35 var(--body);color:#000;background:#fff}
+.stf-print h1{font:900 22px var(--cond);text-transform:none;margin:0;color:#000}
+.stf-print .pmeta{margin:2px 0 10px}
+.stf-print table,.stf-print thead,.stf-print tbody,.stf-print tr,.stf-print th,.stf-print td{display:revert}
+.stf-print table{width:100%;border-collapse:collapse;font-size:11px}
+.stf-print th,.stf-print td{border:1px solid #888;padding:4px 6px;text-align:left;vertical-align:top;text-transform:none;letter-spacing:0;font-size:11px;color:#000}
+.stf-print th{background:#28225c;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.stf-print tr.grp td{background:#e6e5f2;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.stf-print .sig{width:90px}
+@media print{body.printing:has(.stf-print){background:#fff}}

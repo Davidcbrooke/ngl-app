@@ -254,3 +254,18 @@ a.card:hover{border-color:#cfcde3}.nav a{color:#dcdcf2}.nav a.on{color:var(--nav
 .teamt th.c{height:150px;white-space:nowrap;font-size:12px;font-weight:600;color:var(--muted)}.teamt th.c span{display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg)}
 .teamt td.c{text-align:center;vertical-align:middle}.teamt td.who{min-width:200px;vertical-align:middle}.teamt input{width:18px;height:18px;accent-color:var(--navy)}
 .teampick{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.teampick label{display:flex;gap:8px;align-items:center;padding:3px 0;font-size:14px}
+
+/* NGL Admin · Ticket sales (copied from NGL_Ticket_Sales.html) */
+.ts-sync{font-size:14px}.ts-sync.old{border-color:#f0c36d;background:#fff8e6}.ts-sync a{color:var(--red);font-weight:700}
+.ts-ctl{display:flex;gap:8px;align-items:center;font-size:14px;margin:0 0 6px;cursor:pointer}
+.ts-day{margin:18px 0 6px;font:800 15px var(--cond);letter-spacing:1px;text-transform:uppercase;color:var(--navy)}
+.ts-comp{border-left:6px solid var(--c,#0073b3);padding:12px 14px;margin-bottom:8px;display:grid;grid-template-columns:1fr 210px 92px 92px;gap:14px;align-items:center}
+.ts-nm b{display:block}.ts-nm small{display:block;color:var(--muted);font-size:13px}
+.ts-bar{height:10px;background:#eceef5;border-radius:6px;overflow:hidden;margin-top:6px}.ts-bar i{display:block;height:100%;background:var(--c,#0073b3)}
+.ts-gy{font-size:14px}.ts-gy b{font:800 20px var(--cond)}
+.ts-num{text-align:right}.ts-num b{display:block;font:800 22px/1 var(--cond)}.ts-num span{font-size:12px;color:var(--muted)}
+.ts-left b{color:var(--ok)}.ts-left.low b{color:var(--warn)}.ts-left.full b{color:var(--red)}
+.ts-clubs{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;margin-top:-2px}.ts-clubs span{background:#f1f2f8;border-radius:999px;padding:3px 10px;font-size:12.5px}
+.ts-clubs span b{font-weight:700;margin-left:4px;color:var(--navy)}.ts-clubs .lbl{background:none;padding:3px 0;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.ts-unm{margin-top:22px;border:1px dashed #c9cde0;font-size:14px}.ts-unm li{margin:3px 0}
+@media(max-width:700px){.ts-comp{grid-template-columns:1fr 1fr 1fr}.ts-comp .ts-nm{grid-column:1/-1}}

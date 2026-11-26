@@ -2,7 +2,7 @@
 import pytest
 
 ADMIN = ["#/admin", "#/admin/clubs", "#/admin/clubs/demo", "#/admin/orders", "#/admin/orders/unpaid", "#/admin/orders/all",
-         "#/admin/competitions", "#/admin/competitions/c1", "#/admin/music", "#/admin/music/c1", "#/admin/team"]
+         "#/admin/competitions", "#/admin/competitions/c1", "#/admin/music", "#/admin/music/c1", "#/admin/team", "#/admin/sales"]
 
 
 @pytest.mark.parametrize("hash_", ADMIN)
@@ -45,9 +45,9 @@ def test_admin_has_every_app(page):
     page.go("#/admin", demo=True)
     page.p.wait_for_selector(".appt", timeout=15000)
     assert page.p.locator(".appt").count() == 20          # the 19 original Admin Hub apps + Orders
-    page.p.click("text=Ticket sales")
+    page.p.click("text=Judging")
     page.p.wait_for_selector("iframe.appframe", timeout=15000)
-    assert "NGL_Ticket_Sales.html" in page.p.get_attribute("iframe.appframe", "src")
+    assert "ngl-judging-pathway.html" in page.p.get_attribute("iframe.appframe", "src")
 
 
 def test_admin_team_grid(page):
@@ -68,3 +68,12 @@ def test_team_member_sees_only_their_apps(page):
     page.p.evaluate("location.hash = '#/admin/clubs'")
     page.p.wait_for_timeout(1500)
     assert "don’t have access" in page.p.inner_text("#page")
+
+
+def test_ticket_sales(page):
+    page.go("#/admin/sales", demo=True)
+    page.p.wait_for_selector(".ts-comp", timeout=15000)
+    t = page.p.inner_text("#page")
+    assert "187" in t                                    # 104 + 61 + 22 gymnasts sold (the 4th JustGo event matches no competition)
+    assert "SAADI Gymnastics" in t and "not matched" in t   # bookers turned into clubs; an unmatched JustGo event listed
+    assert page.p.locator(".ts-comp").count() == 3

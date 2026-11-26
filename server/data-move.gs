@@ -49,7 +49,7 @@ function rehearse(){
   // Competitions
   const compOut = comps.map(c => { const d = c.data, name = d.name || d.title || c.id, date = isoDate(d.date);
     const path = /recreational/i.test(name + ' ' + (d.pathway || '')) ? 'recreational' : /performance|grades|classic/i.test(name) ? 'performance' : /schools/i.test(name) ? 'schools' : 'general';
-    return {id: c.id, name, path, date, where: d.venue || d.location || 'TBC', who: [d.level, d.gender && d.gender !== 'both' ? (d.gender === 'boys' ? 'Boys' : 'Girls') : ''].filter(Boolean).join(' · ') || 'All levels', status: 'open'}; })
+    return {id: c.id, name, path, date, time: d.time || '', maxPlaces: typeof d.maxPlaces === 'number' ? d.maxPlaces : null, level: d.level || '', where: d.venue || d.location || 'TBC', who: [d.level, d.gender && d.gender !== 'both' ? (d.gender === 'boys' ? 'Boys' : 'Girls') : ''].filter(Boolean).join(' · ') || 'All levels', status: 'open'}; })
     .filter(c => c.date);
   compOut.forEach(c => writes.push(doc('competitions/' + c.id, c)));
 
@@ -120,6 +120,19 @@ function rehearse(){
       schools: d.schoolsSub.length, graduations: evs.length, orders: (ordByClub[c.id] || []).length, unpaid: (ordByClub[c.id] || []).filter(o => o.status === 'awaiting-payment').length,
       reservations: (resByClub[c.id] || []).length}); });
 
+  // NGL Admin apps: Ticket sales (JustGo summary) and Competition planning (from ngl_staffing plan__*)
+  const jgRaw = getDoc(BOOK, 'ngl_finance/justgo'), jg = jgRaw ? fromVal_({mapValue: {fields: jgRaw.fields || {}}}) : null;
+  if (jg) writes.push(doc('justgoSales/summary', Object.assign({}, jg, {clubNames: [...new Set(bookings.map(b => String(b.data.club || '').trim()).filter(Boolean))], movedFrom: 'saadi-rotation/ngl_finance/justgo'})));
+  const staffDocs = listAll(BOOK, 'ngl_staffing');
+  staffDocs.forEach(s => { const id = s.id;
+    if (id === 'summary__planning') writes.push(doc('compPlans/_summary', s.data));
+    else if (id === 'plan__template') writes.push(doc('compPlans/_template', s.data));
+    else if (id.indexOf('plan__') === 0) writes.push(doc('compPlans/' + id.slice(6), s.data));
+    else writes.push(doc('staffing/' + id, s.data)); });   // Staffing: same doc id (= competition id), same document
+  // Judging Pathway lists Staffing reads: same names and doc ids (pw:<assignmentId> links and signupId depend on them)
+  const judging = {}; ['ngl_judge_signups', 'ngl_judging_assignments', 'ngl_judges'].forEach(c => { const list = listAll(BOOK, c); judging[c] = list.length; list.forEach(x => writes.push(doc(c + '/' + x.id, x.data))); });
+  report.apps = {justgoEvents: jg ? Object.keys(jg.events || {}).length : 0, plans: staffDocs.filter(s => s.id.indexOf('plan__') === 0).length, staffing: staffDocs.filter(s => s.id.indexOf('plan__') !== 0 && s.id !== 'summary__planning').length, judging};
+
   // NGL team: same ticks as the original Admin Hub
   team.forEach(t => writes.push(doc('adminUsers/' + String(t.id).toLowerCase(), {name: t.data.name || '', owner: !!t.data.owner, sections: t.data.sections || [], movedFrom: 'saadi-rotation/ngl_admin_users/' + t.id})));
   report.team = team.map(t => (t.data.name || '') + ' (' + mask(t.id) + ')' + (t.data.owner ? ' owner' : ': ' + (t.data.sections || []).length + ' apps'));
@@ -135,6 +148,7 @@ function rehearse(){
   const um = {}; report.unmatched.reservations.forEach(r => { const k = norm(r.club) || '(no name)'; um[k] = um[k] || {names: [], places: 0}; um[k].places += r.places; if (!um[k].names.includes(r.club)) um[k].names.push(r.club); });
   Logger.log('Reservations matched by club name: ' + (report.matchedByName || 0) + ' · still unmatched (places by club): ' + JSON.stringify(um));
   Logger.log('Waiting places with a booking email (join automatically): ' + (report.pendingWithEmail || 0) + ' of ' + report.unmatched.reservations.length);
+  Logger.log('Admin apps: ' + JSON.stringify(report.apps));
   Logger.log('NGL team: ' + JSON.stringify(report.team));
   Logger.log('Merged accounts: ' + JSON.stringify(report.merged));
   Logger.log('Club names with more than one account: ' + JSON.stringify(report.duplicateClubs));

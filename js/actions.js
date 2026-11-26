@@ -8,6 +8,7 @@ import { PS } from './pathways/preschool-actions.js';
 import { REC } from './pathways/rec-actions.js';
 import { SCH } from './pathways/schools-actions.js';
 import { GL } from './pathways/general-actions.js';
+import { APPACTS } from './admin-registry.js';
 
 const rerender = () => window.NGL_RENDER && window.NGL_RENDER();
 export const basket = {
@@ -140,6 +141,6 @@ document.addEventListener('change', async e => {
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
-  const f = ACT[b.dataset.act] || ADM[b.dataset.act] || PS[b.dataset.act] || REC[b.dataset.act] || SCH[b.dataset.act] || GL[b.dataset.act]; if (!f) return;
+  const f = ACT[b.dataset.act] || ADM[b.dataset.act] || PS[b.dataset.act] || REC[b.dataset.act] || SCH[b.dataset.act] || GL[b.dataset.act] || APPACTS[b.dataset.act]; if (!f) return;
   e.preventDefault(); f(b);
 });

@@ -36,6 +36,7 @@ export const APPS = [
  {
   "group": "comps",
   "id": "sales",
+  "to": "#/admin/sales",
   "access": "finance",
   "name": "Ticket sales",
   "desc": "Gymnasts and spectators sold on JustGo for each competition, and places left",
@@ -45,6 +46,7 @@ export const APPS = [
  {
   "group": "comps",
   "id": "staffing",
+  "to": "#/admin/staffing",
   "name": "Staffing",
   "desc": "Who's working each competition, judge requests and staffing sheets",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/NGL_Staffing_Admin.html",
@@ -53,6 +55,7 @@ export const APPS = [
  {
   "group": "comps",
   "id": "planning",
+  "to": "#/admin/planning",
   "access": "staffing",
   "name": "Competition planning",
   "desc": "Every job for each competition with its due date: what's due this week and what's overdue",
