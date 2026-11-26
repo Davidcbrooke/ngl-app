@@ -38,6 +38,9 @@ def test_download_page(page):
     assert "Add to Home Screen" in page.p.inner_text(".land")
     page.p.click("[data-land=os][data-v=android]")
     assert "Install app" in page.p.inner_text(".land")
+    page.p.click("[data-land=os][data-v=pc]")
+    assert "Pin to taskbar" in page.p.inner_text(".land") or "Add to Dock" in page.p.inner_text(".land")
+    assert "COMPUTER" in page.p.inner_text(".land").upper()
 
 
 def test_seven_menu_items_in_order(page):

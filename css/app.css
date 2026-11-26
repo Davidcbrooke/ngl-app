@@ -279,9 +279,9 @@ a.card:hover{border-color:#cfcde3}.nav a{color:#dcdcf2}.nav a.on{color:var(--nav
 .land-wrap{max-width:520px;margin:-44px auto 0;padding:0 16px 40px;position:relative}
 .land-card{margin-bottom:14px}.land-card h2{text-align:center;margin:0 0 4px}
 .land-small{font-size:13px;color:var(--muted);text-align:center;margin:0}
-.osbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-.osbtn{display:flex;align-items:center;gap:10px;justify-content:center;padding:12px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--navy);font:700 17px Roboto,Arial,sans-serif;cursor:pointer}
-.osbtn small{display:block;font-size:11px;font-weight:500;color:var(--muted);text-align:left}.osbtn span{text-align:left}
+.osbtns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.osbtn{display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:center;padding:12px 6px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--navy);font:700 17px Roboto,Arial,sans-serif;cursor:pointer}
+.osbtn small{display:block;font-size:11px;font-weight:500;color:var(--muted)}.osbtn span{text-align:center;font-size:16px}
 .osbtn.on{border-color:var(--navy);background:var(--navy);color:#fff}.osbtn.on small{color:rgba(255,255,255,.75)}
 .land-stepsbox{margin-top:14px}.land-steps{margin:0;padding-left:22px;line-height:1.5}.land-steps li{margin:8px 0}
 .land-note{background:#fff3e0;border-radius:12px;padding:12px 14px;font-size:14px}.land-note b{display:block}.land-note.ok{background:#e4f4ea}

@@ -11,20 +11,26 @@ export const isStandalone = matchMedia('(display-mode: standalone)').matches || 
 const isMobile = isIOS || /Android/i.test(UA);
 const inAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|Snapchat|WhatsApp/i.test(UA);
 const iosNotSafari = isIOS && /CriOS|FxiOS|EdgiOS|GSA\//.test(UA);
-let deferredPrompt = null, installed = false, landOS = isIOS ? 'ios' : /Android/i.test(UA) ? 'android' : null;
+const isMac = /Macintosh/i.test(UA) && !isIOS;
+let deferredPrompt = null, installed = false, landOS = isIOS ? 'ios' : /Android/i.test(UA) ? 'android' : 'pc';
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; if (document.querySelector('.land')) showGate(); });
 window.addEventListener('appinstalled', () => { installed = true; deferredPrompt = null; if (document.querySelector('.land')) showGate(); });
 
-// Phones and tablets install the app before using it; computers (clubs at a desk, the NGL team) carry on in the browser.
-// ?gate shows the download page on a computer too (to check it); ?demo skips it.
+// Phones and tablets must install the app before using it. Computers see the download page too (install and pin it to
+// the taskbar or Dock), with "Continue in the browser" for clubs and the NGL team at a desk (remembered on that computer).
+// ?gate always shows it; ?demo and automated tests skip it.
 export function needGate(){
   const q = new URLSearchParams(location.search);
   if (q.has('gate')) return true;
-  return isMobile && !isStandalone && MODE !== 'demo';
+  if (isStandalone || MODE === 'demo' || navigator.webdriver) return false;
+  if (isMobile) return true;
+  let ok = false; try { ok = localStorage.getItem('ngl.browser') === '1'; } catch (_) {}
+  return !ok;
 }
 
 const SHARE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px" aria-label="Share"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
 const APPLE = '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8s2.3-1.3 3.1-2.5c1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg>';
+const PC = '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>';
 const DROID = '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M17.6 9.5l1.7-3a.4.4 0 0 0-.7-.4l-1.8 3A10.8 10.8 0 0 0 12 8.2c-1.7 0-3.3.3-4.8.9l-1.8-3a.4.4 0 1 0-.7.4l1.7 3A9.6 9.6 0 0 0 1.5 17h21a9.6 9.6 0 0 0-4.9-7.5zM7 14.4a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm10 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>';
 const ico = (d, c) => `<span class="ic" style="background:${c}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg></span>`;
 
@@ -32,6 +38,12 @@ function installSteps(os){
   if (os === 'ios') {
     if (inAppBrowser || iosNotSafari) return `<div class="land-note"><b>Open this page in Safari first</b>Tap the <b>⋯</b> menu and choose <b>Open in Safari</b> (or copy the link into Safari). iPhone apps can only be added from Safari.</div>`;
     return `<ol class="land-steps"><li>Tap the Share button ${SHARE} at the bottom of Safari</li><li>Scroll down and tap <b>Add to Home Screen</b></li><li>Tap <b>Add</b>. The NGL icon appears on your home screen</li><li>Open NGL from your home screen</li></ol>`;
+  }
+  if (os === 'pc') {
+    if (installed) return `<div class="land-note ok"><b>Installed</b>NGL now opens in its own window. Right-click its icon in the taskbar and choose <b>Pin to taskbar</b>.</div>`;
+    return (deferredPrompt ? `<button class="btn land-install" data-land="install">Install NGL on this computer</button><p class="land-small">Then right-click NGL in the taskbar and choose <b>Pin to taskbar</b>.</p><p class="land-small" style="text-align:left;margin-top:14px">No install button? Do it by hand:</p>` : '') +
+      (isMac ? `<ol class="land-steps"><li><b>Safari:</b> click <b>File</b>, then <b>Add to Dock</b></li><li><b>Chrome:</b> click the install icon at the right of the address bar, then <b>Install</b></li><li>NGL is now in your Dock and Launchpad</li></ol>`
+        : `<ol class="land-steps"><li>Open this page in <b>Chrome</b> or <b>Edge</b></li><li>Click the install icon at the right of the address bar (or the <b>⋮</b> / <b>⋯</b> menu, then <b>Install NGL</b> or <b>Apps › Install this site as an app</b>)</li><li>Click <b>Install</b>. NGL opens in its own window</li><li>Right-click the NGL icon in the taskbar and choose <b>Pin to taskbar</b></li></ol>`);
   }
   if (installed) return `<div class="land-note ok"><b>Installed</b>Open NGL from your home screen.</div>`;
   if (inAppBrowser) return `<div class="land-note"><b>Open this page in Chrome first</b>Tap the <b>⋮</b> menu and choose <b>Open in Chrome</b> (or "Open in browser").</div>`;
@@ -47,9 +59,10 @@ export function showGate(){
       <h1>The NGL app</h1>
       <p>Competitions, programmes, awards and results in one place, for British Gymnastics clubs and their families.</p></section>
     <div class="land-wrap">
-      <div class="card land-card"><h2>Download the app</h2><p class="land-small">Choose your phone</p>
-        <div class="osbtns">${os('ios', 'iPhone', APPLE)}${os('android', 'Android', DROID)}</div>
-        ${landOS ? `<div class="land-stepsbox">${installSteps(landOS)}</div>` : `<p class="land-small" style="margin-top:14px">On a computer? Open this link on your phone to install it.</p>`}
+      <div class="card land-card"><h2>Download the app</h2><p class="land-small">Choose your device</p>
+        <div class="osbtns">${os('ios', 'iPhone', APPLE)}${os('android', 'Android', DROID)}${os('pc', 'Computer', PC)}</div>
+        <div class="land-stepsbox">${installSteps(landOS)}</div>
+        ${isMobile ? '' : `<p class="land-small" style="margin-top:16px"><a href="#" data-land="browser">Continue in the browser</a></p>`}
       </div>
       <div class="card land-card"><h2>What's inside</h2>
         ${[[ico('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3a3 3 0 0 1-3 4M7 5H4a3 3 0 0 0 3 4"/>', '#0073b3'), 'Families', 'Your gymnast’s awards, progress and results: enter your club’s code'],
@@ -60,8 +73,9 @@ export function showGate(){
       <p class="land-foot">Exclusively for British Gymnastics Clubs</p>
     </div></div>`;
   root.hidden = false; document.querySelector('.app').hidden = true;
-  root.querySelectorAll('[data-land]').forEach(b => b.addEventListener('click', () => {
+  root.querySelectorAll('[data-land]').forEach(b => b.addEventListener('click', e => { e.preventDefault();
     if (b.dataset.land === 'os') { landOS = b.dataset.v; showGate(); }
+    if (b.dataset.land === 'browser') { try { localStorage.setItem('ngl.browser', '1'); } catch (_) {} location.reload(); return; }
     if (b.dataset.land === 'install' && deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(r => { if (r.outcome === 'accepted') installed = true; deferredPrompt = null; showGate(); }); }
   }));
 }
