@@ -1,23 +1,17 @@
 // NGL Schools data and pure logic: copied WORD FOR WORD from today's Schools hub (nglschools/club/index.html):
 // licence bands and prices, the Profit planner defaults, the Secondary planner (books, equipment, lesson builder),
 // Graduation money, and the programme's routines, skills and videos. Keep in step with the live hub until switch-over.
-const SCHOOLS_BANDS = [
-  {key:'xs', label:'1 to 24 Schools gymnasts',    short:'1–24',    price:150,  max:24},
-  {key:'sm', label:'25 to 49 Schools gymnasts',   short:'25–49',   price:250,  max:49},
-  {key:'s',  label:'50 to 99 Schools gymnasts',   short:'50–99',   price:400,  max:99},
-  {key:'m',  label:'100 to 249 Schools gymnasts', short:'100–249', price:750,  max:249},
-  {key:'m2', label:'250 to 399 Schools gymnasts', short:'250–399', price:1000, max:399},
-  {key:'l',  label:'400 to 599 Schools gymnasts', short:'400–599', price:1250, max:599},
-  {key:'xl', label:'600 or more Schools gymnasts', short:'600+',   price:1500, max:null}   // null = no top
-];
+// Prices to clubs (licence bands, books, certificates, t-shirts, postage, Graduation fees) come from NGL's price list (prices.json)
+import PL, { product, postageFor as postage } from '../prices.js';
+const SCHOOLS_BANDS = PL.licences.schools.bands.map(({k, ...b}) => ({key: k, ...b}));   // max null = no top
 const PRICES = [
-  {kind:'book',   name:'NGL Schools Awards Book', price:5,    rrp:'£10',        note:'Six levels; lasts more than a year'},
-  {kind:'cert',   name:'Certificate (Bronze, Silver or Gold)', price:0.10, rrp:'', note:'Three per level'},
-  {kind:'tshirt', name:'NGL children’s t-shirt',  price:12,   rrp:'£17 to £20', note:''}
+  {kind:'book',   name:'NGL Schools Awards Book', price:product('schbook').price, rrp:'£10',        note:'Six levels; lasts more than a year'},
+  {kind:'cert',   name:'Certificate (Bronze, Silver or Gold)', price:product('schcert').price, rrp:'', note:'Three per level'},
+  {kind:'tshirt', name:'NGL children’s t-shirt',  price:product('tshirt').price, rrp:'£17 to £20', note:''}
 ];
 const CERT_TYPES = [{key:'bronze', name:'Bronze'}, {key:'silver', name:'Silver'}, {key:'gold', name:'Gold'}];
-const POSTAGE = [{upTo:20, price:4}, {upTo:100, price:8}, {upTo:Infinity, price:12}];
-function postageFor(items){ if(items <= 0) return 0; return POSTAGE.find(p => items <= p.upTo).price; }
+const POSTAGE = PL.postage.bands.map(p => ({upTo: p.upTo == null ? Infinity : p.upTo, price: p.price}));
+const postageFor = postage;
 const shopItem = k => PRICES.find(x => x.kind === k);
 
 const PLAN_DEFAULTS = {
@@ -135,8 +129,8 @@ function secToday(p, now = new Date()){
 
 const GRAD_FAMILY_PRICE = 12;   // what families pay the club per gymnast, including one spectator (VAT included)
 const GRAD_EXTRA_SPECTATOR = 6; // what families pay for each extra spectator (VAT included); all of it goes to NGL
-const GRAD_NGL_FEE = 5;         // what NGL invoices the club per graduate, + VAT (medal included)
-const GRAD_NGL_SPECTATOR = 5;   // what NGL invoices the club per extra spectator, + VAT
+const GRAD_NGL_FEE = PL.graduation.graduate.price;         // what NGL invoices the club per graduate, + VAT (medal included)
+const GRAD_NGL_SPECTATOR = PL.graduation.spectator.price;  // what NGL invoices the club per extra spectator, + VAT
 const GRAD_CLUB_KEEPS = 5;      // the club's share of each £12 ticket, after VAT and NGL's fee
 
 const SCH_LEVEL_VIDEOS = {

@@ -4,6 +4,7 @@
 import { appLink } from '../config.js';
 import api from '../data.js';
 import { esc, gbp, date, pill, ic, svg } from '../ui.js';
+import { product, postageFor } from '../prices.js';
 
 const GR = 'https://davidcbrooke.github.io/GYMNASTICS-RESULTS/';
 const IMG = 'img/pathways/';
@@ -17,8 +18,9 @@ const RULES = {
   girls: {label: 'Girls', name: 'Women’s Artistic', pdf: GR + 'ngl-rules-2027-numbered-update/NGL_General_League_WAG_Rules_2027.pdf', dir: GR + 'ngl-rules-2027-numbered-update/general-wag/'},
   boys: {label: 'Boys', name: 'Men’s Artistic', pdf: GR + 'ngl-rules-2027-numbered-update/NGL_General_League_MAG_Rules_2027.pdf', dir: GR + 'ngl-rules-2027-numbered-update/general-mag/'}
 };
-export const BOOK = {price: 4, rrp: 8};
-export const postage = q => q <= 20 ? 4 : q <= 100 ? 8 : 12;
+const GB = product('gbook');
+export const BOOK = {price: GB.price, rrp: GB.rrp};   // from NGL's price list (prices.json)
+export const postage = postageFor;
 export const UI = {gender: 'girls', level: '1', qty: 20};
 const S = {club: null, comps: [], music: []};
 const forGender = c => /boys|mag/i.test(c.who) ? 'boys' : /girls|wag/i.test(c.who) && !/boys/i.test(c.who) ? 'girls' : 'both';

@@ -2,6 +2,7 @@
 // so the sandbox (sample data) and live (Firebase) run exactly the same screens.
 import { RULES_BASE, CARD_PAY_URL, ADMIN_EMAILS } from './config.js';
 import { fb } from './firebase.js';
+import PRICES from './prices.js';
 
 // Sample data when the address has ?demo, otherwise the staging database.
 export const MODE = new URLSearchParams(location.search).has('demo') ? 'demo' : 'firebase';
@@ -37,18 +38,9 @@ const demo = {
     {id:'ORD-K3M7Q', date:'2026-10-26', path:'schools', details:'Schools Club Licence 250–399', total:950, status:'paid'},
     {id:'ORD-R7Y3J', date:'2026-09-26', path:'recreational', details:'190 medals, 12 t-shirts', total:619, status:'paid'}
   ],
-  // Prices to clubs, from context/03 (physical products table)
-  products: [
-    {k:'gbook', path:'general', n:'General Skills Book', d:'Levels 1–4 · RRP £8', price:4},
-    {k:'recbook', path:'recreational', n:'Recreational award books', d:'Ruby, Pink, Teal, Indigo · RRP £10', price:5, needs:'recreational'},
-    {k:'recmedal', path:'recreational', n:'Recreational medals', d:'Every gymnast medals · RRP £5', price:3, needs:'recreational'},
-    {k:'schbook', path:'schools', n:'Schools Awards Books', d:'One book for the whole programme · RRP £10', price:5, needs:'schools'},
-    {k:'schcert', path:'schools', n:'Schools certificates', d:'Bronze, Silver and Gold', price:0.1, needs:'schools'},
-    {k:'pspass', path:'preschool', n:'Pre-School passports', d:'Book 1 and Book 2 · RRP £10', price:5, needs:'preschool'},
-    {k:'psmedal', path:'preschool', n:'Pre-School country medals', d:'20 countries · RRP £4', price:2, needs:'preschool'},
-    {k:'tshirt', path:'recreational', n:'Children’s NGL t-shirt', d:'RRP £17–20', price:12, needs:'recreational'},
-    {k:'kit', path:null, n:'Group Buying: staff kit', d:'Your logo, ordered every quarter', price:null}
-  ]
+  // Prices to clubs: NGL's price list (prices.json, copied in js/prices.js), plus Group Buying, which is priced per round
+  products: [...PRICES.products,
+    {k:'kit', path:null, n:'Group Buying: staff kit', d:'Your logo, ordered every quarter', price:null}]
 };
 
 export const RULES = [
@@ -87,15 +79,25 @@ export const FAQ = [
 // database (competitions, products collections) when the admin screens are built.
 export const CALENDAR = demo.competitions.map(({reserved, ref, buyBy, waiting, musicBy, ...c}) => c);
 const PRODUCTS = demo.products;
+const fromPrice = k => `from £${Math.min(...PRICES.licences[k].bands.map(b => b.price))} a year + VAT`;
 const DEFAULT_LICENCES = {
-  preschool:   {status:'explore', label:'Explore free', price:'from £150 a year + VAT'},
-  schools:     {status:'explore', label:'Explore free', price:'from £150 a year + VAT'},
-  recreational:{status:'explore', label:'Explore free', price:'from £200 a year + VAT'},
+  preschool:   {status:'explore', label:'Explore free', price:fromPrice('preschool')},
+  schools:     {status:'explore', label:'Explore free', price:fromPrice('schools')},
+  recreational:{status:'explore', label:'Explore free', price:fromPrice('recreational')},
   general:     {status:'waived', label:'Fee waived for 2027'},
   performance: {status:'soon', label:'Coming 2027'},
   university:  {status:'soon', label:'Coming soon'},
   masters:     {status:'soon', label:'Coming soon'}
 };
+// The order a club places (orders/{ORD-…}). Every line has a key k naming its entry in the price list (prices.json);
+// the card-payments script recomputes every line, the VAT, the postage and the total from that list before charging.
+export function orderDoc(lines, delivery = '', extra = {}){
+  lines = lines.map(l => ({...l, qty: Math.round(Number(l.qty) || 0)}));
+  const total = Math.round(lines.reduce((a, l) => a + l.qty * l.unit, 0) * 100) / 100;
+  const paths = [...new Set(lines.map(l => l.path).filter(Boolean))];
+  return {path: paths.length === 1 ? paths[0] : 'general', details: lines.filter(l => l.k !== 'vat').map(l => `${l.qty} × ${l.n}`).join(', '),
+    lines, total, delivery, status: 'awaiting-payment', ...extra};
+}
 const code = p => p + '-' + Array.from(crypto.getRandomValues(new Uint8Array(5)), b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 31]).join('');
 const iso = d => (d && d.toDate ? d.toDate() : d instanceof Date ? d : new Date(d || Date.now())).toISOString().slice(0, 10);
 const minusMonths = (isoDate, m) => { const d = new Date(isoDate + 'T12:00'); d.setMonth(d.getMonth() - m); return iso(d); };
@@ -270,11 +272,9 @@ const fbApi = {
   },
   async placeOrder(lines, delivery, extra = {}){
     const {fs, A, D} = await fb(), c = await this.club();
-    const id = code('ORD'), total = lines.reduce((a, l) => a + l.qty * l.unit, 0);
-    const paths = [...new Set(lines.map(l => l.path).filter(Boolean))];
-    await fs.setDoc(fs.doc(D, 'orders', id), {clubId: A.currentUser.uid, clubName: c.name || '', path: paths.length === 1 ? paths[0] : 'general',
-      details: lines.filter(l => l.k !== 'vat').map(l => `${l.qty} × ${l.n}`).join(', '), lines, total, delivery, status: 'awaiting-payment', createdAt: fs.serverTimestamp(), ...extra});
-    return {id, total};
+    const id = code('ORD'), doc = orderDoc(lines, delivery, extra);
+    await fs.setDoc(fs.doc(D, 'orders', id), {clubId: A.currentUser.uid, clubName: c.name || '', ...doc, createdAt: fs.serverTimestamp()});
+    return {id, total: doc.total};
   },
   // Group buying: one order per club per product per round (status 'placed'), plus the round's live totals, in one batch.
   // The logos upload straight after, to groupbuy/{round}/{order id}/front-logo.* and back-logo.* (storage.rules checks the order is the club's).

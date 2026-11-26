@@ -4,8 +4,22 @@
  * Same flow as the live script (card-payments.gs), but:
  *   - reads and writes the STAGING database (Firebase project ngl-club-hub-staging), collection "orders" only;
  *   - refuses to run unless STRIPE_SECRET_KEY is a Stripe TEST key (sk_test_ / rk_test_), so no real money moves.
+ * PRICE CHECK (26 Nov 2026): a club writes its own order, so the order's prices are never trusted. Before Stripe is asked
+ * for a payment (checkout_), and again before anything is switched on (activate_), the order is checked against NGL's
+ * price list, prices.json, fetched from the app's own address (PRICES_URL, kept for 5 minutes):
+ *   - every line's item key (k) must be in the price list; unknown items are refused;
+ *   - quantities must be whole numbers from 1 to the list's maxQty (Graduation: up to 2,000 graduates, 10,000 spectators);
+ *   - each line's unit price, the postage (by the number of items), the VAT (20%, to the penny, on licences, packs and
+ *     Graduations only) and the total must all match exactly; a licence must be one of its pathway's bands, at that band's price;
+ *   - products that need a licence, and Pre-School packs, only while the club's licence is live;
+ *   - group-buying orders (kind 'groupbuy', ORD-GB… ids, which only NGL Admin can create) keep NGL Admin's prices,
+ *     but must add up exactly and carry the fields NGL Admin writes (createdBy 'ngl-admin', invoiceNo matching the id).
+ * Stripe is charged the price list's total, and the paid amount must equal it. If an order fails the check after it was paid,
+ * it is put on hold (status 'on-hold', holdReason) and nothing is switched on.
+ * The check itself is validateOrder_ in the second script file "validate-order" (server/validate-order.js, pasted unchanged).
  * Deploy: web app, Execute as Me, access Anyone. Script property STRIPE_SECRET_KEY = Stripe TEST secret key.
  */
+const PRICES_URL = 'https://davidcbrooke.github.io/ngl-app/prices.json';   // the app's own price list (live: the live app's address)
 const PROJECT = 'ngl-club-hub-staging';
 const FS = 'https://firestore.googleapis.com/v1/projects/' + PROJECT + '/databases/(default)/documents/';
 const COLLS = ['orders'];
@@ -34,7 +48,7 @@ function doGet(e) {
     try { res = activate_(p.session_id); } catch (err) { res = {ok: false, error: String(err)}; }
     const back = safeReturn_(res.ret);
     const msg = res.ok ? 'Thank you, your payment has been received.' + (res.switched ? ' ' + res.switched : '')
-                       : 'We could not confirm the payment yet. If you were charged, it will update shortly; otherwise please try again.';
+                       : res.hold ? res.error : 'We could not confirm the payment yet. If you were charged, it will update shortly; otherwise please try again.';
     return HtmlService.createHtmlOutput(
       '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;font-family:Roboto,Arial,sans-serif;background:#28225c;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center;padding:20px">' +
       '<div style="max-width:460px"><div style="height:6px;display:flex;margin-bottom:22px"><i style="flex:1;background:#e84187"></i><i style="flex:1;background:#fbd43a"></i><i style="flex:1;background:#e8822f"></i><i style="flex:1;background:#0073b3"></i><i style="flex:1;background:#00aeb7"></i><i style="flex:1;background:#6ba526"></i><i style="flex:1;background:#8f286b"></i></div>' +
@@ -54,9 +68,12 @@ function checkout_(b) {
   const o = fromDoc_(JSON.parse(r.getContentText()));
   if (o.clubId !== uid) return {ok: false, error: 'not your order'};
   if (o.status && o.status !== 'awaiting-payment') return {ok: false, error: 'This order is already ' + o.status + '.'};
-  const pence = Math.round(orderTotal_(o) * 100);
-  if (!(pence >= 30)) return {ok: false, error: 'Nothing to pay on this order.'};
+  o.id = orderId;
   const club = adminGet_('clubs/' + uid) || {};
+  const v = validateOrder_(o, prices_(), club);
+  if (!v.ok) return {ok: false, error: 'This order can’t be paid: ' + v.error + ' Please place it again from the app, or contact NGL.'};
+  const pence = Math.round(v.expectedTotal * 100);
+  if (!(pence >= 30)) return {ok: false, error: 'Nothing to pay on this order.'};
   const self = ScriptApp.getService().getUrl();
   const label = describe_(o);
   const s = stripe_('post', 'checkout/sessions', {
@@ -93,10 +110,16 @@ function activate_(sessionId) {
     const o = adminGet_(coll + '/' + id);
     if (!o) return {ok: false, ret: ret, error: 'order missing'};
     if (o.status === 'paid' || o.status === 'sent') return {ok: true, ret: ret, switched: ''};
-    if (Math.round(orderTotal_(o) * 100) !== s.amount_total) return {ok: false, ret: ret, error: 'amount mismatch'};
+    if (o.status === 'on-hold') return {ok: false, hold: true, ret: ret, error: 'This payment needs checking by NGL; nothing has been switched on yet. We will be in touch.'};
+    o.id = id;
     const now = new Date();
-    adminPatch_(coll + '/' + id, {status: 'paid', paidAt: now, paidBy: 'card', stripeSession: sessionId});
     const club = adminGet_('clubs/' + o.clubId) || {};
+    const v = validateOrder_(o, prices_(), club);
+    if (!v.ok || Math.round(v.expectedTotal * 100) !== s.amount_total) {           // paid, but not for this order at NGL's prices: switch nothing on
+      adminPatch_(coll + '/' + id, {status: 'on-hold', holdReason: v.ok ? 'Paid amount does not match the order' : v.error, paidAt: now, paidBy: 'card', stripeSession: sessionId});
+      return {ok: false, hold: true, ret: ret, error: 'This payment needs checking by NGL; nothing has been switched on yet. We will be in touch.'};
+    }
+    adminPatch_(coll + '/' + id, {status: 'paid', paidAt: now, paidBy: 'card', stripeSession: sessionId});
     let switched = '';
     if (o.kind === 'licence' && o.licPath) {                             // one-app model: club.licences[pathway]
       const lic = club.licences || {}, cur = lic[o.licPath] || {};
@@ -116,18 +139,16 @@ function activate_(sessionId) {
 }
 
 /* ---------- helpers ---------- */
-function orderTotal_(o) {
-  const L = (o.lines && o.lines.length) ? o.lines : legacyLines_(o);
-  return L.reduce(function (a, l) { return a + (Number(l.qty) || 0) * (Number(l.unit) || 0); }, 0);
-}
-function legacyLines_(o) {                                              // matches NGL Schools orderLines()
-  if (o.type === 'graduation') {
-    const L = [{qty: o.qty, unit: o.price}];
-    if (o.spectators) L.push({qty: o.spectators, unit: o.spectatorPrice || 5});
-    if (o.vat) { const net = L.reduce(function (a, l) { return a + l.qty * l.unit; }, 0); L.push({qty: 1, unit: Math.round(net * 0.2 * 100) / 100}); }
-    return L;
-  }
-  return [{qty: o.qty || 0, unit: o.price || 0}];
+// NGL's price list (prices.json from the app's address), kept for 5 minutes. No price list, no payment.
+function prices_() {
+  const cache = CacheService.getScriptCache(), hit = cache.get('prices.json');
+  if (hit) return JSON.parse(hit);
+  const r = UrlFetchApp.fetch(PRICES_URL + '?t=' + Date.now(), {muteHttpExceptions: true, followRedirects: true});
+  if (r.getResponseCode() !== 200) throw new Error('The NGL price list could not be loaded (' + r.getResponseCode() + '). Please try again shortly.');
+  const txt = r.getContentText(), p = JSON.parse(txt);
+  if (typeof p.vatRate !== 'number' || !p.licences || !p.products) throw new Error('The NGL price list is not valid.');
+  cache.put('prices.json', txt, 300);
+  return p;
 }
 function describe_(o) { return ('NGL order: ' + (o.details || '')).slice(0, 200); }
 function expiry_(lic, ignoreTrial) {
@@ -193,4 +214,6 @@ function testAccess() {
   const clubs = UrlFetchApp.fetch(FS + 'clubs?pageSize=1', {headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()}, muteHttpExceptions: true});
   Logger.log('Firestore: ' + clubs.getResponseCode());
   Logger.log('Stripe: ' + (stripe_('get', 'balance').object || 'ok'));
+  Logger.log('Price list: ' + (prices_().version || 'loaded'));
+  Logger.log('Order check: ' + (typeof validateOrder_ === 'function' ? 'installed' : 'MISSING: add the validate-order script file'));
 }

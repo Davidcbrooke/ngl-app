@@ -2,6 +2,7 @@
 import api from '../data.js';
 import { modal, toast, esc, gbp } from '../ui.js';
 import rec, { UI, BANDS, recPrint, recSheet } from './recreational.js';
+import { vatOn } from '../prices.js';
 
 const redraw = () => { window.NGL_RENDER && window.NGL_RENDER(); window.scrollTo(0, 0); };
 const go = hash => { if (location.hash === hash) redraw(); else location.hash = hash; };
@@ -43,7 +44,7 @@ export const REC = {
 
   // Licence: straight to secure payment, switches on automatically when paid
   async 'rec-buy'(b){
-    const band = BANDS.find(x => x.k === b.dataset.band), vat = Math.round(band.price * 20) / 100;
+    const band = BANDS.find(x => x.k === b.dataset.band), vat = vatOn(band.price);
     const m = modal(`<h2>Start your Recreational licence</h2><table><tr><td>Recreational Club Licence: ${esc(band.label)} (12 months)</td><td style="text-align:right">${gbp(band.price)}</td></tr>
       <tr><td>VAT (20%)</td><td style="text-align:right">${gbp(vat)}</td></tr><tr><td><b>Total</b></td><td style="text-align:right"><b>${gbp(band.price + vat)}</b></td></tr></table>
       <form><label style="display:flex;gap:8px;align-items:flex-start;margin:12px 0"><input type="checkbox" required style="width:auto;margin-top:4px"><span>We have ${esc(band.label.replace(' recreational gymnasts', ''))} recreational gymnasts. We’ll move up a band if that changes.</span></label>

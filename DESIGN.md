@@ -120,6 +120,7 @@ Every pathway inside Programmes is built from the same template (`js/pathways/`)
 - **Pay at checkout only** (agreed 25 Nov 2026): card, Apple Pay, Google Pay or Stripe Pay by bank. No invoices with bank details, so nobody marks orders paid by hand.
 - An unpaid order (checkout not finished) shows "Not paid" and one action: "Finish payment".
 - After payment the status changes immediately and Stripe emails the receipt; the club can download or re-send it.
+- **One price list** (agreed 26 Nov 2026): every price a club pays lives in `prices.json` (licence bands, packs, books, medals, certificates, t-shirts, Graduation fees, postage bands, VAT). The app reads it through `js/prices.js` (an exact copy; a test checks they match), and every order line carries a key `k` naming its entry. Before Stripe is asked for a payment, and again before a licence or pack is switched on, the card-payments script fetches `prices.json` and rebuilds the order from those keys and quantities (`server/validate-order.js`); if any price, the postage, the VAT or the total is a penny out, the order is refused. Group-buying orders are made only by NGL Admin, so they keep its prices but must add up. To change a price: change `prices.json` and `js/prices.js` together.
 
 ## 8. Words
 - UK English. "Club Licence", never "membership". "Licence fee waived", never "free".

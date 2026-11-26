@@ -6,8 +6,9 @@ import api from '../data.js';
 import { esc, gbp, date, pill, ic } from '../ui.js';
 import { printHTML } from './index.js';
 import * as D from './schools-data.js';
+import PRICES from '../prices.js';
 
-const VAT_RATE = 0.2;
+const VAT_RATE = PRICES.vatRate;
 const PROSPECTUS = 'docs/NGL_Schools_Prospectus.pdf';
 const S = {club: null, lic: null, all: null};
 export const UI = {app: 'floor', lvl: 1, sec: null};

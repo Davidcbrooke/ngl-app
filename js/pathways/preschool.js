@@ -5,15 +5,13 @@ import { appLink } from '../config.js';
 import api from '../data.js';
 import { esc, gbp, date, pill, ic } from '../ui.js';
 import { coming, loadScript, printHTML } from './index.js';
+import PRICES from '../prices.js';
 
 const BASE = 'preschool/';   // the app's own copy: data.js, theme pictures, lesson plans
 const IMG = BASE + 'img/', PLANS = BASE + 'plans/1Qes3TzvJrYQ/', SAMPLE = BASE + 'plans/sample/', FAMILY = BASE;
-export const BANDS = [{k: 'xs', label: '1–24 Pre-School gymnasts', price: 150}, {k: 'sm', label: '25–49 Pre-School gymnasts', price: 250},
-  {k: 's', label: '50–99 Pre-School gymnasts', price: 400}, {k: 'm', label: '100 or more Pre-School gymnasts', price: 750}];
-export const PACKS = {pack2: ['Lesson Plan Pack 11–20', 'Weeks 11–20: Egypt to Brazil in Book 1, the Bahamas to Italy in Book 2.', 100],
-  pack3: ['Lesson Plan Pack 21–30', 'Weeks 21–30: Australia to Japan in Book 1, India to Ireland in Book 2.', 100],
-  pack4: ['Lesson Plan Pack 31–40', 'Weeks 31–40: Japan to Iceland in Book 1, Ireland to Spain in Book 2.', 100],
-  seasonal: ['Seasonal Pack', 'Christmas, Easter, Summer, Halloween, Bonfire Night and Harvest, dropped into the right weeks by the planner.', 50]};
+// Licence bands and packs: from NGL's price list (prices.json). PACKS[k] = [name, description, price]
+export const BANDS = PRICES.licences.preschool.bands;
+export const PACKS = Object.fromEntries(Object.entries(PRICES.packs.preschool.items).map(([k, p]) => [k, [p.n, p.d, p.price]]));
 const P2 = n => String(n).padStart(2, '0');
 const packOf = n => n <= 10 ? 1 : n <= 20 ? 2 : n <= 30 ? 3 : 4;
 const PACKNAME = ['', 'Included with the licence', 'Lesson Plan Pack 11–20', 'Lesson Plan Pack 21–30', 'Lesson Plan Pack 31–40'];

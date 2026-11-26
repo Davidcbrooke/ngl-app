@@ -2,6 +2,7 @@
 import api from '../data.js';
 import { modal, toast, esc, gbp } from '../ui.js';
 import * as D from './schools-data.js';
+import { vatOn } from '../prices.js';
 import { UI, state, planRead, planResults, planPrint, planStart, secRead, secOut, secPrint, secStart } from './schools.js';
 
 const redraw = () => window.NGL_RENDER && window.NGL_RENDER();
@@ -53,7 +54,7 @@ export const SCH = {
       <label class="field"><span>How many gymnasts are graduating?</span><input id="mq" type="number" min="1" max="2000" value="20" required></label>
       <label class="field"><span>Extra spectator tickets sold</span><input id="ms" type="number" min="0" max="10000" value="0"></label><div id="msum"></div>
       <div class="btn-row"><button class="btn">Continue to secure payment</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
-    const vals = () => { const n = Math.max(0, parseInt(m.querySelector('#mq').value || '0')), s = Math.max(0, parseInt(m.querySelector('#ms').value || '0')), net = n * D.GRAD_NGL_FEE + s * D.GRAD_NGL_SPECTATOR; return {n, s, net, vat: Math.round(net * 20) / 100}; };
+    const vals = () => { const n = Math.max(0, parseInt(m.querySelector('#mq').value || '0')), s = Math.max(0, parseInt(m.querySelector('#ms').value || '0')), net = n * D.GRAD_NGL_FEE + s * D.GRAD_NGL_SPECTATOR; return {n, s, net, vat: vatOn(net)}; };
     const upd = () => { const v = vals(); m.querySelector('#msum').innerHTML = `<table><tr><td>${v.n} graduates × ${gbp(D.GRAD_NGL_FEE)} (medal and place)</td><td style="text-align:right">${gbp(v.n * D.GRAD_NGL_FEE)}</td></tr>${v.s ? `<tr><td>${v.s} extra spectators × ${gbp(D.GRAD_NGL_SPECTATOR)}</td><td style="text-align:right">${gbp(v.s * D.GRAD_NGL_SPECTATOR)}</td></tr>` : ''}<tr><td>VAT (20%)</td><td style="text-align:right">${gbp(v.vat)}</td></tr><tr><td><b>Total</b></td><td style="text-align:right"><b>${gbp(v.net + v.vat)}</b></td></tr></table>`; };
     m.querySelectorAll('input').forEach(i => i.addEventListener('input', upd)); upd();
     m.querySelector('form').addEventListener('submit', e => { e.preventDefault(); const v = vals(); if (!v.n) return; m.remove();
@@ -75,7 +76,7 @@ export const SCH = {
   'sch-sec-today'(){ const t = D.secToday(secRead()); if (t.key === 'on') secPrint(t.n); },
 
   'sch-buy'(b){
-    const band = D.SCHOOLS_BANDS.find(x => x.key === b.dataset.band), vat = Math.round(band.price * 20) / 100;
+    const band = D.SCHOOLS_BANDS.find(x => x.key === b.dataset.band), vat = vatOn(band.price);
     const m = modal(`<h2>Start your Schools Club Licence</h2><table><tr><td>NGL Schools Club Licence: ${esc(band.label)} (12 months)</td><td style="text-align:right">${gbp(band.price)}</td></tr><tr><td>VAT (20%)</td><td style="text-align:right">${gbp(vat)}</td></tr><tr><td><b>Total</b></td><td style="text-align:right"><b>${gbp(band.price + vat)}</b></td></tr></table>
       <form><label style="display:flex;gap:8px;align-items:flex-start;margin:12px 0"><input type="checkbox" required style="width:auto;margin-top:4px"><span>We coach ${esc(band.short)} Schools gymnasts. We’ll move up a band if that changes.</span></label>
       <div class="btn-row"><button class="btn">Continue to secure payment</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);

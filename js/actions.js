@@ -10,15 +10,16 @@ import { SCH } from './pathways/schools-actions.js';
 import { GL } from './pathways/general-actions.js';
 import { APPACTS } from './admin-registry.js';
 import { GBO } from './shop/groupbuy-order.js';
+import { postageFor } from './prices.js';
 
 const rerender = () => window.NGL_RENDER && window.NGL_RENDER();
 export const basket = {
   get(){ try { return JSON.parse(sessionStorage.ngl_basket || '[]'); } catch { return []; } },
   set(b){ sessionStorage.ngl_basket = JSON.stringify(b.filter(l => l.qty > 0)); }
 };
-const POSTAGE = qty => qty <= 20 ? 4 : qty <= 100 ? 8 : 12;   // same bands as the Skills Book checkout
+// Prices, postage bands and VAT come from NGL's price list (prices.json, copied in js/prices.js)
 export const totals = lines => { const items = lines.reduce((a, l) => a + l.qty * l.unit, 0), qty = lines.reduce((a, l) => a + l.qty, 0);
-  const post = qty ? POSTAGE(qty) : 0; return {items, post, total: items + post, qty}; };
+  const post = postageFor(qty); return {items, post, total: items + post, qty}; };
 
 const ACT = {
   // QR code for a family link (the one NGL app + the club's code); printable for the noticeboard

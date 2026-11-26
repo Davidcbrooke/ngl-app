@@ -16,6 +16,7 @@ import { fb } from '../firebase.js';
 import { MODE } from '../data.js';
 import { ENV, EMAILJS } from '../config.js';
 import { esc, toast } from '../ui.js';
+import PRICES from '../prices.js';
 
 const DEMO = MODE === 'demo', SANDBOX = ENV !== 'live';
 export const DEMO_CLUB_ID = 'demo';   // the sample club (SAADI Gymnastics) in ?demo, as in admin-data.js
@@ -67,7 +68,7 @@ export const PRODUCTS = [
       ['Navy/Sky Blue', '#0c184a', '#75cfff', 'NV%252fSK'],['Navy/White', '#0c184a', '#ffffff', 'NV%252fWH'],['Burgundy', '#8b2332', null, 'BG_BG']] }
 ];
 export const MIN_TOTAL = 50;      // each product's order goes ahead once all clubs together reach this many
-export const VAT_RATE = 0.20;     // on adult garments, and the adult share of set-up and delivery; children's sizes are zero-rated
+export const VAT_RATE = PRICES.vatRate;     // on adult garments, and the adult share of set-up and delivery; children's sizes are zero-rated
 export const SETUP_FEE = 25;      // one-off logo set-up per club, first order only
 export const DELIVERY_FEE = 20;   // delivery to each club, once per club per order round
 export const CLOSE_MONTHS = [2,5,8,11];  // orders close on the last day of Feb, May, Aug and Nov at 11:59pm
@@ -322,10 +323,10 @@ function clubBills(orders = ORDERS, round = S.round, cof = clubOf){   // one inv
 function payOrderDoc(c, round = S.round){
   const k = l => /^Logo set-up/.test(l.d) ? 'setup' : /^Delivery/.test(l.d) ? 'delivery' : 'groupbuy';
   const lines = c.lines.map(l => ({ k:k(l), n:l.d, qty:l.q, unit:l.u }));
-  const vat = r2(c.vat), net = r2(c.net);
+  const vat = r2(c.vat);
   if (vat) lines.push({ k:'vat', n:`VAT at ${Math.round(VAT_RATE * 100)}%${c.lines.some(l => !l.r) ? ' (adult sizes only' + (c.part ? '; set-up and delivery in proportion' : '') + ')' : ''}`, qty:1, unit:vat });
   const items = c.orders.map(o => `${o.qty} × ${prodOf(o.product || 'JC001').name}`).join(', '), a = c.orders[0].address || {};
-  return { clubId:c.clubId, clubName:c.club, kind:'groupbuy', path:'general', lines, total:r2(net + vat),
+  return { clubId:c.clubId, clubName:c.club, kind:'groupbuy', createdBy:'ngl-admin', path:'general', lines, total:r2(lines.reduce((a, l) => a + l.qty * l.unit, 0)),
     details:`Group buying (invoice ${c.no}): ${items}`, delivery:[c.club, a.line1, a.line2, a.town, a.postcode].filter(Boolean).join(', '),
     status:'awaiting-payment', groupbuyRound:round, groupbuyOrderIds:c.orders.map(o => o.id), invoiceNo:c.no };
 }

@@ -3,6 +3,7 @@ import api from '../data.js';
 import { modal, toast, esc, gbp } from '../ui.js';
 import { loadScript, printHTML } from './index.js';
 import ps from './preschool.js';
+import PRICES, { vatOn } from '../prices.js';
 
 const rerender = () => window.NGL_RENDER && window.NGL_RENDER();
 const H = () => ps.helpers();
@@ -78,7 +79,7 @@ export const PS = {
     catch (x) { console.error(x); toast('Saved on this device, but not to your club account. Please try again.', false); }
     rerender(); },
   async 'ps-buy'(b){
-    const {BANDS} = H(), band = BANDS.find(x => x.k === b.dataset.band), c = await api.club(), vat = Math.round(band.price * 20) / 100;
+    const {BANDS} = H(), band = BANDS.find(x => x.k === b.dataset.band), c = await api.club(), vat = vatOn(band.price);
     const m = modal(`<h2>Start your Pre-School licence</h2>
       <table><tr><td>Pre-School Club Licence: ${esc(band.label)} (12 months)</td><td style="text-align:right">${gbp(band.price)}</td></tr>
       <tr><td>VAT (20%)</td><td style="text-align:right">${gbp(vat)}</td></tr><tr><td>A1 Around the World poster, postage included</td><td style="text-align:right">Free</td></tr>
@@ -88,10 +89,10 @@ export const PS = {
       <div class="btn-row"><button class="btn">Continue to secure payment</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
     m.querySelector('form').addEventListener('submit', e => { e.preventDefault(); const addr = m.querySelector('#addr').value.trim(); m.remove();
       checkout([{k: 'licence', path: 'preschool', n: `Pre-School Club Licence: ${band.label} (12 months)`, qty: 1, unit: band.price}, {k: 'vat', n: 'VAT (20%)', qty: 1, unit: vat},
-        {k: 'poster', n: 'A1 Around the World poster (free with the licence)', qty: 1, unit: 0}], addr, {kind: 'licence', licPath: 'preschool', band: band.label}, 'Pre-School licence'); });
+        {k: 'poster', n: PRICES.included.poster.n, qty: 1, unit: PRICES.included.poster.price}], addr, {kind: 'licence', licPath: 'preschool', band: band.label}, 'Pre-School licence'); });
   },
   async 'ps-pack'(b){
-    const {PACKS} = H(), [n, , price] = PACKS[b.dataset.pack], vat = Math.round(price * 20) / 100;
+    const {PACKS} = H(), [n, , price] = PACKS[b.dataset.pack], vat = vatOn(price);
     checkout([{k: 'pack', path: 'preschool', n, qty: 1, unit: price}, {k: 'vat', n: 'VAT (20%)', qty: 1, unit: vat}], '', {kind: 'pack', licPath: 'preschool', pack: b.dataset.pack}, n);
   }
 };

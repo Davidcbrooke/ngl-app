@@ -19,7 +19,7 @@ export default async function shop([sub = '', id, ...rest]){
     <div class="card"><table><tr><th>Date</th><th>Ref</th><th>Programme</th><th>Details</th><th>Total</th><th>Status</th><th></th></tr>
     ${orders.map(o => { const unpaid = o.status === 'awaiting-payment';
       return `<tr><td>${date(o.date, {day:'numeric', month:'short'})}</td><td><a href="#/shop/orders/${esc(o.id)}"><b>${esc(o.id)}</b></a></td><td>${dot(o.path)} ${esc((path(o.path) || {n: ''}).n)}</td><td>${esc(o.details)}</td><td>${gbp(o.total)}</td>
-      <td>${pill(unpaid ? 'Not paid' : o.status === 'sent' ? 'Sent' : 'Paid', unpaid ? 'red' : 'ok')}</td><td style="white-space:nowrap">${unpaid ? `<button class="btn sm" data-act="pay" data-order="${esc(o.id)}">Finish payment</button>` : `<button class="btn sm ghost" data-act="invoice" data-order="${esc(o.id)}">Receipt</button>`}</td></tr>`; }).join('')}</table></div>
+      <td>${o.status === 'on-hold' ? pill('On hold: NGL is checking', 'warn') : pill(unpaid ? 'Not paid' : o.status === 'sent' ? 'Sent' : 'Paid', unpaid ? 'red' : 'ok')}</td><td style="white-space:nowrap">${unpaid ? `<button class="btn sm" data-act="pay" data-order="${esc(o.id)}">Finish payment</button>` : `<button class="btn sm ghost" data-act="invoice" data-order="${esc(o.id)}">Receipt</button>`}</td></tr>`; }).join('')}</table></div>
     <p class="lead" style="margin-top:12px">You pay when you order: card, Apple Pay, Google Pay or Pay by bank. Stripe emails each receipt.</p>`;
   } else {
     const bk = basket.get(), t = totals(bk);

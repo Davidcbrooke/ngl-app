@@ -3,14 +3,15 @@ import api from '../data.js';
 import { toast } from '../ui.js';
 import { loadScript } from './index.js';
 import { UI, BOOK, postage, totalHTML, LINKS } from './general.js';
+import PRICES from '../prices.js';
 
 const redraw = () => window.NGL_RENDER && window.NGL_RENDER();
-const qty = () => Math.max(1, parseInt((document.getElementById('glQty') || {}).value, 10) || UI.qty || 1);
+const qty = () => Math.min(PRICES.maxQty, Math.max(1, parseInt((document.getElementById('glQty') || {}).value, 10) || UI.qty || 1));
 
 export const GL = {
   'gl-gender'(b){ UI.gender = b.dataset.v; redraw(); },
   'gl-level'(b){ UI.level = b.dataset.v; redraw(); },
-  'gl-qty'(b){ UI.qty = Math.max(1, qty() + +b.dataset.d); const i = document.getElementById('glQty'); if (i) i.value = UI.qty;
+  'gl-qty'(b){ UI.qty = Math.min(PRICES.maxQty, Math.max(1, qty() + +b.dataset.d)); const i = document.getElementById('glQty'); if (i) i.value = UI.qty;
     const t = document.getElementById('glTotal'); if (t) t.innerHTML = totalHTML(UI.qty); },
   async 'gl-buy'(b){
     const q = qty(); UI.qty = q; b.disabled = true; b.textContent = 'Opening secure payment…';

@@ -6,16 +6,13 @@ import { appLink } from '../config.js';
 import api from '../data.js';
 import { esc, gbp, date, pill, ic } from '../ui.js';
 import { printHTML } from './index.js';
+import PRICES from '../prices.js';
 import { PLAN_WEEK_A as WEEK_A, PLAN_WEEK_B as WEEK_B, CLASS_RULES, PIECE_OPTS, planDefaults, buildClubPlan, clubWeekNow } from './rec-engine.js';
 
 export const LEVELS = [
   {key: 'ruby', name: 'Ruby', book: 1, color: '#c8194a'}, {key: 'pink', name: 'Pink', book: 2, color: '#c2185b'},
   {key: 'teal', name: 'Teal', book: 3, color: '#08686b'}, {key: 'indigo', name: 'Indigo', book: 4, color: '#5a55c8'}];
-export const BANDS = [
-  {k: 'xs', label: '1 to 24 recreational gymnasts', price: 200}, {k: 'sm', label: '25 to 49 recreational gymnasts', price: 300},
-  {k: 's', label: '50 to 99 recreational gymnasts', price: 500}, {k: 'm', label: '100 to 249 recreational gymnasts', price: 1000},
-  {k: 'm2', label: '250 to 399 recreational gymnasts', price: 1250}, {k: 'l', label: '400 to 599 recreational gymnasts', price: 1500},
-  {k: 'xl', label: '600 or more recreational gymnasts', price: 2000}];
+export const BANDS = PRICES.licences.recreational.bands;   // from NGL's price list (prices.json)
 const SAMPLE_URL = 'content/rec-sample.json';
 // Parents open the one NGL app with the club's code
 const ROTA_URL = 'https://club.nationalgymnasticsleague.co.uk/rotation-planner/';
