@@ -269,3 +269,25 @@ a.card:hover{border-color:#cfcde3}.nav a{color:#dcdcf2}.nav a.on{color:var(--nav
 .ts-clubs span b{font-weight:700;margin-left:4px;color:var(--navy)}.ts-clubs .lbl{background:none;padding:3px 0;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
 .ts-unm{margin-top:22px;border:1px dashed #c9cde0;font-size:14px}.ts-unm li{margin:3px 0}
 @media(max-width:700px){.ts-comp{grid-template-columns:1fr 1fr 1fr}.ts-comp .ts-nm{grid-column:1/-1}}
+
+/* The front of the one app: download page (phones install first) and Club or Parent */
+.land{position:fixed;inset:0;overflow:auto;background:var(--wash);z-index:50}
+.land-hero{background:radial-gradient(circle at 50% 30%,#2a245f 0%,#0a1440 75%);color:#fff;text-align:center;padding:calc(44px + env(safe-area-inset-top,0px)) 24px 76px;border-radius:0 0 34px 34px;position:relative;overflow:hidden}
+.land-bar{position:absolute;left:0;right:0;top:0;display:flex;height:6px}.land-bar i{flex:1}
+.land-icon{width:112px;height:112px;border-radius:26px;box-shadow:0 12px 30px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.25);display:block;margin:0 auto}
+.land-hero h1{font:900 40px var(--cond);text-transform:uppercase;margin:16px 0 0;color:#fff}.land-hero p{opacity:.88;max-width:34ch;margin:10px auto 0;line-height:1.45}
+.land-wrap{max-width:520px;margin:-44px auto 0;padding:0 16px 40px;position:relative}
+.land-card{margin-bottom:14px}.land-card h2{text-align:center;margin:0 0 4px}
+.land-small{font-size:13px;color:var(--muted);text-align:center;margin:0}
+.osbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.osbtn{display:flex;align-items:center;gap:10px;justify-content:center;padding:12px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--navy);font:700 17px Roboto,Arial,sans-serif;cursor:pointer}
+.osbtn small{display:block;font-size:11px;font-weight:500;color:var(--muted);text-align:left}.osbtn span{text-align:left}
+.osbtn.on{border-color:var(--navy);background:var(--navy);color:#fff}.osbtn.on small{color:rgba(255,255,255,.75)}
+.land-stepsbox{margin-top:14px}.land-steps{margin:0;padding-left:22px;line-height:1.5}.land-steps li{margin:8px 0}
+.land-note{background:#fff3e0;border-radius:12px;padding:12px 14px;font-size:14px}.land-note b{display:block}.land-note.ok{background:#e4f4ea}
+.land-install{width:100%;justify-content:center;margin:4px 0}
+.land-li{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}.land-li:first-of-type{border-top:0}
+.land-li b{display:block;color:var(--navy)}.land-li small{display:block;color:var(--muted);font-size:13px;line-height:1.35}
+.land-foot{text-align:center;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-top:18px}
+.welcome .who-btn{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:16px;margin-top:12px;border:2px solid var(--line);border-radius:16px;background:#fff;cursor:pointer;font:inherit;color:var(--ink)}
+.welcome .who-btn:hover{border-color:var(--navy)}.welcome .who-btn b{display:block;font-size:18px;color:var(--navy)}.welcome .who-btn small{display:block;color:var(--muted)}

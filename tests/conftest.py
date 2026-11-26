@@ -84,6 +84,8 @@ def account(browser, base_url):
     pw = "Test-" + secrets.token_hex(8)
     pg = Page(browser, base_url)
     pg.go()
+    if pg.p.locator("[data-who=club]").count():      # first screen: Club or Parent
+        pg.p.click("[data-who=club]")
     pg.p.click("[data-mode=register]")
     pg.p.fill("#name", "AUTOTEST Gymnastics Club")
     pg.p.fill("#contact", "Auto Test")

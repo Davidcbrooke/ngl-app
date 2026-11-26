@@ -1,8 +1,8 @@
 {
-  "name": "NGL Club Hub",
-  "short_name": "Club Hub",
-  "description": "Competitions, programmes, orders and rules for National Gymnastics League clubs.",
-  "start_url": "./#/home",
+  "name": "National Gymnastics League",
+  "short_name": "NGL",
+  "description": "The NGL app for clubs and families: competitions, programmes, awards and results.",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#28225c",

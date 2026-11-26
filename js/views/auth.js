@@ -6,7 +6,7 @@ import { BRAND } from '../config.js';
 
 const shell = (inner) => `<div class="auth"><div><div class="box">
   <img class="logo" src="${BRAND}ngl-logo-full.png" alt="National Gymnastics League">${inner}</div>
-  <p class="foot">Exclusively for British Gymnastics Clubs · <a style="color:#fff" href="?demo#/home">Look around with sample data</a></p></div></div>`;
+  <p class="foot">Exclusively for British Gymnastics Clubs · <a style="color:#fff" href="#" data-parent>I’m a parent</a> · <a style="color:#fff" href="?demo#/home">Look around with sample data</a></p></div></div>`;
 const field = (id, label, type = 'text', extra = '') => `<label class="field"><span>${label}</span><input id="${id}" type="${type}" ${extra}></label>`;
 
 export function showAuth(mode = 'login', msg = ''){
@@ -25,6 +25,7 @@ export function showAuth(mode = 'login', msg = ''){
     <p class="err" id="err">${esc(msg)}</p><button class="btn" style="width:100%;justify-content:center">Log in</button></form>
     <p class="alt"><a href="#" data-mode="reset">Forgotten password?</a> · New to NGL? <a href="#" data-mode="register">Register your club</a></p>`);
   root.hidden = false; document.querySelector('.app').hidden = true;
+  const par = root.querySelector('[data-parent]'); if (par) par.addEventListener('click', async e => { e.preventDefault(); try { localStorage.removeItem('ngl.who'); } catch (_) {} (await import('./welcome.js')).showParent(); });
   root.querySelectorAll('[data-mode]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); showAuth(a.dataset.mode); }));
   const f = root.querySelector('#f'), err = root.querySelector('#err'), v = id => (root.querySelector('#' + id) || {}).value?.trim();
   root.querySelector('input').focus();

@@ -18,10 +18,26 @@ def test_every_screen_opens(page, hash_, title):
     assert title in page.p.inner_text("#page h1").upper()
 
 
-def test_signed_out_shows_login(page):
+def test_signed_out_shows_club_or_parent(page):
     page.go("#/home")
-    assert "CLUB HUB" in page.p.inner_text("#authRoot h1").upper()
+    assert "WELCOME" in page.p.inner_text("#authRoot h1").upper()
     assert page.p.is_hidden(".app")
+    page.p.click("[data-who=club]")
+    assert "CLUB HUB" in page.p.inner_text("#authRoot h1").upper()
+    page.p.click("[data-parent]")
+    page.p.wait_for_selector("#pcode", timeout=5000)
+    assert "PARENT" in page.p.inner_text("#authRoot h1").upper()
+
+
+def test_download_page(page):
+    page.p.goto(page.base + "?gate")
+    page.p.wait_for_selector(".land", timeout=20000)
+    t = page.p.inner_text(".land").upper()
+    assert "DOWNLOAD THE APP" in t and "IPHONE" in t and "ANDROID" in t
+    page.p.click("[data-land=os][data-v=ios]")
+    assert "Add to Home Screen" in page.p.inner_text(".land")
+    page.p.click("[data-land=os][data-v=android]")
+    assert "Install app" in page.p.inner_text(".land")
 
 
 def test_seven_menu_items_in_order(page):

@@ -3,6 +3,7 @@
 import { ENV } from './config.js';
 import api, { MODE } from './data.js';
 import { showAuth } from './views/auth.js';
+import { needGate, showGate, showWelcome } from './views/welcome.js';
 import './actions.js';
 import { svg, esc, toast } from './ui.js';
 import { SEARCH } from './search.js';
@@ -50,10 +51,12 @@ async function render(){
 }
 
 async function start(){
+  if (needGate()) return showGate();                 // phones: download the app first
   if (MODE === 'firebase') {
     let u = null;
     try { u = await api.user(); } catch (e) { console.error(e); }
-    if (!u) return showAuth();
+    if (!u) { let who = ''; try { who = localStorage.getItem('ngl.who') || ''; } catch (_) {}
+      return who === 'club' ? showAuth() : showWelcome(); }   // first screen: Club or Parent
   }
   const c = await api.club(), lic = await api.licences();
   let claimed = 0; try { claimed = await api.claimPending(); } catch (e) { console.warn('Earlier places not brought in', e.code || e); }
