@@ -37,6 +37,11 @@ service firebase.storage {
                             && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
       allow delete: if isAdmin();
     }
+    // Judges' profile photos: each judge writes only their own, images under 5MB; signed-in users can see them
+    match /judge-photos/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid && request.resource.size < 5 * 1024 * 1024 && request.resource.contentType.matches('image/.*');
+    }
     match /resources/{file} {
       allow read: if signedIn();
       allow write: if isAdmin() || team(['judging']);

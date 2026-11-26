@@ -1,0 +1,174 @@
+/* Judging Pathway, judge side (js/views/judge.js). The family shell's pattern in the app's look; every class starts jg- */
+.jg{min-height:100vh;background:var(--wash);display:flex;flex-direction:column}
+.jg .sr,.jg-dlg .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.jg-top{display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;background:#fff;border-bottom:4px solid var(--navy)}
+.jg-top img{height:30px}.jg-top .grow{flex:1;min-width:0}.jg-top b{display:block;color:var(--navy)}
+.jg-top small{display:block;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jg-tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);scrollbar-width:none}
+.jg-tabs::-webkit-scrollbar{display:none}
+.jg-tabs a{flex:none;padding:8px 14px;min-height:40px;display:flex;align-items:center;border-radius:99px;border:2px solid var(--navy);color:var(--navy);font-weight:700;text-decoration:none;font-size:14px}
+.jg-tabs a.on{background:var(--navy);color:#fff}
+.jg-page{flex:1;width:100%;max-width:760px;margin:0 auto;padding:16px}
+.jg-foot{text-align:center;color:var(--muted);font-size:12px;line-height:1.8;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+.jg-foot b{color:var(--navy)}.jg-foot a{color:var(--navy)}
+.jg-demo{margin:0 0 12px;font-size:13px;color:var(--warn);font-weight:700}
+.jg-err{margin-bottom:14px;color:var(--red);font-weight:500}
+.jg-page .card{margin-bottom:16px}
+.jg-wide{width:100%;justify-content:center;min-height:44px;margin:0 0 10px}
+.jg-page .btn:not(.sm),.jg-dlg .btn:not(.sm){min-height:44px}
+.jg-req{color:var(--red);font-style:normal}
+.jg-hint{font-size:13px;color:var(--muted);margin:-6px 0 12px}
+.jg-note{color:var(--muted);font-size:14px;font-style:italic;margin:0;padding:14px 16px}
+.jg-meta{color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:2px}
+.jg-okmsg{color:var(--ok)!important}
+.jg-pin{width:14px;height:14px;vertical-align:-2px}
+
+/* headings */
+.jg-h1{margin-bottom:6px}
+.jg-eyebrow{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:4px 0 2px}
+.jg-sec{margin:0 0 2px}
+.jg-secsub{color:var(--muted);margin:0 0 16px;font-size:14px}
+
+/* hero, why, pathway */
+.jg-hero{background:linear-gradient(180deg,var(--navy),var(--navy3));color:#fff;border-radius:16px;padding:26px 20px;text-align:center;margin-bottom:16px}
+.jg-kicker{display:inline-block;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.75);font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:4px 12px;border-radius:99px;margin-bottom:14px}
+.jg-hero h1{color:#fff;font-size:28px;margin:0 0 10px}.jg-hero h1 em{color:var(--sch);font-style:normal}
+.jg-hero p{color:rgba(255,255,255,.8);margin:0 auto;max-width:560px;font-size:14px}
+.jg-why{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px}
+.jg-whycard{border-top:4px solid var(--red);margin:0!important}
+.jg-wt{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:4px}
+.jg-whycard h3{margin:0 0 6px;color:var(--navy);font-size:17px}.jg-whycard p{margin:0;color:var(--muted);font-size:14px}
+.jg-pw{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:20px}
+.jg-pwcard{background:var(--navy);color:#fff;border-radius:16px;padding:16px 18px}
+.jg-pwcard b{display:block;font-size:16px}.jg-pwcard small{display:block;color:#c9cbee;font-size:13px;margin-bottom:8px}
+.jg-pwcard ul{margin:0;padding-left:18px;font-size:14px;color:#e6e6f5}.jg-pwcard li{margin:3px 0}
+.jg-pwi{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.12);margin-bottom:6px}
+.jg-pwi svg{width:22px;height:22px}
+.jg-about{margin:8px 0 16px}.jg-about summary{cursor:pointer;font-weight:700;color:var(--navy);padding:10px 0;min-height:44px}
+.jg-about[open] summary{margin-bottom:10px}
+@media(min-width:720px){.jg-why,.jg-pw{grid-template-columns:repeat(3,1fr)}.jg-hero h1{font-size:34px}}
+
+/* cards with a heading strip */
+.jg-cardhead{padding:0 0 8px}.jg-cardhead h2{margin:0 0 2px}.jg-cardhead p{margin:0;color:var(--muted);font-size:13px}
+.jg-list{padding:16px 0 4px}.jg-list>.jg-cardhead{padding:0 18px 8px;border-bottom:1px solid var(--line)}
+
+/* sign in / register */
+.jg-auth{max-width:480px;margin:0 auto 16px}
+.jg-seg{display:flex;border:1.5px solid var(--line);border-radius:99px;overflow:hidden;margin:10px 0 6px}
+.jg-seg button{flex:1;border:0;background:#fff;color:var(--navy);font:700 14px var(--body);padding:10px;min-height:44px;cursor:pointer}
+.jg-seg button.on{background:var(--navy);color:#fff}
+.jg-two{display:grid;grid-template-columns:1fr;gap:0 10px}
+@media(min-width:560px){.jg-two{grid-template-columns:1fr 1fr}}
+.jg-qlabel{font-weight:700;font-size:13px;margin:12px 0 0}
+.jg-qrow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.jg-qrow .field{flex:1;min-width:140px;margin:8px 0}
+.jg-qrow .jg-qx{margin-bottom:10px}
+.jg-qrow+.btn,.jg-qrow~.btn{margin:4px 0 14px}
+.field select{background:#fff;min-height:44px}
+.jg-forgot{margin:4px 0 0;font-size:14px}.jg-forgot a{color:var(--navy)}
+
+/* the profile card ("passport") */
+.jg-passport{background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;border-radius:18px;padding:20px;margin-bottom:12px}
+.jg-ptop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.jg-pid{display:flex;gap:14px;align-items:flex-start;min-width:0}
+.jg-avatar{position:relative;width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.35);display:grid;place-items:center;flex:none;cursor:pointer}
+.jg-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}.jg-avatar>svg{width:30px;height:30px}
+.jg-avedit{position:absolute;right:-3px;bottom:-3px;width:24px;height:24px;border-radius:50%;background:var(--red);border:2px solid var(--navy);display:grid;place-items:center}
+.jg-avedit svg{width:12px;height:12px}
+.jg-avatar:focus-within{outline:3px solid #fff;outline-offset:2px}
+.jg-pkicker{color:var(--sch);font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px}
+.jg-pname{font:900 24px/1.1 var(--cond);text-transform:uppercase}
+.jg-pclub{color:#c9cbee;font-size:13px;margin-top:2px}
+.jg-pqual{display:inline-block;background:rgba(255,255,255,.1);border-radius:99px;font-size:12px;font-weight:700;padding:2px 10px;margin-top:6px}
+.jg-rank{display:flex;flex-direction:column;align-items:center;gap:4px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:10px 14px;min-width:110px;text-align:center}
+.jg-rank svg{width:30px;height:30px}.jg-rank span{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--sch)}
+.jg-pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.jg-pstats div{background:rgba(255,255,255,.07);border-radius:12px;padding:10px 6px;text-align:center}
+.jg-pstats b{display:block;font:900 24px var(--cond)}.jg-pstats span{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#c9cbee}
+.jg-apptitle{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#c9cbee;margin-bottom:8px}
+.jg-apps{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.jg-app{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:9px 10px}
+.jg-app b{display:block;font-size:13px;margin-bottom:6px}.jg-app small{color:#c9cbee;font-size:12px}
+.jg-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;margin-bottom:5px}
+.jg-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--red),var(--sch))}
+.jg-bar.light{background:var(--wash);margin:10px 0 16px}
+
+/* next tier checklist */
+.jg-plist{padding:4px 18px 10px}
+.jg-pitem{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;color:var(--navy)}
+.jg-pitem:first-child{border-top:0}
+.jg-pitem.done{color:var(--muted);text-decoration:line-through}
+.jg-tick{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center;color:#fff}
+.jg-pitem.done .jg-tick{background:var(--ok);border-color:var(--ok)}.jg-tick svg{width:13px;height:13px}
+
+/* featured link (Elevien Academy) and quiz bests */
+.jg-feat{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-radius:16px;padding:14px 16px;margin-bottom:16px;text-decoration:none;border-left:5px solid var(--red)}
+.jg-feat .grow{flex:1;min-width:0}.jg-feat b{display:block}.jg-feat small{display:block;color:#c9cbee;font-size:13px}
+.jg-feat>span{color:var(--sch);font-weight:700;font-size:13px;white-space:nowrap}
+.jg-featic{width:30px;height:30px;flex:none;color:var(--sch)}
+a.jg-quizpb{display:block;text-decoration:none;color:inherit}a.jg-quizpb:hover{border-color:#cfcde3}
+.jg-pbs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.jg-pbs div{background:var(--wash);border-radius:12px;padding:12px 8px;text-align:center}
+.jg-pbs b{display:block;font:900 24px var(--cond);color:var(--navy)}.jg-pbs span{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+/* notifications */
+.jg-notif{display:flex;gap:10px;padding:12px 18px;border-top:1px solid var(--line);font-size:14px;color:var(--navy)}
+.jg-notif:first-child{border-top:0}.jg-notif small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.jg-nic{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--wash);color:var(--navy)}
+.jg-nic svg{width:15px;height:15px}.jg-nic.ok{background:#e4f4ea;color:var(--ok)}.jg-nic.bad{background:#fbe7ea;color:var(--red)}
+
+/* competitions (my assignments, judge a competition, calendar) */
+.jg-comp{background:#fff;border:1px solid var(--line);border-left:4px solid transparent;border-radius:14px;margin-bottom:10px;overflow:hidden}
+.jg-list .jg-comp{margin:10px 12px}
+.jg-comp.signed{border-left-color:var(--red)}
+.jg-comphead{display:flex;gap:12px;align-items:center;padding:12px 14px;flex-wrap:wrap}
+.jg-comphead .grow{flex:1;min-width:170px}.jg-comphead b{color:var(--navy)}
+.jg-date{background:var(--navy);color:#fff;text-align:center;border-radius:10px;padding:6px 4px;width:52px;flex:none}
+.jg-date b{display:block;font:900 22px/1 var(--cond);color:#fff}.jg-date span{font-size:10px;font-weight:700;letter-spacing:.1em;color:#c9cbee}
+.jg-acts{display:flex;gap:6px;flex-wrap:wrap}
+.jg-assign{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:4px 14px 14px;border-top:1px solid var(--line);background:#fdf6f5}
+.jg-assign .field{flex:1;min-width:140px;margin:8px 0 0}
+.jg-assign>.btn{min-width:110px;justify-content:center}
+.jg-pinfo{flex-basis:100%;font-size:13px;font-weight:600;color:var(--navy);background:#fff8d6;border:1px solid #f0d66b;border-radius:10px;padding:8px 10px}
+.jg-mypills{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px}
+.jg-mypill{display:inline-flex;align-items:center;gap:6px;background:#fdf6f5;border:1px solid rgba(198,21,46,.25);color:var(--navy);font-size:13px;font-weight:700;padding:3px 4px 3px 10px;border-radius:99px}
+.jg-mypill button{border:0;background:none;color:var(--red);font-weight:700;font-size:18px;line-height:1;min-width:32px;min-height:32px;border-radius:50%}
+.jg-how{border-left:4px solid var(--sch)}
+.jg-howt{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px}
+.jg-howgrid{display:grid;grid-template-columns:1fr;gap:10px;font-size:14px;color:var(--navy);margin-bottom:12px}
+@media(min-width:560px){.jg-howgrid{grid-template-columns:1fr 1fr}}
+.jg-how .jg-hint{margin:0}
+.jg-gate{text-align:center;color:var(--muted);padding:30px 18px}.jg-gate b{display:block;color:var(--navy);font-size:17px;margin-bottom:6px}
+.jg-calbtn{width:100%;border:0;background:#fff;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.jg-count{background:var(--wash);color:var(--navy);font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.jg-reveal{padding:12px 16px;border-top:1px solid var(--line)}
+.jg-calgroup{margin-bottom:12px}.jg-calgroup:last-child{margin-bottom:0}
+.jg-caltitle{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.jg-calrow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px 0;border-top:1px solid var(--line);font-size:14px;color:var(--navy)}
+.jg-calrow:first-of-type{border-top:0}
+.jg-reveal .jg-note{padding:0}
+
+/* quiz */
+.jg-qcard .jg-qbody{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.jg-qbody small{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.jg-qbody b{display:block;font:900 28px var(--cond);color:var(--navy)}
+.jg-qtop{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.jg-qq{font:700 17px/1.4 var(--body);text-transform:none;margin:0 0 14px}
+.jg-opts{display:flex;flex-direction:column;gap:8px}
+.jg-opt{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px 14px;min-height:44px;font:500 15px var(--body);color:var(--ink);cursor:pointer}
+.jg-opt:hover:not([disabled]){border-color:var(--navy)}
+.jg-opt[disabled]{cursor:default}
+.jg-opt.right{border-color:var(--ok);color:var(--ok);font-weight:700}.jg-opt.wrong{border-color:var(--red);color:var(--red);font-weight:700}.jg-opt.dim{opacity:.5}
+.jg-fb{border-radius:10px;padding:10px 14px;font-weight:700;margin:12px 0}.jg-fb.right{background:#e4f4ea;color:var(--ok)}.jg-fb.wrong{background:#fbe7ea;color:var(--red)}
+.jg-qres{text-align:center}.jg-qresic svg{width:40px;height:40px;color:var(--sch)}
+.jg-qpct{font:900 40px var(--cond)}
+
+/* resources */
+.jg-restitle{font-size:14px;color:var(--muted);margin:18px 0 8px}
+.jg-res{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--sch);border-radius:14px;padding:12px 14px;margin-bottom:8px;text-decoration:none;color:inherit}
+.jg-res .grow{flex:1;min-width:0}.jg-res b{display:block;color:var(--navy)}.jg-res small{display:block;color:var(--muted);font-size:13px}
+.jg-res .jg-meta{white-space:nowrap}
+.jg-resic{width:22px;height:22px;flex:none;color:var(--navy)}
+
+/* dialogs */
+.jg-dlg .btn-row{margin-top:12px}

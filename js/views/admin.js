@@ -10,7 +10,7 @@ const SUB = [['', 'Overview'], ['clubs', 'Clubs'], ['orders', 'Orders'], ['compe
 const allowed = (me, k) => k === '' || (k === 'team' ? !!me.owner : can(me, SCREENS[k]));
 const NO_ACCESS = '<div class="card empty">You don’t have access to this area. Ask Dave to tick it for you in NGL Admin → Team.</div>';
 const on = L => L && ['live', 'waived'].includes(L.status);
-const statusPill = o => o.status === 'sent' ? pill('Posted', 'ok') : o.status === 'paid' ? pill('Paid · to post', 'warn') : pill('Not paid', 'red');
+const statusPill = o => o.status === 'sent' ? pill('Posted', 'ok') : o.status === 'paid' ? pill('Paid · to post', 'warn') : o.status === 'on-hold' ? pill('On hold · price check failed', 'red') : pill('Not paid', 'red');
 
 export default async function admin(parts = [], ctx = {}){
   const [sub = '', id] = parts;
@@ -37,9 +37,10 @@ function board(me){
 
 // Rebuilt admin apps, each in its own file (js/admin/<id>.js), loaded the first time it's opened. true = has its own stylesheet.
 // value = the app's stylesheet (css/admin-<name>.css), '' = none
-const MODS = {sales: '', finance: 'finance', planning: 'planning', staffing: 'staffing', music: 'music', musicplayer: 'music', results: 'results', judging: 'judging', powerleague: 'powerleague', 'gl-hub': 'glhub', rotation: 'rotation', groupbuy: 'groupbuy', email: 'email', projection: 'projection'};
+const MODS = {sales: '', finance: 'finance', planning: 'planning', staffing: 'staffing', music: 'music', musicplayer: 'music', results: 'results', judging: 'judging', powerleague: 'powerleague', 'gl-hub': 'glhub', rotation: 'rotation', groupbuy: 'groupbuy', email: 'email', projection: 'projection', mailer: 'mailer'};
 async function appModule(sub, me, rest){
-  const a = APPS.find(x => x.id === sub);
+  // Booking emails has no tile of its own: it opens from Competitions and Competition planning (Competitions or Competition planning ticks)
+  const a = sub === 'mailer' ? {id: 'competitions', access: 'planning', name: 'Booking emails'} : APPS.find(x => x.id === sub);
   if (!canApp(me, a)) return head('NGL Admin') + NO_ACCESS;
   const css = MODS[sub];
   if (css && !document.querySelector(`link[data-admin-css="${css}"]`)) {
@@ -149,7 +150,7 @@ async function competitions(compId){
   <div class="card"><table><tr><th>Date</th><th>Competition</th><th>Places</th><th>Clubs</th><th></th></tr>${cal.map(c => { const rs = res.filter(r => r.compId === c.id);
     return `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td>
       <td>${rs.filter(r => r.status !== 'waiting').reduce((a, r) => a + r.places, 0)}${rs.some(r => r.status === 'waiting') ? ' + waiting' : ''}</td><td>${rs.length}</td>
-      <td style="white-space:nowrap"><a class="btn sm ghost" href="#/admin/competitions/${esc(c.id)}">Reservations</a> <button class="btn sm ghost" data-act="adm-comp" data-comp="${esc(c.id)}">Edit</button></td></tr>`; }).join('')}</table></div>`;
+      <td style="white-space:nowrap"><a class="btn sm ghost" href="#/admin/competitions/${esc(c.id)}">Reservations</a> <a class="btn sm ghost" href="#/admin/mailer/${esc(c.id)}">Booking emails</a> <button class="btn sm ghost" data-act="adm-comp" data-comp="${esc(c.id)}">Edit</button></td></tr>`; }).join('')}</table></div>`;
 }
 
 // Places booked before the club registered, grouped by the club name on the booking, with the likely club suggested

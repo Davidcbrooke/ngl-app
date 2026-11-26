@@ -26,16 +26,17 @@ const PHASES = [
 ];
 const phaseOf = days => PHASES.findIndex(([min]) => days >= min);
 const BOOKING_ADMIN = LIVE_TOOLS + 'ngl-booking-system.html?admin=1', CLUBHUB_ADMIN = '#/admin/clubs';
+const MAILER = '#/admin/mailer/{comp}/';   // Booking emails, built into this app (js/admin/mailer.js)
 const STAFFING = '#/admin/staffing', MUSIC_ADMIN = LIVE_TOOLS + 'NGL_Music_Admin.html', JUDGING = LIVE_TOOLS + 'ngl-judging-pathway.html?admin=1';
 const DEFAULT_TASKS = [
   {id:'venue',     days:120, t:'Confirm the date, venue and session times', w:'Check the competition calendar and the venue booking match.'},
   {id:'elevien',   days:112, t:'Set up the competition in Elevien', w:'Events, levels, apparatus and session start times.'},
   {id:'bookings',  days:112, t:'Open reservations to clubs', w:'Clubs reserve places in the NGL Club Hub; check the competition shows on the season calendar.', steps:[{l:'Open bookings admin', u:BOOKING_ADMIN}]},
-  {id:'mlink',     days:120, t:'Email clubs their MyBG booking link', w:'Paste the private MyBG link for each competition that day, check the preview, send a test, then Send. Each club gets its own email with its places.', steps:[{l:'Open the email', u:BOOKING_ADMIN + '&mail={comp}&tpl=open'}]},
-  {id:'mremind',   days:97,  t:'Reminder: one week to the booking deadline', w:'Same email screen, second template. Goes to every club with reserved places.', steps:[{l:'Open the reminder', u:BOOKING_ADMIN + '&mail={comp}&tpl=remind'}]},
+  {id:'mlink',     days:120, t:'Email clubs their MyBG booking link', w:'Paste the private MyBG link for each competition that day, check the preview, send a test, then Send. Each club gets its own email with its places.', steps:[{l:'Open the email', u:MAILER + 'open'}]},
+  {id:'mremind',   days:97,  t:'Reminder: one week to the booking deadline', w:'Same email screen, second template. Goes to every club with reserved places.', steps:[{l:'Open the reminder', u:MAILER + 'remind'}]},
   {id:'buy',       days:90,  t:'Reservation deadline: clubs buy their places', w:'Reserved places must be bought 3 months before. Chase anyone who reserved but hasn\'t bought on JustGo.', steps:[{l:'See who hasn\'t bought', u:BOOKING_ADMIN}]},
   {id:'release',   days:89,  t:'Fill any places that weren\'t bought', w:'Work down the list in order. Stop as soon as the places are filled.',
-    steps:[{l:'1. Email the waiting list', u:BOOKING_ADMIN + '&mail={comp}&tpl=waitlist'}, {l:'2. Email every club with an NGL Club Hub account', u:BOOKING_ADMIN + '&mail={comp}&tpl=hub'}, {l:'3. Social media post', u:'https://www.instagram.com/national_gymnastics_league/'}, {l:'4. Email all British Gymnastics clubs (Brevo)', u:'https://app.brevo.com/'}]},
+    steps:[{l:'1. Email the waiting list', u:MAILER + 'waitlist'}, {l:'2. Email every club with an NGL Club Hub account', u:MAILER + 'hub'}, {l:'3. Social media post', u:'https://www.instagram.com/national_gymnastics_league/'}, {l:'4. Email all British Gymnastics clubs (Brevo)', u:'https://app.brevo.com/'}]},
   {id:'judges',    days:84,  t:'Book the judges', w:'2 remote judges from the Judging Pathway, plus attending clubs\' judges for the other pieces.', steps:[{l:'Open Judging', u:JUDGING}]},
   {id:'staff',     days:75,  t:'Fill the staffing board', w:'Competition manager, floor manager, scoring, announcer, music, runners, camera operators.', steps:[{l:'Open Staffing', u:STAFFING}]},
   {id:'medals',    days:70,  t:'Order medals and awards', w:'Allow for every level and age group, plus spares.'},
@@ -76,12 +77,14 @@ function addNewStd(list, seen){
   return add.length ? list.concat(add).sort((a, b) => b.days - a.days || (a.pos ?? 0) - (b.pos ?? 0)) : list;
 }
 
-/* Links saved by the old tool (relative to GYMNASTICS-RESULTS) still work: Staffing and Club Hub admin open in this app,
-   every other old tool opens live in a new tab. */
+/* Links saved by the old tool (relative to GYMNASTICS-RESULTS) still work: Staffing, Club Hub admin and the booking emails
+   (ngl-booking-system.html?admin=1&mail=…&tpl=…, kept in a saved standard list) open in this app, every other old tool opens live in a new tab. */
 const OLD_CLUBHUB = 'https://club.nationalgymnasticsleague.co.uk/#admin';
 function linkOf(u){
   u = String(u || '#').trim();
   if (u === OLD_CLUBHUB) return CLUBHUB_ADMIN;
+  const ml = u.match(/ngl-booking-system\.html\?admin=1&mail=([^&#]*)(?:&tpl=(\w+))?/i);
+  if (ml) return '#/admin/mailer/' + ml[1] + (ml[2] ? '/' + ml[2] : '');
   if (u === '#' || /^(https?:|mailto:|#)/i.test(u)) return u;
   u = u.replace(/^\.\//, '');
   if (/^NGL_Staffing_Admin\.html/i.test(u)) return STAFFING;
@@ -201,7 +204,7 @@ function weekHTML(){
     (items.length > 12 ? `<p class="pl-more-n">and ${items.length - 12} more: open each competition to see them.</p>` : '')
     : '<p class="pl-clear">Nothing due in the next 7 days.</p>') + '</div>';
 }
-/* "Fill any places that weren't bought": say plainly whether there's a waiting list, and send each email straight from the booking system's mailer. */
+/* "Fill any places that weren't bought": say plainly whether there's a waiting list, and send each email straight from Booking emails. */
 function waitInfo(c){
   if (!c || !S.bookings) return null;
   const grp = S.comps.filter(x => x.date === c.date && String(x.venue || '').trim().toLowerCase() === String(c.venue || '').trim().toLowerCase()).map(x => x.id);
@@ -211,8 +214,8 @@ function waitInfo(c){
 }
 function releaseSteps(t, c){
   const wi = waitInfo(c), steps = (t.steps || []).map(x => ({...x})), done = {...t.stepsDone};
-  if (steps[0]) steps[0].u = BOOKING_ADMIN + '&mail={comp}&tpl=waitlist';
-  if (steps[1]) { steps[1].u = BOOKING_ADMIN + '&mail={comp}&tpl=hub'; steps[1].l = '2. Email every club with an NGL Club Hub account'; }
+  if (steps[0]) steps[0].u = MAILER + 'waitlist';
+  if (steps[1]) { steps[1].u = MAILER + 'hub'; steps[1].l = '2. Email every club with an NGL Club Hub account'; }
   let note = '';
   if (wi && steps[0]) {
     if (wi.n) { steps[0].l = `1. Email the waiting list (${wi.clubs.length} club${wi.clubs.length === 1 ? '' : 's'})`;

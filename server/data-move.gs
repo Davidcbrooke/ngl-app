@@ -136,7 +136,23 @@ function rehearse(){
     else if (id.indexOf('plan__') === 0) writes.push(doc('compPlans/' + id.slice(6), s.data));
     else writes.push(doc('staffing/' + id, s.data)); });   // Staffing: same doc id (= competition id), same document
   // Judging Pathway lists Staffing reads: same names and doc ids (pw:<assignmentId> links and signupId depend on them)
-  const judging = {}; ['ngl_judge_signups', 'ngl_judging_assignments', 'ngl_judges', 'ngl_judge_notifications', 'ngl_resources', 'ngl_power_league', 'ngl_power_league_private', 'ngl_groupbuy_orders', 'ngl_groupbuy_rounds'].forEach(c => { const list = listAll(BOOK, c); judging[c] = list.length; list.forEach(x => writes.push(doc(c + '/' + x.id, x.data))); });
+  // One login per person in the one app: someone who was both a club and a judge keeps their CLUB login, so their judge
+  // profile and bookings move to the club's id (matched by email)
+  const clubByEmail = {}; clubs.forEach(c => { const e = String(c.data.email || '').trim().toLowerCase(); if (e) clubByEmail[e] = home(c.id); });
+  const judgesRaw = listAll(BOOK, 'ngl_judges'), judgeMap = {};
+  judgesRaw.forEach(j => { const to = clubByEmail[String(j.data.email || '').trim().toLowerCase()]; if (to && to !== j.id) judgeMap[j.id] = to; });
+  const remapJ = d => (d && d.judgeUid && judgeMap[d.judgeUid]) ? Object.assign({}, d, {judgeUid: judgeMap[d.judgeUid]}) : d;
+  const judging = {}; ['ngl_judge_signups', 'ngl_judging_assignments', 'ngl_judges', 'ngl_judge_notifications', 'ngl_resources', 'ngl_power_league', 'ngl_power_league_private', 'ngl_groupbuy_orders', 'ngl_groupbuy_rounds'].forEach(c => {
+    const list = c === 'ngl_judges' ? judgesRaw : listAll(BOOK, c); judging[c] = list.length;
+    list.forEach(x => writes.push(doc(c + '/' + (c === 'ngl_judges' ? (judgeMap[x.id] || x.id) : x.id), remapJ(x.data)))); });
+  report.judgesRelinked = Object.keys(judgeMap).length;
+  // Rotation Planner: clubs' feedback (Club Hub project) and NGL's sponsor logos (old planner database, public read)
+  const rotaFb = listAll(LIVE, 'rotaFeedback'); rotaFb.forEach(x => writes.push(doc('rotaFeedback/' + x.id, Object.assign({}, x.data, {uid: home(x.data.uid || '')}))));
+  let sponsorsN = 0;
+  try { const sp = JSON.parse(UrlFetchApp.fetch('https://saadi-rotation-default-rtdb.europe-west1.firebasedatabase.app/sponsors.json', {muteHttpExceptions: true}).getContentText() || 'null') || {};
+    Object.keys(sp).forEach(k => { const v = sp[k] || {}; if (v.image && v.image.length < 900000) { writes.push(doc('rotaSponsors/' + k, Object.assign({id: k}, v))); sponsorsN++; } }); }
+  catch (e) { Logger.log('Sponsors not copied: ' + e); }
+  report.rota = {feedback: rotaFb.length, sponsors: sponsorsN};
   report.apps = {justgoEvents: jg ? Object.keys(jg.events || {}).length : 0, plans: staffDocs.filter(s => s.id.indexOf('plan__') === 0).length, staffing: staffDocs.filter(s => s.id.indexOf('plan__') !== 0 && s.id !== 'summary__planning').length, judging};
 
   // Floor music: musicEvents (running order, absences, intros, announcements) and _builtin, same ids, from the live Club Hub project
@@ -182,6 +198,7 @@ function rehearse(){
   Logger.log('Reservations matched by club name: ' + (report.matchedByName || 0) + ' · still unmatched (places by club): ' + JSON.stringify(um));
   Logger.log('Waiting places with a booking email (join automatically): ' + (report.pendingWithEmail || 0) + ' of ' + report.unmatched.reservations.length);
   Logger.log('Family codes: ' + JSON.stringify(report.family));
+  Logger.log('Judges re-linked to their club login: ' + report.judgesRelinked + ' · Rotation Planner: ' + JSON.stringify(report.rota));
   Logger.log('Admin apps: ' + JSON.stringify(report.apps) + ' · music: ' + JSON.stringify(report.music));
   Logger.log('NGL team: ' + JSON.stringify(report.team));
   Logger.log('Merged accounts: ' + JSON.stringify(report.merged));

@@ -26,7 +26,7 @@ def browser(pytestconfig):
     with sync_playwright() as p:
         # Locally use installed Chrome; on GitHub Actions use Playwright's own Chromium.
         kw = {} if os.environ.get("CI") else {"channel": "chrome"}
-        b = p.chromium.launch(headless=not pytestconfig.getoption("--headed", default=False), **kw)
+        b = p.chromium.launch(headless=not pytestconfig.getoption("--headed", default=False), args=["--mute-audio"], **kw)   # never play sounds (the rotation screen's bell and voice) through the speakers
         yield b
         b.close()
 

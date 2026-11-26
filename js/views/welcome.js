@@ -88,10 +88,12 @@ export function showWelcome(){
     <h1>Welcome</h1><p class="lead">Are you a club or a parent?</p>
     <button class="who-btn" data-who="club">${ico('<path d="M3 21h18M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/>', '#28225c')}<span><b>Club</b><small>Log in with your club email</small></span></button>
     <button class="who-btn" data-who="parent">${ico('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.2c3 .2 5.5 2.3 5.5 5.8"/>', '#0073b3')}<span><b>Parent</b><small>Enter the code your club gave you</small></span></button>
+    <button class="who-judge" data-who="judge" style="display:block;width:100%;min-height:44px;margin-top:14px;padding:10px 12px;border:0;border-top:1px solid var(--line);background:none;text-align:center;font:inherit;font-size:14px;color:var(--muted);cursor:pointer"><b style="color:var(--navy)">Judge</b> · <span style="text-decoration:underline">Judging Pathway: log in or register as an NGL judge</span></button>
     </div><p class="foot">Exclusively for British Gymnastics Clubs</p></div></div>`;
   root.hidden = false; document.querySelector('.app').hidden = true;
   root.querySelector('[data-who=club]').addEventListener('click', () => { try { localStorage.setItem('ngl.who', 'club'); } catch (_) {} showAuth('login'); });
   root.querySelector('[data-who=parent]').addEventListener('click', () => showParent());
+  root.querySelector('[data-who=judge]').addEventListener('click', async () => { try { localStorage.setItem('ngl.who', 'judge'); } catch (_) {} (await import('./judge.js')).showJudge(); });
 }
 
 // Parent: the family code (each programme has its own code, as today); the code decides which programme opens

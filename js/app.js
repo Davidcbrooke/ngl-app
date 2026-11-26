@@ -17,12 +17,14 @@ import help from './views/help.js';
 import admin from './views/admin.js';
 import groupbuy from './views/groupbuy.js';
 import better from './views/better.js';
+import tools from './tools/rotation.js';
 
 const NAV = [
   ['home', 'Home', 'home', home],
   ['competitions', 'Competitions', 'comp', competitions],
   ['rules', 'Rules & resources', 'rules', rules],
   ['programmes', 'Programmes', 'prog', programmes],
+  ['tools', 'Rotation Planner', 'plan', tools],
   ['shop', 'Shop & orders', 'shop', shop],
   ['groupbuy', 'Group Buying', 'group', groupbuy],
   ['better', 'Be Better', 'better', better],
@@ -64,15 +66,21 @@ async function start(){
   if (fam.hasArrival(qa) && await fam.arrive(qa)) return fam.showFamily();
   // Parents: ?demo&family shows the family side with sample codes; a parent's own codes open it straight away
   if (MODE === 'demo' && new URLSearchParams(location.search).has('family')) { fam.seedDemo(); return fam.showFamily(); }
+  // Judges (js/views/judge.js): ?demo&judge shows the Judging Pathway with a sample judge; Welcome > Judge remembers 'judge'
+  if (MODE === 'demo' && q0.has('judge')) return (await import('./views/judge.js')).showJudge();
   if (MODE === 'firebase') {
     let u = null;
     try { u = await api.user(); } catch (e) { console.error(e); }
+    let who0 = ''; try { who0 = localStorage.getItem('ngl.who') || ''; } catch (_) {}
+    if (who0 === 'judge' || location.hash.startsWith('#/judge')) return (await import('./views/judge.js')).showJudge();
     if (!u) { let who = ''; try { who = localStorage.getItem('ngl.who') || ''; } catch (_) {}
       if (q0.has('join')) { history.replaceState(null, '', location.pathname); return showAuth('register'); }   // "Find out how to join": club sign-up
       if (fam.isParent() || location.hash.startsWith('#/family')) return fam.showFamily();
       return who === 'club' ? showAuth() : showWelcome(); }   // first screen: Club or Parent
   }
   const c = await api.club(), lic = await api.licences();
+  // A judge who logged in on the club screen: no club account and not NGL team, but a Judging Pathway profile, opens the judge side
+  if (MODE === 'firebase' && c.none && !(await api.adminMe())) { const jg = await import('./views/judge.js'); if (await jg.hasProfile()) return jg.showJudge(); }
   let claimed = 0; try { claimed = await api.claimPending(); } catch (e) { console.warn('Earlier places not brought in', e.code || e); }
   CTX.admin = await api.adminMe(); CTX.isAdmin = !!CTX.admin; CTX.needsVerify = await api.needsVerify(); CTX.staffOnly = !!c.none && CTX.isAdmin;   // an NGL team login with no club (a brand-new club whose account is still saving is not)
   const live = Object.entries(lic).filter(([, v]) => v.status === 'live' || v.status === 'waived').length;
