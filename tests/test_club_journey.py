@@ -67,3 +67,15 @@ def test_log_out_and_back_in(account):
     pg.route("#/shop/orders")
     pg.p.wait_for_selector("#page >> text=Orders & receipts", timeout=20000)
     pg.p.wait_for_selector("#page table >> text=ORD-", timeout=20000)
+
+
+def test_graduation_shows_for_families(account):
+    """A club publishes a Graduation: parents (not signed in) can read it in familyEvents; deleting it removes it."""
+    pg = account["page"]
+    r = pg.p.evaluate("""(async () => { const api = (await import('./js/data.js')).default, m = await import('./js/firebase.js'), {fs, A, D} = await m.fb();
+      await api.syncFamilyEvents([{id: 't1', title: 'AUTOTEST Graduation', date: '2099-07-01', time: '10:00', venue: 'Test hall', schoolName: '', medals: 4}]);
+      const q = await fs.getDocs(fs.query(fs.collection(D, 'familyEvents'), fs.where('clubId', '==', A.currentUser.uid)));
+      const d = q.docs.map(x => x.data()); await api.syncFamilyEvents([]);
+      const q2 = await fs.getDocs(fs.query(fs.collection(D, 'familyEvents'), fs.where('clubId', '==', A.currentUser.uid)));
+      return [d.length, d[0] && d[0].title, d[0] && ('medals' in d[0]), q2.size]; })()""")
+    assert r == [1, "AUTOTEST Graduation", False, 0]

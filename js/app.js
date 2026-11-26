@@ -51,9 +51,14 @@ async function render(){
 }
 
 async function start(){
+  const q0 = new URLSearchParams(location.search), fam = await import('./views/family.js');
+  // Came from an old family site or a club's QR code: keep what it brought (also on the phone, for Android's installed app)
+  if (fam.hasArrival(q0)) { try { localStorage.setItem('ngl.pending', location.search); } catch (_) {} }
   if (needGate()) return showGate();                 // phones: download the app first
+  let pend = ''; try { pend = localStorage.getItem('ngl.pending') || ''; } catch (_) {}
+  const qa = fam.hasArrival(q0) ? q0 : new URLSearchParams(pend);
+  if (fam.hasArrival(qa) && await fam.arrive(qa)) return fam.showFamily();
   // Parents: ?demo&family shows the family side with sample codes; a parent's own codes open it straight away
-  const fam = await import('./views/family.js');
   if (MODE === 'demo' && new URLSearchParams(location.search).has('family')) { fam.seedDemo(); return fam.showFamily(); }
   if (MODE === 'firebase') {
     let u = null;

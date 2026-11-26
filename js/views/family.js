@@ -24,6 +24,7 @@ const DEMO_CODES = {
   'SAADI-R9TQ': {programme: 'recreational', clubId: 'demo', clubName: 'SAADI Gymnastics', status: 'active', key: 'demo'}
 };
 const LS = 'ngl.family';
+const DOCS = {};
 const load = () => { try { return JSON.parse(localStorage.getItem(LS) || '[]'); } catch (_) { return []; } };
 const save = list => { try { localStorage.setItem(LS, JSON.stringify(list)); localStorage.setItem('ngl.who', 'parent'); } catch (_) {} };
 export const familyCodes = () => load();
@@ -54,8 +55,26 @@ function preschoolLink(raw){
   catch (_) { return null; }
 }
 
-export async function openFamily(raw){
-  if (!raw) throw new Error('Enter the code your club gave you.');
+// Arriving from an old family site (or a club's QR code): ?code=X (or ?codes=X,Y), ?p=<old Pre-School plan>, and
+// ?carry=<what the old site saved on the phone> (Recreational progress, chosen book and colour, Pre-School book).
+// Only these keys are ever copied in, and a phone's own newer data is never overwritten.
+const CARRY_KEYS = ['nglrec-progress', 'nglrec-book', 'nglrec-level', 'nglrec-colour', 'nglrec-tab', 'ngl-ps-book'];
+const b64 = s => decodeURIComponent(escape(atob(String(s).replace(/-/g, '+').replace(/_/g, '/'))));
+export function hasArrival(q){ return ['code', 'codes', 'p', 'carry'].some(k => q.has(k)); }
+export async function arrive(q){
+  if (q.has('carry')) { try { const c = JSON.parse(b64(q.get('carry')));
+    CARRY_KEYS.forEach(k => { if (c[k] != null && localStorage.getItem(k) == null) localStorage.setItem(k, typeof c[k] === 'string' ? c[k] : JSON.stringify(c[k])); }); } catch (e) { console.warn('Carried data not read', e); } }
+  const raws = [...(q.get('codes') || '').split(','), q.get('code') || ''].map(s => s.trim()).filter(Boolean);
+  if (q.has('p')) raws.push('#p=' + q.get('p'));
+  let last = '', errs = [];
+  for (const raw of raws) { try { last = await addCode(raw); } catch (e) { errs.push(e.message); } }
+  try { localStorage.removeItem('ngl.pending'); } catch (_) {}
+  history.replaceState(null, '', location.pathname + (location.search.includes('demo') ? '?demo' + (q.has('family') ? '&family' : '') : '') + (last ? '#/family/' + last : location.hash));
+  if (errs.length && !last) toast(errs[0], false);
+  return !!last || isParent();
+}
+// Check one code and keep it on the phone; returns its programme
+async function addCode(raw){
   let code = tidy(raw), doc = preschoolLink(raw);
   if (doc) code = 'LINK-' + Math.abs([...String(raw)].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) | 0, 7)).toString(36).toUpperCase();
   else {
@@ -65,12 +84,18 @@ export async function openFamily(raw){
   }
   const list = load().filter(x => x.code !== code);
   list.unshift({code, programme: doc.programme, clubName: doc.clubName || '', doc: doc.link ? doc : undefined});
-  save(list);
-  location.hash = '#/family/' + doc.programme;
+  save(list); DOCS[code] = doc;
+  return doc.programme;
+}
+
+export async function openFamily(raw){
+  if (!raw) throw new Error('Enter the code your club gave you.');
+  const prog = await addCode(raw);
+  location.hash = '#/family/' + prog;
   showFamily();
 }
 
-let CHECKED = false, DOCS = {};
+let CHECKED = false;
 async function recheck(){
   if (CHECKED) return; CHECKED = true;
   const list = load(), keep = [];

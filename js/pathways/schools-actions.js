@@ -38,7 +38,9 @@ export const SCH = {
       <label class="field"><span>How families book (optional link)</span><input id="gb" type="url" value="${esc(ev.bookingUrl || '')}" placeholder="https://… your club’s booking page"></label>
       <p class="lead" style="font-size:13px">Families pay £${D.GRAD_FAMILY_PRICE} a gymnast including one spectator; extra spectators £${D.GRAD_EXTRA_SPECTATOR}. NGL charges £${D.GRAD_NGL_FEE} + VAT a graduate, medal included.</p>
       <div class="btn-row"><button class="btn">${ev.id ? 'Save changes' : 'Publish Graduation'}</button>${ev.id ? '<button class="btn ghost" type="button" data-del>Delete</button>' : ''}<button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
-    const save = async next => { try { await api.updateClub({schoolEvents: next}); m.remove(); toast('Graduations updated'); redraw(); } catch (x) { fail(x); } };
+    const save = async next => { try { await api.updateClub({schoolEvents: next});
+      try { await api.syncFamilyEvents(next); } catch (x) { console.warn('Graduations not yet shown to families', x); toast('Saved. Families will see it once you’re back online.', false); }   // the parents' copy
+      m.remove(); toast('Graduations updated'); redraw(); } catch (x) { fail(x); } };
     m.querySelector('form').addEventListener('submit', e => { e.preventDefault(); const g = id => m.querySelector(id).value.trim(), sid = g('#gs'), school = (S.club.schoolsList || []).find(s => s.id === sid);
       const d = {id: ev.id || uid(), title: g('#gt'), schoolId: sid, schoolName: school ? school.name : '', date: g('#gd'), time: g('#gtm'), venue: g('#gv'), bookingUrl: g('#gb'), medals: ev.medals || 0};
       save(ev.id ? evs.map(x => x.id === ev.id ? d : x) : [...evs, d]); });

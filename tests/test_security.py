@@ -34,6 +34,10 @@ ATTEMPTS = {
         "await fs.getDocs(fs.collection(D, 'adminUsers'));",
     "add itself to the NGL team":
         "await fs.setDoc(fs.doc(D, 'adminUsers', A.currentUser.email.toLowerCase()), {name: 'Hack', owner: true, sections: ['clubs']});",
+    "publish a Graduation as another club":
+        "await fs.setDoc(fs.doc(D, 'familyEvents', 'someone-else_x'), {clubId: 'someone-else', title: 'Hack'});",
+    "list every family code":
+        "await fs.getDocs(fs.collection(D, 'familyCodes'));",
     "write to an unknown collection":
         "await fs.setDoc(fs.doc(D, 'anything', 'x'), {a: 1});",
 }

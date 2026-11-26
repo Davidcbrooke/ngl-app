@@ -120,6 +120,7 @@ const demoApi = {
   async products(){ return demo.products; },
   async reserve(){ throw new Error('Sample data: nothing is saved. Remove ?demo from the address to use the test database.'); },
   async changeReservation(){ throw new Error('Sample data: nothing is saved.'); },
+  async syncFamilyEvents(){},
   async uploadMusic(){ throw new Error('Sample data: nothing is uploaded.'); },
   async placeOrder(){ throw new Error('Sample data: nothing is saved.'); },
   async updateClub(){ throw new Error('Sample data: nothing is saved.'); },
@@ -259,6 +260,16 @@ const fbApi = {
     await fs.setDoc(fs.doc(D, 'orders', id), {clubId: A.currentUser.uid, clubName: c.name || '', path: paths.length === 1 ? paths[0] : 'general',
       details: lines.filter(l => l.k !== 'vat').map(l => `${l.qty} × ${l.n}`).join(', '), lines, total, delivery, status: 'awaiting-payment', createdAt: fs.serverTimestamp(), ...extra});
     return {id, total};
+  },
+  // Graduations parents can see: familyEvents/{club uid}_{event id}, kept in step with clubs/{uid}.schoolEvents (medal counts stay private)
+  async syncFamilyEvents(events){
+    const {fs, A, D} = await fb(), uid = A.currentUser.uid, c = await this.club();
+    const old = await fs.getDocs(fs.query(fs.collection(D, 'familyEvents'), fs.where('clubId', '==', uid)));
+    const b = fs.writeBatch(D), keep = new Set((events || []).map(e => uid + '_' + e.id));
+    old.docs.forEach(d => { if (!keep.has(d.id)) b.delete(d.ref); });
+    (events || []).forEach(e => b.set(fs.doc(D, 'familyEvents', uid + '_' + e.id), {clubId: uid, clubName: c.name || '', programme: 'schools', title: e.title || '', schoolName: e.schoolName || '',
+      date: e.date || '', time: e.time || '', venue: e.venue || '', bookingUrl: e.bookingUrl || '', updatedAt: fs.serverTimestamp()}));
+    await b.commit();
   },
   async updateClub(fields){
     const {fs, A, D} = await fb();
