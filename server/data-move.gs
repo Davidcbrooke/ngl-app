@@ -130,8 +130,18 @@ function rehearse(){
     else if (id.indexOf('plan__') === 0) writes.push(doc('compPlans/' + id.slice(6), s.data));
     else writes.push(doc('staffing/' + id, s.data)); });   // Staffing: same doc id (= competition id), same document
   // Judging Pathway lists Staffing reads: same names and doc ids (pw:<assignmentId> links and signupId depend on them)
-  const judging = {}; ['ngl_judge_signups', 'ngl_judging_assignments', 'ngl_judges'].forEach(c => { const list = listAll(BOOK, c); judging[c] = list.length; list.forEach(x => writes.push(doc(c + '/' + x.id, x.data))); });
+  const judging = {}; ['ngl_judge_signups', 'ngl_judging_assignments', 'ngl_judges', 'ngl_judge_notifications', 'ngl_resources'].forEach(c => { const list = listAll(BOOK, c); judging[c] = list.length; list.forEach(x => writes.push(doc(c + '/' + x.id, x.data))); });
   report.apps = {justgoEvents: jg ? Object.keys(jg.events || {}).length : 0, plans: staffDocs.filter(s => s.id.indexOf('plan__') === 0).length, staffing: staffDocs.filter(s => s.id.indexOf('plan__') !== 0 && s.id !== 'summary__planning').length, judging};
+
+  // Floor music: musicEvents (running order, absences, intros, announcements) and _builtin, same ids, from the live Club Hub project
+  musicEvents.forEach(m => writes.push(doc('musicEvents/' + m.id, m.data)));
+  // Music staff (old music tool's own list) become Team ticks: full = Floor music, otherwise the music player
+  const musicStaff = listAll(LIVE, 'musicStaff'), teamIds = team.map(t => String(t.id).toLowerCase());
+  musicStaff.forEach(m => { const email = String(m.id).toLowerCase(), tick = m.data.level === 'full' ? 'music' : 'musicplayer';
+    const t = team.find(x => String(x.id).toLowerCase() === email);
+    if (t) { t.data.sections = [...new Set((t.data.sections || []).concat([tick]))]; }
+    else if (!teamIds.includes(email)) team.push({id: email, data: {name: m.data.name || '', owner: false, sections: [tick]}}); });
+  report.music = {events: musicEvents.length, staff: musicStaff.length};
 
   // NGL team: same ticks as the original Admin Hub
   team.forEach(t => writes.push(doc('adminUsers/' + String(t.id).toLowerCase(), {name: t.data.name || '', owner: !!t.data.owner, sections: t.data.sections || [], movedFrom: 'saadi-rotation/ngl_admin_users/' + t.id})));
@@ -148,7 +158,7 @@ function rehearse(){
   const um = {}; report.unmatched.reservations.forEach(r => { const k = norm(r.club) || '(no name)'; um[k] = um[k] || {names: [], places: 0}; um[k].places += r.places; if (!um[k].names.includes(r.club)) um[k].names.push(r.club); });
   Logger.log('Reservations matched by club name: ' + (report.matchedByName || 0) + ' · still unmatched (places by club): ' + JSON.stringify(um));
   Logger.log('Waiting places with a booking email (join automatically): ' + (report.pendingWithEmail || 0) + ' of ' + report.unmatched.reservations.length);
-  Logger.log('Admin apps: ' + JSON.stringify(report.apps));
+  Logger.log('Admin apps: ' + JSON.stringify(report.apps) + ' · music: ' + JSON.stringify(report.music));
   Logger.log('NGL team: ' + JSON.stringify(report.team));
   Logger.log('Merged accounts: ' + JSON.stringify(report.merged));
   Logger.log('Club names with more than one account: ' + JSON.stringify(report.duplicateClubs));

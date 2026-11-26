@@ -1,0 +1,91 @@
+/* NGL Admin · Results (js/admin/results.js). App colours from css/app.css; every class starts rs- */
+.rs-root{--rs-gold:#8a6d12;--rs-gold-soft:#fbf5e1;--rs-red-soft:#fbe7ea;--rs-ok-soft:#e4f4ea}
+.rs-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px}
+.rs-top .lead{margin:0}
+.rs-status{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:99px;padding:6px 14px}
+.rs-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--line)}
+.rs-dot.loading{background:#e0a100;animation:rs-pulse 1s infinite}
+.rs-dot.ok{background:var(--ok)}
+.rs-dot.error{background:var(--red)}
+@keyframes rs-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(prefers-reduced-motion:reduce){.rs-dot.loading{animation:none}}
+.rs-banner{margin-bottom:16px}.rs-banner b{display:block}.rs-banner small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.rs-tabs{margin-top:4px}
+
+.rs-sec{display:flex;align-items:center;gap:10px;font:800 19px var(--cond);text-transform:uppercase;color:var(--navy);margin:26px 0 12px}
+.rs-sec:first-of-type{margin-top:6px}
+.rs-count{font:700 12px var(--body);text-transform:none;color:var(--muted);background:var(--wash);border:1px solid var(--line);border-radius:99px;padding:2px 10px}
+.rs-box{margin-bottom:16px}
+.rs-box-title{font-size:15px;margin:0 0 8px;color:var(--navy)}
+.rs-note{font-size:13px;color:var(--muted);margin:0 0 6px}
+.rs-reassign{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
+.rs-reassign .field,.rs-search .field{margin:0}
+.rs-reassign .btn,.rs-search .btn{min-height:44px;justify-content:center}
+.rs-search{display:flex;gap:10px;align-items:end}.rs-search .field{flex:1}
+.rs-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.rs-gap{margin-bottom:16px}
+
+.rs-tablecard{padding:6px 14px;overflow-x:auto;margin-bottom:16px}
+.rs-tbl td{vertical-align:middle;font-size:14px}
+.rs-mono{font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.rs-old{text-decoration:line-through;color:var(--muted)}
+.rs-new{font-weight:700;color:var(--navy)}
+.rs-act{text-align:right;white-space:nowrap}
+.rs-del{color:var(--red)}
+.rs-was{color:var(--muted);text-decoration:line-through;font-size:12px}
+.rs-arrow{color:var(--muted);margin:0 4px}
+.rs-changed{color:var(--red);font-weight:700}
+
+/* one gymnast's results */
+.rs-gym{padding:0;overflow:hidden;margin-bottom:16px}
+.rs-gym-head{background:var(--navy);color:#fff;padding:14px 20px}
+.rs-gym-id{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.rs-gym-name{font-size:17px;font-weight:700;margin-top:2px}
+.rs-results{margin:0}.rs-results th{padding:10px 12px;background:var(--wash)}.rs-results td{padding:8px 12px}
+.rs-comp{font-size:12.5px;color:var(--muted)}
+.rs-score{font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+.rs-edit select{width:100%;min-width:84px;border:1.5px solid var(--line);border-radius:10px;padding:6px 8px;font:inherit;font-size:13px;background:var(--wash);color:var(--ink)}
+.rs-edit select:focus{outline:none;border-color:var(--navy)}
+.rs-edit.modified select{border-color:var(--rs-gold);background:var(--rs-gold-soft)}
+.rs-gym-foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 20px;background:var(--wash);border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.rs-gym-foot .btn{margin-left:auto}
+
+/* data quality */
+.rs-dq-summary{margin:4px 0 20px}
+.rs-dq-card{text-align:center}
+.rs-dq-card b.rs-okn{color:var(--ok)}.rs-dq-card b.rs-warnn{color:var(--red)}
+.rs-allok{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;background:var(--rs-ok-soft);border-color:#bfe3cc;color:var(--ok);padding:32px}
+.rs-allok b{font-size:16px}
+.rs-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;margin-bottom:14px}
+.rs-filter label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.rs-filter select,.rs-dq-actions select{border:1.5px solid var(--line);border-radius:10px;padding:7px 10px;font:inherit;font-size:13px;background:var(--wash);min-width:160px}
+.rs-flag{padding:0;overflow:hidden;margin-bottom:14px}
+.rs-flag-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 18px;background:#fdf4f5;border-bottom:1px solid var(--line)}
+.rs-flag-id{font-weight:700;color:var(--navy)}
+.rs-flag-name{font-size:14px;color:var(--muted);margin-left:8px}
+.rs-fix{color:var(--rs-gold);border-color:#e9dcb0}
+.rs-flag-body{padding:12px 18px}
+.rs-field{margin-bottom:14px}.rs-field:last-child{margin-bottom:0}
+.rs-field-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.rs-values{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.rs-value{display:inline-flex;align-items:center;gap:6px;background:var(--wash);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:13px}
+.rs-value.conflict{background:var(--rs-red-soft);border-color:#f1c2ca;color:var(--red);font-weight:700}
+.rs-value-comp{font-size:11px;color:var(--muted);font-weight:400}
+.rs-dq-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rs-fix-label{font-size:13px;color:var(--muted)}
+
+/* GitHub token (live app only) */
+.rs-login{max-width:380px;margin:20px auto;text-align:center}
+.rs-login h2{margin:0 0 4px}.rs-login .field{text-align:left}.rs-login .btn{width:100%;justify-content:center;min-height:44px}
+.rs-login-err{color:var(--red);font-size:13px;margin:8px 0 0}
+
+@media(max-width:860px){
+  .rs-reassign{grid-template-columns:1fr}
+  .rs-dq-summary{grid-template-columns:1fr 1fr}
+  .rs-tablecard{padding:4px 14px}
+  .rs-results td{padding:3px 14px}.rs-results tr{padding:10px 0}
+  .rs-edit select{max-width:220px}
+  .rs-act{text-align:left;padding-top:6px}
+  .rs-gym-foot .btn{margin-left:0;min-height:44px}
+  .rs-dq-actions .btn,.rs-fix,.rs-del{min-height:44px}
+}

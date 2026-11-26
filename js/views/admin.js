@@ -36,12 +36,14 @@ function board(me){
 }
 
 // Rebuilt admin apps, each in its own file (js/admin/<id>.js), loaded the first time it's opened. true = has its own stylesheet.
-const MODS = {sales: false, planning: true, staffing: true};
+// value = the app's stylesheet (css/admin-<name>.css), '' = none
+const MODS = {sales: '', planning: 'planning', staffing: 'staffing', music: 'music', musicplayer: 'music', results: 'results', judging: 'judging'};
 async function appModule(sub, me, rest){
   const a = APPS.find(x => x.id === sub);
   if (!canApp(me, a)) return head('NGL Admin') + NO_ACCESS;
-  if (MODS[sub] && !document.querySelector(`link[data-admin-css="${sub}"]`)) {
-    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = `css/admin-${sub}.css`; l.dataset.adminCss = sub; document.head.appendChild(l); }
+  const css = MODS[sub];
+  if (css && !document.querySelector(`link[data-admin-css="${css}"]`)) {
+    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = `css/admin-${css}.css`; l.dataset.adminCss = css; document.head.appendChild(l); }
   const bar = `<div class="appbar"><a class="btn sm ghost" href="#/admin">← All apps</a><h1 style="margin:0;font-size:22px" class="grow">NGL Admin · ${esc(a.name)}</h1></div>`;
   let mod; try { mod = await import(`../admin/${sub}.js`); } catch (e) { console.error(e); return bar + '<div class="card empty">This app couldn’t load. Please refresh the page.</div>'; }
   for (const [k, v] of Object.entries(mod)) if (k !== 'default' && v && typeof v === 'object' && !Array.isArray(v)) Object.assign(APPACTS, v);

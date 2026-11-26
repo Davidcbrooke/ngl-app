@@ -1,0 +1,63 @@
+/* NGL Admin · Judging (js/admin/judging.js). Same sections as the Judging Pathway admin, in the app's look; every class starts jd- */
+.jd .sr,.jd-dlg .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.jd-err{margin-bottom:14px;color:var(--red);font-weight:500}
+.jd-demo{margin:0 0 12px;font-size:13px;color:var(--warn);font-weight:700}
+.jd-head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:14px}
+.jd-head .grow{flex:1;min-width:220px}
+.jd-head h2{font-size:22px;margin:0 0 2px}
+.jd-head .lead{margin:0}
+.jd-headbtns{display:flex;gap:8px;flex-wrap:wrap}
+.jd-stats{margin-bottom:16px}
+.jd-stats .jd-total b{color:var(--red)}
+.jd-card{padding:0;overflow:hidden}
+.jd-card>h2{margin:18px 20px 2px}
+.jd-sub{margin:0 20px 8px;font-size:14px}
+.jd-reslist{margin-top:16px}
+.jd-note{font-size:13px;margin:12px 0 0}
+#jdResForm,.jd-card #jdResList{padding:0 20px}
+.jd-card .jd-note{padding:0 20px 18px}
+.jd-card .empty{padding:30px 16px}
+
+/* toolbar */
+.jd-toolbar{display:flex;flex-wrap:wrap;gap:10px;padding:12px 16px;background:var(--wash);border-bottom:1px solid var(--line)}
+.jd-toolbar input,.jd-toolbar select{border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;font:inherit;font-size:14px;background:#fff;color:var(--ink);min-height:40px}
+.jd-toolbar .jd-search{flex:1;min-width:200px;max-width:340px}
+.jd-toolbar .jd-search input{width:100%}
+
+/* rows: judge · competition · role and piece · status · actions */
+.jd-row{display:grid;grid-template-columns:1.1fr 1.1fr 1.3fr auto auto;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);font-size:14px}
+.jd-row:first-child{border-top:0}
+.jd-row>*{min-width:0;overflow-wrap:anywhere}
+.jd-row b{color:var(--navy)}
+.jd-jrow{grid-template-columns:1.3fr 1.3fr auto}
+.jd-meta{color:var(--muted);font-size:12.5px}
+.jd-acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.jd-acts .jd-meta{margin-right:4px}
+.btn.jd-danger{color:var(--red)}
+@media(max-width:900px){
+  .jd-row,.jd-jrow{grid-template-columns:1fr;gap:4px}
+  .jd-acts{justify-content:flex-start;margin-top:6px}
+}
+
+/* tier pills: Senior green, Club blue, Apprentice grey (same as the original) */
+.jd-tier{display:inline-block;font-size:12px;font-weight:700;border-radius:99px;padding:2px 10px;margin-top:3px;background:var(--wash);color:var(--muted)}
+.jd-tier.t2{background:#e8eefc;color:#2451b8}
+.jd-tier.t3{background:#e1f2e7;color:#145f34}
+
+/* resources */
+.jd-seg{display:inline-flex;border:1.5px solid var(--line);border-radius:99px;overflow:hidden;margin:8px 0 2px}
+.jd-seg button{border:0;background:#fff;color:var(--navy);font:700 13px var(--body);padding:9px 16px;min-height:40px;cursor:pointer}
+.jd-seg button.on{background:var(--navy);color:#fff}
+.jd-res{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.jd-res:first-child{border-top:0}
+.jd-res .grow{flex:1;min-width:0}.jd-res small{display:block;color:var(--muted);font-size:13px}
+.jd-resic{width:36px;height:36px;border-radius:10px;background:var(--navy);color:#fff;display:grid;place-items:center;flex:none}
+
+/* dialogs */
+.jd-dlg .req,.jd-dlg .field span.req{display:inline;color:var(--red)}
+.jd-hint{font-size:13px;color:var(--muted);margin:-4px 0 4px}
+.jd-warn{background:#fff3e0;border-radius:10px;padding:10px 12px;font-size:14px;color:#6b3b00}
+.jd-qlabel{font-weight:700;font-size:13px;margin:12px 0 0}
+.jd-qrow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.jd-qrow .field{flex:1;min-width:150px;margin:8px 0}
+.jd-qrow .jd-qx{margin-bottom:10px}

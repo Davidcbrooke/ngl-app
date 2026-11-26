@@ -65,6 +65,7 @@ export const APPS = [
  {
   "group": "comps",
   "id": "judging",
+  "to": "#/admin/judging",
   "name": "Judging",
   "desc": "Judging Pathway registrations, tiers and approvals",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/ngl-judging-pathway.html?admin=1",
@@ -145,6 +146,7 @@ export const APPS = [
  {
   "group": "comps",
   "id": "musicplayer",
+  "to": "#/admin/musicplayer",
   "access": "music",
   "name": "Competition music player",
   "desc": "Play floor music in running order on the day, offline, with announcements",
@@ -154,6 +156,7 @@ export const APPS = [
  {
   "group": "comps",
   "id": "results",
+  "to": "#/admin/results",
   "name": "Results",
   "desc": "Result corrections and data quality",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/admin-corrections.html",

@@ -13,7 +13,9 @@ export async function fb(){
     import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`)
   ]);
   const a = app.initializeApp(FIREBASE_STAGING);
-  FB = {auth, fs, A: auth.getAuth(a), D: fs.getFirestore(a)};
+  // Offline storage on (as the old music tool had): reads work and changes are kept while offline, then sent when the connection returns
+  let D; try { D = fs.initializeFirestore(a, {localCache: fs.persistentLocalCache({tabManager: fs.persistentMultipleTabManager()})}); } catch (e) { console.warn('Offline storage not available', e); D = fs.getFirestore(a); }
+  FB = {auth, fs, A: auth.getAuth(a), D};
   return FB;
 }
 

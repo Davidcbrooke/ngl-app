@@ -1,20 +1,32 @@
 rules_version = '2';
-// NGL Club Hub file storage (staging bucket, London). Floor music only for now:
-// music/{competition}/{clubId}/{gymnastId}.mp3. A club can only write to its own folder,
-// MP3 only, up to 15MB. Clubs read their own files; NGL admins read and delete everything.
+// NGL Club Hub file storage (staging bucket, London).
+// music/{competition}/{folder}/{file}.mp3: a club writes only to its own folder (folder = its uid), MP3 only, up to 15MB.
+//   NGL owners and the team ticked for Floor music / the music player read and write everything (intros, announcements).
+// resources/{file}: the Judging Pathway library; signed-in users read, the Judging team writes.
 service firebase.storage {
   match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
     function isAdmin() {
-      return request.auth != null && request.auth.token.email_verified == true &&
+      return signedIn() && request.auth.token.email_verified == true &&
         request.auth.token.email in ['admin@nationalgymnasticsleague.co.uk', 'bookingoffice@saadigymnastics.co.uk'];
     }
-    match /music/{comp}/{clubId}/{file} {
-      allow read: if isAdmin() || (request.auth != null && request.auth.uid == clubId);
-      allow create, update: if request.auth != null && request.auth.uid == clubId
-                            && file.matches('[A-Za-z0-9_-]+[.]mp3')
-                            && request.resource.size < 15 * 1024 * 1024
-                            && request.resource.contentType == 'audio/mpeg';
-      allow delete: if isAdmin();
+    // Team ticks from NGL Admin > Team (Firestore adminUsers/{email})
+    function team(apps) {
+      return signedIn() && request.auth.token.email_verified == true &&
+        firestore.get(/databases/(default)/documents/adminUsers/$(request.auth.token.email.lower())).data.sections.hasAny(apps);
+    }
+    function mp3() {
+      return request.resource.size < 15 * 1024 * 1024 && request.resource.contentType == 'audio/mpeg';
+    }
+    match /music/{comp}/{folder}/{file} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == folder) || team(['music', 'musicplayer']);
+      allow create, update: if file.matches('[A-Za-z0-9_-]+[.]mp3') && mp3()
+                            && ((signedIn() && request.auth.uid == folder) || isAdmin() || team(['music', 'musicplayer']));
+      allow delete: if isAdmin() || team(['music', 'musicplayer']);
+    }
+    match /resources/{file} {
+      allow read: if signedIn();
+      allow write: if isAdmin() || team(['judging']);
     }
     match /{allPaths=**} { allow read, write: if false; }
   }

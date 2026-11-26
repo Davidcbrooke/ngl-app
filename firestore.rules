@@ -35,7 +35,7 @@ service cloud.firestore {
 
     // Club account: one document per club, id = the club's login uid
     match /clubs/{clubId} {
-      allow read: if own(clubId) || clubsTeam();
+      allow read: if own(clubId) || clubsTeam() || canAny(['music']);
       allow create: if own(clubId) && !request.resource.data.keys().hasAny(['licences', 'isAdmin']);
       allow update: if clubsTeam() || (own(clubId) && unchanged(['licences', 'isAdmin']));
       allow delete: if isAdmin();
@@ -70,6 +70,8 @@ service cloud.firestore {
     match /pendingPlaces/{id} {
       allow read, delete: if compsTeam() || emailIs(resource.data.email);
       allow create, update: if isAdmin();
+      // (Floor music reads club names and emails here to match entries)
+      allow read: if canAny(['music']);
     }
     // Floor music: NGL adds each club's gymnasts per competition (musicEntries/{compId}_{clubId});
     // the club uploads one record per gymnast (musicUploads/{compId}_{gymnastId}).
@@ -78,8 +80,8 @@ service cloud.firestore {
       allow write: if musicTeam();
     }
     match /musicUploads/{id} {
-      allow read: if musicTeam() || (signedIn() && resource.data.clubId == request.auth.uid);
-      allow create, update: if signedIn() && request.resource.data.clubId == request.auth.uid
+      allow read: if musicTeam() || canAny(['musicplayer']) || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow create, update: if musicTeam() || signedIn() && request.resource.data.clubId == request.auth.uid
                             && (resource == null || resource.data.clubId == request.auth.uid)
                             && id == request.resource.data.compId + '_' + request.resource.data.gymnastId
                             && exists(/databases/$(database)/documents/musicEntries/$(request.resource.data.compId + '_' + request.auth.uid));
@@ -97,6 +99,13 @@ service cloud.firestore {
     match /ngl_judge_signups/{id} { allow read, update: if canAny(['staffing', 'judging']); allow create, delete: if canAny(['judging']); }
     match /ngl_judging_assignments/{id} { allow read: if canAny(['staffing', 'judging']); allow write: if canAny(['judging']); }
     match /ngl_judges/{id} { allow read: if canAny(['staffing', 'judging']); allow write: if canAny(['judging']); }
+    // Floor music and the competition music player: running order, absences, intros, announcements (musicEvents);
+    // the competition from Elevien (musicComps, written by the import tool)
+    match /musicEvents/{id} { allow read, write: if canAny(['music', 'musicplayer']); }
+    match /musicComps/{id} { allow read: if canAny(['music', 'musicplayer']); allow write: if isAdmin(); }
+    // Judging admin: notifications to judges, and the resources library
+    match /ngl_judge_notifications/{id} { allow read, write: if canAny(['judging']); }
+    match /ngl_resources/{id} { allow read, write: if canAny(['judging']); }
 
     // Shared content every signed-in club can read: competitions calendar, products, rules
     match /competitions/{id} { allow read: if signedIn(); allow write: if compsTeam(); }

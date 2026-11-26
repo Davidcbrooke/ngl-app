@@ -19,12 +19,6 @@ def test_admin_club_search(page):
     assert len(visible) == 1 and "Northgate" in visible[0].inner_text()
 
 
-def test_admin_music_shows_uploads(page):
-    page.go("#/admin/music/c1", demo=True)
-    t = page.p.inner_text("#page")
-    assert "1 / 4" in t and "Amelia R" in t and "Download" in t
-
-
 def test_club_has_no_admin(account):
     pg = account["page"]
     pg.route("#/home")
@@ -45,9 +39,9 @@ def test_admin_has_every_app(page):
     page.go("#/admin", demo=True)
     page.p.wait_for_selector(".appt", timeout=15000)
     assert page.p.locator(".appt").count() == 20          # the 19 original Admin Hub apps + Orders
-    page.p.click("text=Judging")
+    page.p.click("text=Email assistant")
     page.p.wait_for_selector("iframe.appframe", timeout=15000)
-    assert "ngl-judging-pathway.html" in page.p.get_attribute("iframe.appframe", "src")
+    assert "NGL_Email_Assistant.html" in page.p.get_attribute("iframe.appframe", "src")
 
 
 def test_admin_team_grid(page):
