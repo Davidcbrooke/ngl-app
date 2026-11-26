@@ -8,6 +8,7 @@ ROUTES = {
     "#/rules": "RULES & RESOURCES",
     "#/programmes": "PROGRAMMES", "#/programmes/preschool": "PROGRAMMES", "#/programmes/masters": "PROGRAMMES",
     "#/shop": "SHOP & ORDERS", "#/shop/orders": "SHOP & ORDERS", "#/shop/orders/ORD-R2M6F": "ORD-R2M6F",
+    "#/groupbuy": "GROUP BUYING", "#/better": "BE BETTER", "#/better/coach": "BE BETTER",
     "#/club": "MY CLUB", "#/help": "HELP", "#/help/level": "HELP",
 }
 
@@ -46,7 +47,7 @@ def test_download_page(page):
 def test_seven_menu_items_in_order(page):
     page.go(demo=True)
     labels = [t.strip() for t in page.p.locator("#nav a:not(.admin-link) span:first-of-type").all_inner_texts()]
-    assert labels == ["Home", "Competitions", "Rules & resources", "Programmes", "Shop & orders", "My club", "Help"]
+    assert labels == ["Home", "Competitions", "Rules & resources", "Programmes", "Shop & orders", "Group Buying", "Be Better", "My club", "Help"]
 
 
 def test_search_finds_rules(page):

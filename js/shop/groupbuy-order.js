@@ -1,4 +1,4 @@
-// Shop · Group buying (#/shop/groupbuy): the club's quarterly order of staff kit with its logo.
+// Shop · Group buying (#/groupbuy): the club's quarterly order of staff kit with its logo.
 // Copied from GYMNASTICS-RESULTS/ngl-group-order.html (the form the old Club Hub embedded): the same wording, products,
 // maker's photos, colours, sizes, prices, rules, live order board and countdown. What changed (agreed with Dave, 26 Nov 2026):
 //   - the club is signed in: club name, contact, email, phone and delivery address come from its account (and can be changed here);
@@ -323,7 +323,7 @@ function loadCss(){
     const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; l.dataset.adminCss = k; document.head.appendChild(l); });
 }
 
-/* The screen: #/shop/groupbuy. club = the signed-in club's account (api.club()). */
+/* The screen: #/groupbuy. club = the signed-in club's account (api.club()). */
 export default async function groupbuyOrder(club, parts = []){
   loadCss();
   if (club && club !== CLUB) { CLUB = club; fromAccount(club); }

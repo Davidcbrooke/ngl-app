@@ -80,11 +80,7 @@ function supportAction(a, club){
   if (a.mail) {
     const name = club ? club.name : '';
     const subject = a.subject + (name ? ' – ' + name : '');
-    const body = (a.body ? a.body + '
-
-' : '') + (name ? 'Club: ' + name + '
-' : '') + (club && club.email ? 'Email: ' + club.email + '
-' : '');
+    const body = (a.body ? a.body + '\n\n' : '') + (name ? 'Club: ' + name + '\n' : '') + (club && club.email ? 'Email: ' + club.email + '\n' : '');
     const href = `mailto:${a.mail}?subject=${encodeURIComponent(subject)}${body ? '&body=' + encodeURIComponent(body) : ''}`;
     return `<a class="btn sm${a.ghost ? ' ghost' : ''}" href="${esc(href)}">${esc(a.l)}</a>`;
   }

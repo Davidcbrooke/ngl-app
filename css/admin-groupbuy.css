@@ -15,12 +15,12 @@
 /* countdown */
 .gb-countdown{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;background:var(--red);color:#fff;border-radius:16px;padding:16px 20px;margin-bottom:14px}
 .gb-cdl{display:flex;flex-direction:column;gap:2px}
-.gb-cdl .k{font:800 13px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#ffe1e5}
+.gb-cdl .k{font:800 13px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#fff}
 .gb-cdl .d{font:700 20px var(--cond)}
 .gb-cdt{display:flex;gap:8px}
-.gb-cdt div{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:12px;min-width:74px;padding:6px 8px;text-align:center}
+.gb-cdt div{background:rgba(0,0,0,.14);border:1px solid rgba(255,255,255,.25);border-radius:12px;min-width:74px;padding:6px 8px;text-align:center}
 .gb-cdt b{display:block;font:900 40px/1 var(--cond);font-variant-numeric:tabular-nums}
-.gb-cdt span{font:700 11px var(--body);letter-spacing:.1em;text-transform:uppercase;color:#ffe1e5}
+.gb-cdt span{font:700 11px var(--body);letter-spacing:.1em;text-transform:uppercase;color:#fff}
 .gb-cdt.urgent div{background:#fff;color:var(--red)}.gb-cdt.urgent span{color:var(--red)}
 @media(max-width:520px){.gb-cdt{width:100%}.gb-cdt div{min-width:0;flex:1}.gb-cdt b{font-size:30px}}
 

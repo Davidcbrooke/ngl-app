@@ -15,6 +15,8 @@ import shop from './views/shop.js';
 import club from './views/club.js';
 import help from './views/help.js';
 import admin from './views/admin.js';
+import groupbuy from './views/groupbuy.js';
+import better from './views/better.js';
 
 const NAV = [
   ['home', 'Home', 'home', home],
@@ -22,6 +24,8 @@ const NAV = [
   ['rules', 'Rules & resources', 'rules', rules],
   ['programmes', 'Programmes', 'prog', programmes],
   ['shop', 'Shop & orders', 'shop', shop],
+  ['groupbuy', 'Group Buying', 'group', groupbuy],
+  ['better', 'Be Better', 'better', better],
   ['club', 'My club', 'club', club],
   ['help', 'Help', 'help', help]
 ];

@@ -33,7 +33,7 @@ def fill_order(pg, sizes, address=True):
 
 def test_form_renders_like_the_old_page(page):
     open_gbo(page)
-    assert "SHOP & ORDERS" in page.p.inner_text("#page h1").upper()
+    assert "GROUP BUYING" in page.p.inner_text("#page h1").upper()
     root = page.p.inner_text("#gboRoot")
     assert "THE MORE CLUBS ORDER, THE LESS EVERYONE PAYS" in root.upper()
     assert "LIVE ORDER BOARD" in root.upper() and "THIS ORDER CLOSES IN" in root.upper()
@@ -119,9 +119,10 @@ def test_place_order_with_sample_data(page):
 
 def test_shop_home_links_to_group_buying(page):
     page.go("#/shop", demo=True)
-    page.p.click("a[href='#/shop/groupbuy'] >> text=Order staff kit")
+    page.p.click("a[href='#/groupbuy'] >> text=Order staff kit")
     page.p.wait_for_selector("#gboRoot", timeout=15000)
-    assert page.p.locator(".sub a.on").inner_text() == "Group buying"
+    assert "GROUP BUYING" in page.p.inner_text("#page h1").upper()
+    assert page.p.locator("#nav a.on[href='#/groupbuy']").count() == 1     # its own place on the menu
 
 
 def test_group_buying_invoice_is_paid_in_shop_orders(page):
@@ -182,3 +183,25 @@ def test_club_places_a_real_order(account):
     assert r[6] == "yes", r
     mine = pg.p.inner_text("#gboMine")
     assert "Staff T-shirt" in mine and "Placed" in mine     # the club's own order appears in its list (the list doesn't show club names)
+
+
+
+def test_be_better_pillars(page):
+    page.go("#/better", demo=True)
+    t = page.p.inner_text("#page")
+    for p in ["Operate Better", "Coach Better", "Care Better", "Grow Better", "Connect Better"]:
+        assert p.upper() in t.upper()
+    for partner in ["JustGo", "Matt Jackson Gymnastics Consultancy", "Impact HR", "Working With Parents in Sport", "Rebound Therapy"]:
+        assert partner in t
+    page.p.click("a.bb-chip[href='#/better/care']")
+    page.p.wait_for_function("location.hash === '#/better/care'")
+    page.p.wait_for_timeout(800)
+    t = page.p.inner_text("#page")
+    assert "Impact HR" in t and "JustGo" not in t
+
+
+def test_group_buying_on_the_menu(page):
+    page.go("#/home", demo=True)
+    page.p.click("#nav a[href='#/groupbuy']")
+    page.p.wait_for_function("location.hash === '#/groupbuy'")
+    page.p.wait_for_selector("#page h1 >> text=Group Buying", timeout=15000)

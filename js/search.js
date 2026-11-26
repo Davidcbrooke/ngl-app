@@ -37,7 +37,13 @@ const SCREENS = [
   ['Licences and renewals', '#/club', 'My club', 'licence price cost renew band'],
   ['Family codes for parents', '#/club', 'My club', 'parents app code qr'],
   ['Club details and password', '#/club', 'My club', 'password login email bg number'],
-  ['Club Support partner offers', '#/help', 'Help', 'partners discount hr coaching safeguarding'],
+  ['Be Better: partner offers', '#/better', 'Be Better', 'club support partners discount hr coaching safeguarding pillars operate coach care grow connect'],
+  ['Operate Better', '#/better/operate', 'Be Better', 'justgo rotation planner admin finance'],
+  ['Coach Better', '#/better/coach', 'Be Better', 'matt jackson elevate fb curves growth club rebound therapy cpd'],
+  ['Care Better', '#/better/care', 'Be Better', 'impact hr safeguarding working with parents in sport wwpis'],
+  ['Grow Better', '#/better/grow', 'Be Better', 'marketing social media rebound therapy'],
+  ['Connect Better', '#/better/connect', 'Be Better', 'clubs collaboration'],
+  ['Group Buying: staff kit', '#/groupbuy', 'Group Buying', 't-shirts quarter zips logo clothing kit order'],
   ['Contact NGL', '#/help', 'Help', 'email chat call dave']
 ];
 const INDEX = [

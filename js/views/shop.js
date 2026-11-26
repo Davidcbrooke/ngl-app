@@ -2,14 +2,14 @@ import api from '../data.js';
 import { esc, gbp, date, dot, pill, tabs, head, ic, path } from '../ui.js';
 import { basket, totals } from '../actions.js';
 
-const TABS = [['', 'Shop'], ['groupbuy', 'Group buying'], ['orders', 'Orders & receipts']];
+const TABS = [['', 'Shop'], ['orders', 'Orders & receipts']];
 const LEAD = 'One shop for every programme. Pay securely when you order.';
 
 export default async function shop([sub = '', id, ...rest]){
   if (sub === 'orders' && id) return orderPage(id);
   // Group buying: staff kit with the club's logo, ordered every quarter (js/shop/groupbuy-order.js)
-  if (sub === 'groupbuy') { const [m, c] = await Promise.all([import('../shop/groupbuy-order.js'), api.club()]);
-    return head('Shop & orders', LEAD) + tabs(TABS, sub, '#/shop') + await m.default(c, [id, ...rest].filter(Boolean)); }
+  // Group Buying has its own place on the menu now (#/groupbuy); old links still open it
+  if (sub === 'groupbuy') return (await import('./groupbuy.js')).default([id, ...rest]);
   const [orders, products, lic] = await Promise.all([api.orders(), api.products(), api.licences()]);
   let body;
   if (sub === 'orders') {
@@ -27,7 +27,7 @@ export default async function shop([sub = '', id, ...rest]){
       const locked = p.needs && !['live', 'waived'].includes(lic[p.needs].status);
       return `<div class="card ${locked ? 'lock' : ''}">${ic('book', c)}<p style="margin:10px 0 2px"><b>${esc(p.n)}</b></p><small style="color:var(--muted)">${esc(p.d)}</small>
       <p style="margin:8px 0 0"><b>${p.price != null ? gbp(p.price) + ' each' : 'Ordered quarterly'}</b></p>
-      ${p.k === 'kit' ? '<a class="btn sm" style="margin-top:8px" href="#/shop/groupbuy">Order staff kit</a>' : locked ? `<small style="color:var(--muted)">Needs a ${esc(path(p.needs).n)} licence · <a href="#/programmes/${p.needs}">Explore</a></small>`
+      ${p.k === 'kit' ? '<a class="btn sm" style="margin-top:8px" href="#/groupbuy">Order staff kit</a>' : locked ? `<small style="color:var(--muted)">Needs a ${esc(path(p.needs).n)} licence · <a href="#/programmes/${p.needs}">Explore</a></small>`
         : p.price == null ? '<small style="color:var(--muted)">Next round opens soon</small>' : `<button class="btn sm" style="margin-top:8px" data-act="add" data-prod="${p.k}">Add 10 to basket</button>`}</div>`; }).join('')}</div>
     <div class="card basket"><h2>Your basket</h2>${bk.length ? bk.map(l => `<div class="row"><div class="grow"><b>${esc(l.n)}</b><small>${gbp(l.unit)} each</small></div>
       <div class="qty"><button data-act="inc" data-prod="${l.k}" data-by="-1" aria-label="One fewer">−</button><b>${l.qty}</b><button data-act="inc" data-prod="${l.k}" data-by="1" aria-label="One more">+</button></div></div>`).join('') +
