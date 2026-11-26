@@ -1,13 +1,14 @@
 // General League: compete locally, score nationally. Standard pathway model (DESIGN.md 6a).
 // Content and links follow today's General League hub (club.nationalgymnasticsleague.co.uk/general/).
 // The Skills Book is bought through the Club Hub's own checkout (same as every product), not a separate link.
+import { appLink } from '../config.js';
 import api from '../data.js';
 import { esc, gbp, date, pill, ic, svg } from '../ui.js';
 
 const GR = 'https://davidcbrooke.github.io/GYMNASTICS-RESULTS/';
-const IMG = 'https://club.nationalgymnasticsleague.co.uk/img/pathways/';
+const IMG = 'img/pathways/';
 export const LINKS = {
-  powerLeague: GR + 'ngl-training-league.html', parents: 'https://club.nationalgymnasticsleague.co.uk/family/',
+  powerLeague: GR + 'ngl-training-league.html', get parents(){ return appLink('#/family/general'); },
   league2027: 'https://www.nationalgymnasticsleague.co.uk/2027-season-results-and-league-table',
   results2026: 'https://www.nationalgymnasticsleague.co.uk/resultsandleaguetable', qualifiers: GR + 'national-qualifier.html',
   coachGuide: GR + 'ngl-training-league-coach-guide.pdf'

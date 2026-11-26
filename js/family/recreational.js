@@ -11,7 +11,7 @@ import { CALENDAR } from '../data.js';
 import { fb } from '../firebase.js';
 import { CLASS_RULES, buildClubPlan, clubWeekNow } from '../pathways/rec-engine.js';
 
-const SAMPLE_URL = 'https://nglrecreational.co.uk/content/rec-sample.json';
+const SAMPLE_URL = 'content/rec-sample.json';
 const CAL_URL = 'https://firestore.googleapis.com/v1/projects/saadi-rotation/databases/(default)/documents/ngl_competitions?pageSize=300&key=AIzaSyDV7BuYhSjji9DQDjih5a6Ms7G-SVZpKw4';
 const CONTACT_EMAIL = 'admin@nationalgymnasticsleague.co.uk';
 const BASE = '#/family/recreational';

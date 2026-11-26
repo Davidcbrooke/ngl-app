@@ -46,7 +46,8 @@ def test_preschool_planner_and_twenty_medals(page):
 def test_preschool_family_link_holds_plan(page):
     page.go("#/programmes/preschool/families", demo=True)
     link = page.p.wait_for_selector("#psLink", timeout=15000).input_value()
-    assert link.startswith("https://club.nationalgymnasticsleague.co.uk/preschool/#p=")
+    # the one NGL app: the club's Pre-School code when it has one, otherwise the term plan travels in the link
+    assert link.startswith(page.base) and ("?code=" in link or "?p=" in link)
 
 
 def test_preschool_licence_for_new_club(account):

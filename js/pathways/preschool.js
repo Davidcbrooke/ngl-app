@@ -1,11 +1,12 @@
 // Pre-School: "Around the World with Somi & Flic". Built on the standard pathway model (DESIGN.md 6a).
 // Programme data (countries, themes, skills, the planner) comes from the same data.js as today's Pre-School hub,
 // and plans, posts and images are served from there too, so there is one source of truth until switch-over.
+import { appLink } from '../config.js';
 import api from '../data.js';
 import { esc, gbp, date, pill, ic } from '../ui.js';
 import { coming, loadScript, printHTML } from './index.js';
 
-const BASE = 'https://club.nationalgymnasticsleague.co.uk/preschool/';
+const BASE = 'preschool/';   // the app's own copy: data.js, theme pictures, lesson plans
 const IMG = BASE + 'img/', PLANS = BASE + 'plans/1Qes3TzvJrYQ/', SAMPLE = BASE + 'plans/sample/', FAMILY = BASE;
 export const BANDS = [{k: 'xs', label: '1–24 Pre-School gymnasts', price: 150}, {k: 'sm', label: '25–49 Pre-School gymnasts', price: 250},
   {k: 's', label: '50–99 Pre-School gymnasts', price: 400}, {k: 'm', label: '100 or more Pre-School gymnasts', price: 750}];
@@ -40,7 +41,7 @@ function cfg(){
   if (!S.lic.seasonal && api.mode !== 'demo') S.cfg.seasonal = false;
   return S.cfg;
 }
-const familyLink = () => FAMILY + '#p=' + P.encode(cfg());
+const familyLink = () => { const code = S.lic && S.lic.code; return code ? appLink('?code=' + encodeURIComponent(code)) : appLink('?p=' + P.encode(cfg())); };
 function thisWeek(){ const rows = P.plan(cfg()), today = P.iso(new Date()); let i = -1; rows.forEach((r, k) => { if (r.date <= today) i = k; });
   const brk = P.breakNow(rows, today); return {rows, i: brk ? brk.next : (i < 0 ? 0 : i), started: i >= 0, brk}; }
 const dd = d => new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', {day: 'numeric', month: 'short', timeZone: 'UTC'});

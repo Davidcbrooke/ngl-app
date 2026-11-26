@@ -68,7 +68,8 @@ async function start(){
     let u = null;
     try { u = await api.user(); } catch (e) { console.error(e); }
     if (!u) { let who = ''; try { who = localStorage.getItem('ngl.who') || ''; } catch (_) {}
-      if (fam.isParent()) return fam.showFamily();
+      if (q0.has('join')) { history.replaceState(null, '', location.pathname); return showAuth('register'); }   // "Find out how to join": club sign-up
+      if (fam.isParent() || location.hash.startsWith('#/family')) return fam.showFamily();
       return who === 'club' ? showAuth() : showWelcome(); }   // first screen: Club or Parent
   }
   const c = await api.club(), lic = await api.licences();

@@ -7,7 +7,7 @@ import { loadScript } from '../pathways/index.js';
 
 if (!document.querySelector('link[data-fam-css=preschool]')) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/family-preschool.css'; l.dataset.famCss = 'preschool'; document.head.appendChild(l); }
 
-const BASE = 'https://club.nationalgymnasticsleague.co.uk/preschool/', IMG = BASE + 'img/';
+const BASE = 'preschool/', IMG = BASE + 'img/';   // the app's own copy
 const pad = n => String(n).padStart(2, '0');
 const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.9l-6.4 3.5 1.4-7.1-5.3-5 7.2-.9z" fill="currentColor"/></svg>';
 const SEVEN = '<div class="seven" aria-hidden="true">' + ['#E84187', '#F8D438', '#E88230', '#0071B3', '#01AFB8', '#6AA525', '#90276A'].map(c => `<i style="background:${c}"></i>`).join('') + '</div>';

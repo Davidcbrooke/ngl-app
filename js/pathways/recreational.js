@@ -2,6 +2,7 @@
 // Screens and wording follow today's Recreational hub (nglrecreational.co.uk); the planning engine is
 // copied word for word in rec-engine.js. Content: the published programme in the database when there is
 // one, otherwise the public sample (Weeks 1 & 2, Level 1, the competition routines).
+import { appLink } from '../config.js';
 import api from '../data.js';
 import { esc, gbp, date, pill, ic } from '../ui.js';
 import { printHTML } from './index.js';
@@ -15,8 +16,8 @@ export const BANDS = [
   {k: 's', label: '50 to 99 recreational gymnasts', price: 500}, {k: 'm', label: '100 to 249 recreational gymnasts', price: 1000},
   {k: 'm2', label: '250 to 399 recreational gymnasts', price: 1250}, {k: 'l', label: '400 to 599 recreational gymnasts', price: 1500},
   {k: 'xl', label: '600 or more recreational gymnasts', price: 2000}];
-const SAMPLE_URL = 'https://nglrecreational.co.uk/content/rec-sample.json';
-const FAMILY_URL = 'https://nglrecreational.co.uk/families/';
+const SAMPLE_URL = 'content/rec-sample.json';
+// Parents open the one NGL app with the club's code
 const ROTA_URL = 'https://club.nationalgymnasticsleague.co.uk/rotation-planner/';
 const PIECE_NAMES = {FF: 'Forward Floor', BF: 'Backward Floor', VT: 'Vault', BM: 'Beam', BA: 'Bars', FT: 'Fast Track'};
 const PIECE_COL = {FF: '#4a90d9', BF: '#01afb8', VT: '#5cb85c', BM: '#e8914f', BA: '#7b68ee', FT: '#d9534f'};
@@ -284,7 +285,7 @@ const tabs = {
       <div class="card" style="margin-top:16px"><h2>Rules and format</h2><ul>${c.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>`;
   },
   async families(p){
-    const code = S.club.recCode, link = code ? FAMILY_URL + '?code=' + encodeURIComponent(code) : '';
+    const code = S.club.recCode || (S.lic && S.lic.code), link = code ? appLink('?code=' + encodeURIComponent(code)) : '';
     return `<div class="card"><h2>Family app</h2><p class="lead">Parents see what their child is learning this fortnight and how it links to their award book and the Recreational Competition. No child details are stored.</p>
       ${licensed() ? (code ? `<p><b>Your club code: ${esc(code)}</b></p><div style="display:flex;gap:10px;flex-wrap:wrap"><input readonly value="${esc(link)}" style="flex:1;min-width:240px;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit" aria-label="Family link"><button class="btn" data-act="rec-copy" data-v="${esc(link)}">Copy link</button><a class="btn ghost" href="${esc(link)}" target="_blank" rel="noopener">Open ↗</a></div>`
         : `<p class="lead">Your family code is created when your licence switches on. In the sandbox it appears after the switch-over.</p>`) : `<span class="pill">The family app opens with your Recreational licence</span> <a class="btn sm ghost" href="#/programmes/recreational/licence">See the licence</a>`}</div>`;

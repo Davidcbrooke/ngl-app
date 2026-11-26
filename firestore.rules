@@ -167,7 +167,9 @@ service cloud.firestore {
         && d.shirts == shirts + getAfter(o).data.qty && d.orders == orders + 1;
     }
     // Parents (not signed in): look up ONE family code at a time (never list them), the club's live timetable, Graduations
-    match /familyCodes/{code} { allow get: if true; allow list: if isAdmin(); allow write: if isAdmin() || clubsTeam(); }
+    match /familyCodes/{code} { allow get: if true; allow list: if isAdmin(); allow write: if isAdmin() || clubsTeam();
+      // a club keeps its own Pre-School term plan up to date (nothing else on the code)
+      allow update: if signedIn() && resource.data.clubId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['plan', 'updatedAt']); }
     match /rotaLive/{clubId} { allow read: if true; allow write: if own(clubId) || isAdmin(); }
     // Graduations parents see: a club keeps its own in step (id = clubUid_eventId); NGL can change any
     match /familyEvents/{id} { allow read: if true;

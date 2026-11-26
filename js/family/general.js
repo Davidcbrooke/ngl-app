@@ -26,7 +26,7 @@ function css(){
   l.onload = () => size(); document.head.appendChild(l);
 }
 
-const help = () => `<div class="fg-help"><p><b>No code yet?</b> Ask your gymnast's club. Clubs find their family codes in their NGL hub. If your club isn't in the NGL yet, tell them about it: registering is free at <a href="https://club.nationalgymnasticsleague.co.uk/#register" target="_top">club.nationalgymnasticsleague.co.uk</a>.</p>
+const help = () => `<div class="fg-help"><p><b>No code yet?</b> Ask your gymnast's club. Clubs find their family codes in their NGL hub. If your club isn't in the NGL yet, tell them about it: registering is free at <a href="?join" data-fg-join>club.nationalgymnasticsleague.co.uk</a>.</p>
   <p class="fg-add">Got a code for Pre-School, Schools or Recreational? <button type="button" class="btn sm" data-fg="add">Add a code</button></p></div>`;
 
 function home(){
@@ -38,7 +38,7 @@ function home(){
     </section>
     <h2 class="fg-h2">Results &amp; league tables</h2>
     <div class="fg-tiles">${SECTIONS.map(s => `<a class="fg-tile" href="#/family/general/${s.k}" data-fg-tile="${s.k}"><span class="fg-ic">${s.icon}</span><span class="fg-tx"><i>${amp(s.tag)}</i><b>${s.title}</b><span>${s.sub}</span></span><span class="fg-go">${CHEV}</span></a>`).join('')}</div>
-    <p class="fg-more">Is your gymnast’s club in the NGL? <a href="https://club.nationalgymnasticsleague.co.uk/#register" target="_top">Find out how to join</a></p>
+    <p class="fg-more">Is your gymnast’s club in the NGL? <a href="?join" data-fg-join>Find out how to join</a></p>
     ${help()}
   </div>`;
 }

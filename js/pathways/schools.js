@@ -1,13 +1,14 @@
 // Schools: the club takes NGL gymnastics into local schools. Standard pathway model (DESIGN.md 6a).
 // Prices, the Profit planner, the Secondary planner and the programme content come word for word from
 // today's Schools hub via schools-data.js; the screens are rebuilt in the Club Hub style.
+import { appLink } from '../config.js';
 import api from '../data.js';
 import { esc, gbp, date, pill, ic } from '../ui.js';
 import { printHTML } from './index.js';
 import * as D from './schools-data.js';
 
 const VAT_RATE = 0.2;
-const PROSPECTUS = 'https://nglschools.co.uk/docs/NGL_Schools_Prospectus.pdf';
+const PROSPECTUS = 'docs/NGL_Schools_Prospectus.pdf';
 const S = {club: null, lic: null, all: null};
 export const UI = {app: 'floor', lvl: 1, sec: null};
 const licensed = () => S.lic && S.lic.status === 'live';
@@ -206,7 +207,7 @@ const tabs = {
   async families(p){
     const code = S.lic.code;
     return `<div class="card"><h2>Schools family app</h2><p class="lead">One club code for all your Schools families: they watch the routines, follow the programme at home and see your Graduations. No pupil details are stored.</p>
-      ${licensed() ? (code ? `<p style="font:900 28px var(--cond);color:var(--navy)">${esc(code)}</p><div class="btn-row"><button class="btn" data-act="rec-copy" data-v="https://nglschools.co.uk/?code=${encodeURIComponent(code)}">Copy family link</button><a class="btn ghost" href="https://nglschools.co.uk/?code=${encodeURIComponent(code)}" target="_blank" rel="noopener">Open ↗</a></div>`
+      ${licensed() ? (code ? `<p style="font:900 28px var(--cond);color:var(--navy)">${esc(code)}</p><div class="btn-row"><button class="btn" data-act="rec-copy" data-v="${esc(appLink('?code=' + encodeURIComponent(code)))}">Copy family link</button><button class="btn ghost" data-act="fam-qr" data-code="${esc(code)}" data-n="Schools">QR code</button><a class="btn ghost" href="${esc(appLink('?code=' + encodeURIComponent(code)))}" target="_blank" rel="noopener">Open ↗</a></div>`
         : '<p class="lead">Your family code is created when your licence switches on. In the sandbox it appears after the switch-over.</p>') : '<span class="pill">The family app opens with your Schools licence</span>'}</div>`;
   },
   async licence(p){

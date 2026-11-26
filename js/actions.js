@@ -21,6 +21,18 @@ export const totals = lines => { const items = lines.reduce((a, l) => a + l.qty 
   const post = qty ? POSTAGE(qty) : 0; return {items, post, total: items + post, qty}; };
 
 const ACT = {
+  // QR code for a family link (the one NGL app + the club's code); printable for the noticeboard
+  async 'fam-qr'(b){
+    const { appLink } = await import('./config.js'), { loadScript } = await import('./pathways/index.js');
+    const code = b.dataset.code || '', link = code ? appLink('?code=' + encodeURIComponent(code)) : appLink('#/family/general');
+    try { await loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'); } catch (_) { return toast('Couldn’t load the QR code maker. Check your connection.', false); }
+    const q = window.qrcode(0, 'M'); q.addData(link); q.make();
+    const m = modal(`<h2>${esc(b.dataset.n || 'Family')} family link</h2><div style="max-width:240px;margin:8px auto">${q.createSvgTag({cellSize: 6, margin: 2, scalable: true})}</div>
+      <p style="text-align:center;margin:4px 0 2px">Scan to open the NGL app${code ? `, then your club’s code is added for you: <b>${esc(code)}</b>` : ''}</p>
+      <p style="text-align:center;font-size:13px;color:var(--muted);word-break:break-all">${esc(link)}</p>
+      <div class="btn-row" style="justify-content:center"><button class="btn" data-print>Print</button><button class="btn ghost" data-close>Close</button></div>`);
+    m.querySelector('[data-print]').addEventListener('click', () => window.print());
+  },
   async signout(){ await api.signOut(); },
 
   async reserve(b){

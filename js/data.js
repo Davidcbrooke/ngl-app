@@ -128,6 +128,7 @@ const demoApi = {
   async reserve(){ throw new Error('Sample data: nothing is saved. Remove ?demo from the address to use the test database.'); },
   async changeReservation(){ throw new Error('Sample data: nothing is saved.'); },
   async syncFamilyEvents(){},
+  async syncFamilyPlan(){},
   async uploadMusic(){ throw new Error('Sample data: nothing is uploaded.'); },
   async placeOrder(){ throw new Error('Sample data: nothing is saved.'); },
   // Group buying with sample data: the order is kept in memory only (it shows on the board and in NGL Admin until the page reloads)
@@ -319,6 +320,8 @@ const fbApi = {
       date: e.date || '', time: e.time || '', venue: e.venue || '', bookingUrl: e.bookingUrl || '', updatedAt: fs.serverTimestamp()}));
     await b.commit();
   },
+  // Pre-School: the term plan parents see lives on the club's family code (familyCodes/{code}.plan)
+  async syncFamilyPlan(code, plan){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'familyCodes', code), {plan, updatedAt: fs.serverTimestamp()}); },
   async updateClub(fields){
     const {fs, A, D} = await fb();
     await fs.setDoc(fs.doc(D, 'clubs', A.currentUser.uid), fields, {merge: true});

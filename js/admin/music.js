@@ -17,7 +17,7 @@ import { MODE, CALENDAR } from '../data.js';
 
 const LIVE = MODE !== 'demo';
 const SV = '10.12.2';
-const CLUB_HUB = 'https://club.nationalgymnasticsleague.co.uk/#/competitions/music';
+const CLUB_HUB = location.origin + location.pathname + '#/competitions/music';   // the one NGL app
 const GHOST = () => { const i = document.createElement('input'); i.className = 'mu-hidden'; return i; };   // stands in when the screen isn't open
 const $ = s => document.querySelector(s) || GHOST();
 const onScreen = () => !!document.getElementById('muRoot');

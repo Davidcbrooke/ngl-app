@@ -25,7 +25,7 @@ export const CARD_PAY_URL = 'https://script.google.com/macros/s/AKfycbzhIP9CZyde
 export const ADMIN_EMAILS = ['admin@nationalgymnasticsleague.co.uk', 'bookingoffice@saadigymnastics.co.uk'];
 export const CONTACT_EMAIL = 'admin@nationalgymnasticsleague.co.uk';
 export const RULES_BASE = 'https://davidcbrooke.github.io/GYMNASTICS-RESULTS/ngl-rules-2027-numbered-update/';
-export const BRAND = 'https://davidcbrooke.github.io/GYMNASTICS-RESULTS/brand/';
+export const BRAND = 'img/brand/';   // NGL and JustGo logos (copied from GYMNASTICS-RESULTS/brand)
 
 // The seven pathways, always in this order (NGL brand rule).
 export const PATHWAYS = [
@@ -37,3 +37,6 @@ export const PATHWAYS = [
   {k:'university',  n:'University League',  c:'var(--uni)'},
   {k:'masters',     n:'Masters',            c:'var(--mas)'}
 ];
+
+// The one app's own address: parent links and QR codes point here (?code=…), wherever the app is served from
+export const appLink = (q = '') => location.origin + location.pathname + q;

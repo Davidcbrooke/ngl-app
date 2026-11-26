@@ -74,7 +74,7 @@ export const PS = {
     c.terms.push({name: 'Term ' + (c.terms.length + 1), start, weeks: 12, half: 6}); rerender(); },
   async 'ps-term-del'(b){ const c = readForm(); c.terms.splice(+b.dataset.ti, 1); rerender(); },
   async 'ps-save'(){ const c = readForm(); localStorage.ngl_ps_plan = JSON.stringify(c);
-    try { if (api.mode !== 'demo') await api.updateClub({plans: {preschool: c}}); toast('Plan saved. Your family link now follows it.'); }
+    try { if (api.mode !== 'demo') { await api.updateClub({plans: {preschool: c}}); const code = S.lic && S.lic.code; if (code && api.syncFamilyPlan) await api.syncFamilyPlan(code, c); } toast('Plan saved. Your family link now follows it.'); }
     catch (x) { console.error(x); toast('Saved on this device, but not to your club account. Please try again.', false); }
     rerender(); },
   async 'ps-buy'(b){
