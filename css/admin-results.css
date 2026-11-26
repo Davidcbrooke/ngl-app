@@ -89,3 +89,11 @@
   .rs-gym-foot .btn{margin-left:0;min-height:44px}
   .rs-dq-actions .btn,.rs-fix,.rs-del{min-height:44px}
 }
+
+/* One correction per gymnast */
+.rs-fix{background:var(--wash);border-radius:12px;padding:12px 14px;margin:0 0 12px}.rs-fix b{display:block}.rs-fix small{display:block;color:var(--muted);font-size:13px;margin:2px 0 10px}
+.rs-fix-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.rs-fix-grid label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.rs-fix-grid input{border:1.5px solid var(--line);border-radius:10px;padding:6px 8px;font:inherit;font-size:13px;background:#fff;color:var(--ink)}
+.rs-edit.modified input{border-color:var(--rs-gold);background:var(--rs-gold-soft)}
+.rs-val.modified{background:var(--rs-gold-soft);font-weight:700}

@@ -33,8 +33,8 @@ def test_search_and_save_correction(page):
     assert "MEMBER ID: 9100102" in card.upper() and "Isla Morgan" in card and "Changes apply to all results" in card
     assert page.p.locator("#rsResults .rs-results tr").count() >= 5   # header + 4 results
     # change the first row's age category: the cell turns gold, then Save Corrections adds it to Active Corrections
-    page.p.select_option("#rs-row-0-ageCategory select", "9-11")
-    page.p.wait_for_selector("#rs-row-0-ageCategory.modified", timeout=5000)
+    page.p.select_option("#rs-gym-ageCategory select", "9-11")
+    page.p.wait_for_selector("#rs-gym-ageCategory.modified", timeout=5000)
     page.p.click("[data-act=rs-save-gym]")
     assert "Saved" in page.toast()
     page.p.wait_for_selector("#rsCorrTable tr[data-id='9100102']", timeout=10000)
@@ -101,3 +101,14 @@ def test_results_on_phone(phone):
     phone.p.press("#rsSearch", "Enter")
     phone.p.wait_for_selector("#rsResults .rs-gym", timeout=10000)
     assert phone.p.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+
+
+def test_club_correction(page):
+    open_results(page)
+    page.p.fill("#rsSearch", "9100102")
+    page.p.click("#rsSearchForm button[type=submit]")
+    page.p.wait_for_selector("#rs-club-override", timeout=10000)
+    page.p.fill("#rs-club-override", "Riverside Gym Academy")
+    page.p.click("[data-act=rs-save-gym]")
+    page.p.wait_for_selector("#rsCorrTable tr[data-id='9100102']", timeout=10000)
+    assert "Riverside Gym Academy" in page.p.inner_text("#rsCorrTable tr[data-id='9100102']")

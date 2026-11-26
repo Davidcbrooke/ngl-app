@@ -220,21 +220,22 @@ function searchResults(id){
   var entries = S.allData.filter(function(e){ return e.memberId === id; });
   if (!entries.length) return '<div class="card empty">No results found for Member ID <strong>' + esc(id) + '</strong></div>';
   var name = S.namesLookup[id] || "";
-  var corr = S.corrections[id] || {};
+  var corr = S.corrections[id] || {}, first = entries[0];
   var html = '<div class="card rs-gym" data-id="' + esc(id) + '">';
-  html += '<div class="rs-gym-head"><div class="rs-gym-id">Member ID: ' + esc(id) + '</div><div class="rs-gym-name">' + (name ? esc(name) + ' · ' : '') + esc(entries[0].club || "Unknown Club") + '</div></div>';
+  html += '<div class="rs-gym-head"><div class="rs-gym-id">Member ID: ' + esc(id) + '</div><div class="rs-gym-name">' + (name ? esc(name) + ' · ' : '') + esc(corr.club || first.club || "Unknown Club") + '</div></div>';
+  // One correction per gymnast (that's how corrections.json works): it applies to every result below
+  html += '<div class="rs-fix"><b>Correct this gymnast</b><small>Applies to all ' + entries.length + ' result' + (entries.length === 1 ? '' : 's') + ' below. Values left as they are keep what the spreadsheet says.</small><div class="rs-fix-grid">';
+  html += editBox("gender", first.gender, corr.gender, GENDER_OPTIONS, "Gender");
+  html += editBox("ageCategory", first.ageCategory, corr.ageCategory, AGE_OPTIONS, "Age Cat.");
+  html += editBox("level", first.level, corr.level, LEVEL_OPTIONS, "Level");
+  html += editBox("trainingHrs", first.trainingHrs, corr.trainingHrs, TRAINING_OPTIONS, "Training Hrs");
+  html += '<label class="rs-edit' + (corr.club && corr.club !== first.club ? ' modified' : '') + '"><span>Club</span><input id="rs-club-override" type="text" value="' + esc(corr.club || "") + '" placeholder="' + esc(first.club || "Club name") + '" data-orig=""></label>';
+  html += '</div></div>';
   html += '<table class="rs-tbl rs-results"><tr><th>Competition</th><th>Apparatus</th><th>Score</th><th>Gender</th><th>Age Cat.</th><th>Level</th><th>Training Hrs</th></tr>';
-  entries.forEach(function(e, i){
-    var rowId = "rs-row-" + i;
-    html += '<tr id="' + rowId + '">';
-    html += '<td class="rs-comp">' + esc(e.competition) + '</td>';
-    html += '<td><b>' + esc(e.apparatus) + '</b></td>';
-    html += '<td class="rs-score">' + esc(parseFloat(e.score) || e.score || "—") + '</td>';
-    html += editCell(rowId, "gender", e.gender, corr.gender, GENDER_OPTIONS, "Gender");
-    html += editCell(rowId, "ageCategory", e.ageCategory, corr.ageCategory, AGE_OPTIONS, "Age Cat.");
-    html += editCell(rowId, "level", e.level, corr.level, LEVEL_OPTIONS, "Level");
-    html += editCell(rowId, "trainingHrs", e.trainingHrs, corr.trainingHrs, TRAINING_OPTIONS, "Training Hrs");
-    html += '</tr>';
+  var cell = function(orig, c){ return c && c !== orig ? '<td class="rs-val modified" title="Spreadsheet: ' + esc(orig || "blank") + '">' + esc(c) + '</td>' : '<td class="rs-val">' + esc(orig || "—") + '</td>'; };
+  entries.forEach(function(e){
+    html += '<tr><td class="rs-comp">' + esc(e.competition) + '</td><td><b>' + esc(e.apparatus) + '</b></td><td class="rs-score">' + esc(parseFloat(e.score) || e.score || "—") + '</td>';
+    html += cell(e.gender, corr.gender) + cell(e.ageCategory, corr.ageCategory) + cell(e.level, corr.level) + cell(e.trainingHrs, corr.trainingHrs) + '</tr>';
   });
   html += '</table>';
   html += '<div class="rs-gym-foot"><div>Changes apply to <strong>all results</strong> for this gymnast.</div>';
@@ -243,12 +244,13 @@ function searchResults(id){
   return html;
 }
 
-function editCell(rowId, field, original, corrected, options, label){
+function editBox(field, original, corrected, options, label){
   var current = corrected || original;
   var isModified = corrected && corrected !== original;
-  var s = '<td class="rs-edit' + (isModified ? ' modified' : '') + '" id="' + rowId + '-' + field + '"><select aria-label="' + esc(label) + '" data-orig="' + esc(original) + '">';
+  var s = '<label class="rs-edit' + (isModified ? ' modified' : '') + '" id="rs-gym-' + field + '"><span>' + esc(label) + '</span><select data-orig="' + esc(original) + '">';
+  if (options.indexOf(current) < 0) s += '<option value="' + esc(current || "") + '" selected>' + esc(current || "—") + '</option>';
   options.forEach(function(o){ s += '<option value="' + esc(o) + '"' + (current === o ? ' selected' : '') + '>' + esc(o) + '</option>'; });
-  s += '</select></td>';
+  s += '</select></label>';
   return s;
 }
 
@@ -377,12 +379,13 @@ export const RS = {
     var memberId = b.dataset.id;
     var fields = ["gender", "ageCategory", "level", "trainingHrs"];
     var corr = {};
-    fields.forEach(function(f){   // as the original: the first result row's values apply to every result for this gymnast
-      var cell = document.getElementById("rs-row-0-" + f);
-      if (cell) { var sel = cell.querySelector("select"); if (sel) corr[f] = sel.value; }
+    fields.forEach(function(f){   // one value per gymnast; only values that differ from the spreadsheet are saved
+      var sel = document.querySelector("#rs-gym-" + f + " select");
+      if (sel && sel.value && sel.value !== sel.dataset.orig) corr[f] = sel.value;
     });
-    var clubOverride = document.getElementById("rs-club-override");   // as the original (no club field on screen yet)
+    var clubOverride = document.getElementById("rs-club-override");
     if (clubOverride && clubOverride.value.trim()) corr.club = clubOverride.value.trim();
+    if (!Object.keys(corr).length) { if (S.corrections[memberId]) { delete S.corrections[memberId]; S.searchId = S.shown = memberId; saveCorrections().then(redraw); } else toast("Nothing changed: every value matches the spreadsheet.", false); return; }
     S.corrections[memberId] = corr;
     S.searchId = S.shown = memberId;
     saveCorrections().then(redraw);
@@ -427,7 +430,8 @@ document.addEventListener('submit', e => {
 document.addEventListener('change', e => {
   if (!mine(e)) return;
   if (e.target.id === 'rsDqFilter') { S.dqFieldFilter = e.target.value; redraw(); return; }
-  const cell = e.target.closest('td.rs-edit');   // markModified: gold edge when the value differs from the spreadsheet
+  const cell = e.target.closest('.rs-edit');   // markModified: gold edge when the value differs from the spreadsheet
   if (cell && e.target.tagName === 'SELECT') cell.classList.toggle('modified', e.target.value !== e.target.dataset.orig);
+  if (cell && e.target.id === 'rs-club-override') cell.classList.toggle('modified', !!e.target.value.trim());
 });
 document.addEventListener('input', e => { if (mine(e) && e.target.id === 'rsSearch') S.searchId = e.target.value.trim(); });

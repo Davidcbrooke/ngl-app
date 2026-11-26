@@ -85,6 +85,7 @@ function buildComp(c, el, ents){
   return {compKey: c.id, title: c.name || (el && el.title) || c.id, date: c.date || (el && el.date) || '',
     deadline: (el && el.deadline) || (c.musicBy ? longDate(c.musicBy) : '') || (ents[0] && longDate(ents[0].deadline)) || '', ...base};
 }
+const MUSIC_COMPS_URL = 'https://davidcbrooke.github.io/GYMNASTICS-RESULTS/ngl-music-comps.js';
 async function loadLists(){
   let cal = [], el = {};
   if (LIVE) {
@@ -94,6 +95,13 @@ async function loadLists(){
       get('clubs', 'club accounts'), get('pendingPlaces', 'Reservation emails not readable')]);
     cal = cs && cs.size ? cs.docs.map(d => ({id: d.id, ...d.data()})) : CALENDAR.slice();
     (mc ? mc.docs : []).forEach(d => { try { el[d.id] = JSON.parse(d.data().json); const at = isoOf(d.data().updatedAt) || el[d.id].updatedAt; if (at && (!ELEV_AT || at > ELEV_AT)) ELEV_AT = at; } catch (e) { console.warn('Elevien entries for ' + d.id + " couldn't be read", e); } });
+    // The Elevien import ("ask Claude to update from Elevien") publishes ngl-music-comps.js on the results site, as for the old tool.
+    // Read it too, so both tools stay in step; whichever copy is newer wins. (Offline: skipped, the saved copy is used.)
+    try { const r = await fetch(MUSIC_COMPS_URL + '?v=' + Date.now(), {cache: 'no-store'});
+      if (r.ok) { const t = await r.text(), k = t.indexOf('{', t.indexOf('NGL_MUSIC_COMPS')), j = JSON.parse(t.slice(k, t.lastIndexOf('}') + 1));
+        (j.comps || []).forEach(c => { const cur = el[c.compKey]; if (c.compKey && (!cur || String(j.updatedAt || '') > String(cur.updatedAt || ''))) el[c.compKey] = {...c, updatedAt: j.updatedAt}; });
+        if (j.updatedAt && (!ELEV_AT || j.updatedAt > ELEV_AT)) ELEV_AT = j.updatedAt; } }
+    catch (e) { console.warn('Elevien file not loaded', e); }
     ENTRIES = (me ? me.docs : []).map(d => d.data());
     ACCOUNTS = (cl ? cl.docs : []).map(d => ({uid: d.id, name: d.data().name || '', bg: String(d.data().bgNumber || '').replace(/^BG/i, '').trim(), email: d.data().email || ''})).sort((a, b) => a.name.localeCompare(b.name));
     /* Emails clubs gave when reserving competition places before they had a Club Hub account (pendingPlaces). Matched by club name. */

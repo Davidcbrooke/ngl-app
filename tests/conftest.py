@@ -94,7 +94,9 @@ def account(browser, base_url):
     yield {"email": email, "pw": pw, "page": pg}
     # Clean up: delete the test login (club data stays, marked AUTOTEST).
     try:
-        pg.p.evaluate("""(async () => { const m = await import('./js/firebase.js'); const {A} = await m.fb();
-                         if (A.currentUser) await A.currentUser.delete(); })()""")
+        # Sign in again first: deleting a login needs a recent sign-in, and the whole suite takes several minutes
+        pg.p.evaluate("""async ([e, p]) => { const m = await import('./js/firebase.js'); const {auth, A} = await m.fb();
+                         try { await auth.signInWithEmailAndPassword(A, e, p); } catch (_) {}
+                         if (A.currentUser) await A.currentUser.delete(); }""", [email, pw])
     finally:
         pg.ctx.close()

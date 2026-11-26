@@ -57,7 +57,7 @@ async function start(){
   }
   const c = await api.club(), lic = await api.licences();
   let claimed = 0; try { claimed = await api.claimPending(); } catch (e) { console.warn('Earlier places not brought in', e.code || e); }
-  CTX.admin = await api.adminMe(); CTX.isAdmin = !!CTX.admin; CTX.needsVerify = await api.needsVerify(); CTX.staffOnly = !!c.none;
+  CTX.admin = await api.adminMe(); CTX.isAdmin = !!CTX.admin; CTX.needsVerify = await api.needsVerify(); CTX.staffOnly = !!c.none && CTX.isAdmin;   // an NGL team login with no club (a brand-new club whose account is still saving is not)
   const live = Object.entries(lic).filter(([, v]) => v.status === 'live' || v.status === 'waived').length;
   $('#clubCard').innerHTML = CTX.staffOnly ? `<b>NGL team</b><span>${esc(c.email)}</span>` : `<b>${esc(c.name)}</b><span>${live} programme${live === 1 ? '' : 's'} active</span>`;
   const who = CTX.staffOnly ? ((CTX.admin && CTX.admin.name) || c.email) : (c.contact || c.name || '');
@@ -73,3 +73,13 @@ async function start(){
   if (claimed) setTimeout(() => toast(`We’ve added ${claimed} competition booking${claimed === 1 ? '' : 's'} your club made before joining. See Competitions → My places.`), 600);
 }
 start();
+
+// Offline support (sw.js): the app and the music player still open on a reload without internet.
+// Skipped in automated tests unless the address has ?sw.
+if ('serviceWorker' in navigator && (!navigator.webdriver || new URLSearchParams(location.search).has('sw'))) {
+  navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(reg => {
+    let t = null;
+    const send = () => { clearTimeout(t); t = setTimeout(() => { if (reg.active) reg.active.postMessage({cache: [location.href.split('#')[0], ...performance.getEntriesByType('resource').map(e => e.name)]}); }, 1500); };
+    send(); document.addEventListener('ngl:rendered', send);
+  }).catch(e => console.warn('Offline support not available', e));
+}
