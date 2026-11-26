@@ -19,7 +19,7 @@ export function invoiceHTML(o, c){
   </div>
   <table class="inv-t"><thead><tr><th>Description</th><th class="n">Qty</th><th class="n">Unit price</th><th class="n">Amount</th></tr></thead>
   <tbody>${(o.lines || []).map(l => `<tr><td>${esc(l.n)}${l.k && l.k !== 'postage' ? ` <small>(${esc(prog)})</small>` : ''}</td><td class="n">${l.qty}</td><td class="n">${gbp(l.unit)}</td><td class="n">${gbp(l.qty * l.unit)}</td></tr>`).join('')}</tbody>
-  <tfoot><tr><td colspan="3" class="n">Books, medals and t-shirts carry no VAT.</td><td></td></tr><tr class="inv-tot"><td colspan="3" class="n">${paid ? 'Total paid' : 'Total due'}</td><td class="n">${gbp(total(o))}</td></tr></tfoot></table>
+  <tfoot><tr><td colspan="3" class="n">${o.kind === 'groupbuy' ? 'Adult sizes include VAT at 20%, shown on its own line; children’s sizes carry no VAT.' : 'Books, medals and t-shirts carry no VAT.'}</td><td></td></tr><tr class="inv-tot"><td colspan="3" class="n">${paid ? 'Total paid' : 'Total due'}</td><td class="n">${gbp(total(o))}</td></tr></tfoot></table>
   ${paid ? `<p class="inv-note">Paid online${o.paidAt ? ' on ' + date(o.paidAt) : ''}. Thank you.</p>` : '<p class="inv-note" style="color:var(--red)">Not paid yet: finish payment in Shop &amp; orders.</p>'}
   <div class="inv-foot">${esc(INVOICE.name)} · Company no. ${esc(INVOICE.company)} · VAT no. ${esc(INVOICE.vat)}</div></div>`;
 }

@@ -135,7 +135,10 @@ def test_view_invoice(page):
     assert "50 × Staff T-shirt (JC001), Jet Black, adult sizes, club logo left chest" in txt
     assert "Back print: two lines of text" in txt and "£100.00" in txt
     assert "Total due" in txt and "£585.60" in txt
-    assert "Sort code 60-84-64" in txt
+    # Paid by card in the app (agreed 26 Nov 2026): no bank details
+    assert "Pay now in the NGL app" in txt and "ORD-GB" in txt and "Finish payment" in txt
+    assert "60-84-64" not in txt and "93416867" not in txt and "bank transfer" not in txt.lower()
+    assert w.locator("a", has_text="Pay now in the NGL app").get_attribute("href").endswith("#/shop/orders")
     w.close()
 
 
@@ -169,3 +172,71 @@ def test_phone_no_sideways_scroll(phone):
     phone.p.select_option("#gbRound", index=2)
     phone.p.wait_for_selector("#gbBills tr[data-bill$='-04']", timeout=10000)
     assert phone.p.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+
+
+# ---------- Paying by card in the app (agreed 26 Nov 2026) ----------
+# Last closed round: the orders were placed on the old page (no clubId) and are matched to app accounts by email.
+# Northgate (GB-02) paid its app order by card, Oakwood (GB-03) paid by card and was sent, SAADI (GB-05) hasn't paid yet,
+# Riverside (GB-04) isn't invoiced, Hillside (GB-01) has no app account.
+def pay_orders(page, club_id):
+    return page.p.evaluate("id => import('./js/admin/groupbuy.js').then(m => m.demoPayOrders(id))", club_id)
+
+
+def test_card_payment_shows_as_paid(page):
+    open_gb(page)
+    closed_round(page)
+    assert bill(page, 2).locator(".gb-st").inner_text() == "Paid"
+    assert bill(page, 2).locator(".gb-pay").inner_text() == "Paid by card in the app"
+    assert bill(page, 2).locator("[data-cl=unpaid]").count() == 0          # a card payment can't be undone here
+    assert bill(page, 2).locator("[data-cl=print]").count() == 1
+    assert bill(page, 3).locator(".gb-pay").inner_text() == "Paid by card in the app"
+    assert bill(page, 5).locator(".gb-pay").inner_text().startswith("Card payment ORD-GB")
+    assert bill(page, 5).locator(".gb-pay").inner_text().endswith("-05: not paid yet")
+
+
+def test_email_invoice_creates_the_app_order(page):
+    open_gb(page)
+    rid = closed_round(page).replace("-", "")
+    assert pay_orders(page, "club-riverside") == []
+    bill(page, 4).locator("[data-cl=inv]").click()
+    page.p.wait_for_function("document.querySelector(\"#gbBills tr[data-bill$='-04'] .gb-st\").textContent === 'Invoiced, awaiting payment'", timeout=10000)
+    assert f"Riverside Gym Academy pays order ORD-GB{rid}-04 by card in the app." in page.p.inner_text("#gbMsg")
+    assert bill(page, 4).locator(".gb-pay").inner_text() == f"Card payment ORD-GB{rid}-04: not paid yet"
+    [o] = pay_orders(page, "club-riverside")
+    assert o["id"] == f"ORD-GB{rid}-04" and o["kind"] == "groupbuy" and o["status"] == "awaiting-payment"
+    assert o["clubName"] == "Riverside Gym Academy" and o["path"] == "general" and o["invoiceNo"] == f"GB{rid}-04"
+    assert o["groupbuyRound"] == closed_round(page) and o["groupbuyOrderIds"] == ["d1a1river"]
+    # 30 × £7.36 + £25 set-up + £20 delivery = £265.80, then VAT £53.16 as its own line = £318.96
+    assert [(l["k"], l["qty"], l["unit"]) for l in o["lines"]] == [("groupbuy", 30, 7.36), ("setup", 1, 25), ("delivery", 1, 20), ("vat", 1, 53.16)]
+    assert round(sum(l["qty"] * l["unit"] for l in o["lines"]), 2) == o["total"] == 318.96
+    # Resend doesn't make a second order
+    bill(page, 4).locator("[data-cl=inv]").click()
+    page.p.wait_for_function("document.getElementById('gbMsg').textContent.includes('pays order')", timeout=10000)
+    assert len(pay_orders(page, "club-riverside")) == 1
+
+
+def test_no_app_account(page):
+    open_gb(page)
+    closed_round(page)
+    row = bill(page, 1)
+    assert row.locator(".gb-pay").inner_text() == "No app account: ask the club to register with chris@hillside.example"
+    assert row.locator("[data-cl=inv]").is_disabled()      # Resend: no app order can be made for it
+    assert row.locator("[data-cl=paid]").is_enabled()      # Mark paid stays for exceptions
+
+
+def test_mark_paid_by_hand_updates_the_club_order(page):
+    open_gb(page)
+    rid = closed_round(page).replace("-", "")
+    bill(page, 5).locator("[data-cl=paid]").click()
+    page.p.wait_for_function("document.querySelector(\"#gbBills tr[data-bill$='-05'] .gb-st\").textContent === 'Paid'", timeout=10000)
+    assert bill(page, 5).locator(".gb-pay").inner_text() == "Marked paid by hand"
+    assert [o["status"] for o in pay_orders(page, "demo")] == ["paid"]
+    # The club (the sample club is SAADI) no longer sees Finish payment for it
+    page.route(f"#/shop/orders/ORD-GB{rid}-05")
+    assert page.p.locator("[data-act=pay]").count() == 0 and "PAID" in page.p.inner_text("#page .pill").upper()
+    page.route("#/admin/groupbuy")
+    page.p.wait_for_selector("#gbRoot", timeout=20000)
+    closed_round(page)
+    bill(page, 5).locator("[data-cl=unpaid]").click()
+    page.p.wait_for_function("document.querySelector(\"#gbBills tr[data-bill$='-05'] .gb-st\").textContent === 'Invoiced, awaiting payment'", timeout=10000)
+    assert [o["status"] for o in pay_orders(page, "demo")] == ["awaiting-payment"]

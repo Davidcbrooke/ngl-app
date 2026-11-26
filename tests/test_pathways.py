@@ -75,6 +75,7 @@ def test_recreational_lesson_plan_ladder(page):
     page.p.click("[data-act=rec-piece] >> nth=0")
     page.p.wait_for_selector(".setgrid img[src]", timeout=15000)          # set-up photos load
     page.p.click("[data-act=rec-pstep][data-v=ladder]")
+    page.p.wait_for_function("document.querySelector('#page').innerText.toUpperCase().includes('BEGINNER')", timeout=15000)
     t = page.p.inner_text("#page").upper()
     assert "BEGINNER" in t and "ADVANCED" in t and "STATION 1" in t
 
@@ -85,7 +86,7 @@ def test_recreational_run_your_class(page):
     page.p.click("[data-act=rec-run-start]")
     page.p.wait_for_selector(".stephead >> text=Warm-up", timeout=10000)
     page.p.click("[data-act=rec-run-next]")
-    assert "ROTATE TO" in page.p.inner_text(".stephead").upper()
+    page.p.wait_for_function("(document.querySelector('.stephead') || {innerText: ''}).innerText.toUpperCase().includes('ROTATE TO')", timeout=15000)
 
 
 def test_recreational_competition_routines(page):
@@ -149,6 +150,7 @@ def test_general_rules_switch_gender_and_level(page):
     page.go("#/programmes/general/compete", demo=True)
     page.p.click("[data-act=gl-gender][data-v=boys]", timeout=15000)
     page.p.click("[data-act=gl-level][data-v='3']")
+    page.p.wait_for_function("(() => { const i = document.querySelector('figure img'); return i && /general-mag\/page-05\.jpg$/.test(i.getAttribute('src') || ''); })()", timeout=15000)
     imgs = page.p.locator("figure img").evaluate_all("els => els.map(e => e.getAttribute('src'))")
     assert all("general-mag/page-0" in s for s in imgs) and imgs[0].endswith("page-05.jpg")
 

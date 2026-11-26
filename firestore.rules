@@ -40,18 +40,37 @@ service cloud.firestore {
       allow update: if clubsTeam() || (own(clubId) && unchanged(['licences', 'isAdmin']));
       // Rotation Planner clubs: the team can import a club's rotation data, and nothing else
       allow update: if canAny(['rotation']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rotaJson', 'rotaUpdatedAt']);
+      // Group purchasing: find a club's app account by the email on an order placed on the old page
+      allow read: if canAny(['groupbuy']);
       allow delete: if isAdmin();
     }
 
     // Orders: a club places them unpaid; owners change anything; the team can only mark paid orders as posted
     match /orders/{orderId} {
       allow read: if ordersTeam() || (signedIn() && resource.data.clubId == request.auth.uid);
+      // A club's own order: never a group-buying one, and never an ORD-GB… id (those are NGL's group-buying invoices)
       allow create: if signedIn() && request.resource.data.clubId == request.auth.uid
-                    && request.resource.data.status == 'awaiting-payment';
+                    && request.resource.data.status == 'awaiting-payment'
+                    && request.resource.data.get('kind', '') != 'groupbuy' && !orderId.matches('ORD-GB.*');
       allow update: if isAdmin() || (ordersTeam() && resource.data.status == 'paid' && request.resource.data.status == 'sent'
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'sentAt']));
       allow delete: if isAdmin();
+      // Group purchasing: when a round closes, NGL turns each club's invoice into an order the club pays by card
+      // (orders/ORD-GB{round}-{NN}, kind 'groupbuy'); the card-payments script marks it paid. The team can mark one paid by hand
+      // (an exception), undo that, and mark a paid one sent to print; nothing else.
+      allow read: if gbTeam() && (resource == null || resource.data.kind == 'groupbuy');
+      allow create: if gbTeam() && orderId.matches('ORD-GB[0-9]{6}-[0-9]{2,3}') && request.resource.data.kind == 'groupbuy'
+                    && request.resource.data.status == 'awaiting-payment' && request.resource.data.clubId is string
+                    && exists(/databases/$(database)/documents/clubs/$(request.resource.data.clubId));
+      allow update: if gbTeam() && resource.data.kind == 'groupbuy' && unchanged(['clubId', 'kind', 'lines', 'total', 'invoiceNo']) && (
+                       (resource.data.status == 'awaiting-payment' && request.resource.data.status == 'paid' && request.resource.data.paidBy == 'manual'
+                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'paidAt', 'paidBy']))
+                    || (resource.data.status == 'paid' && resource.data.get('paidBy', '') == 'manual' && request.resource.data.status == 'awaiting-payment'
+                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'paidAt', 'paidBy']))
+                    || (resource.data.status == 'paid' && request.resource.data.status == 'sent'
+                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'sentAt'])));
     }
+    function gbTeam() { return canAny(['groupbuy', 'finance']); }
 
     // Competition reservations and floor music records
     match /reservations/{id} {
@@ -111,9 +130,42 @@ service cloud.firestore {
     // NGL P&L: assumptions (settings) and typed actual costs / income targets (actuals)
     match /finance/{id} { allow read, write: if canAny(['finance']) || (id == 'projection' && canAny(['projection'])); }
     // Group purchasing: club orders each quarter (admin invoices, marks paid, sends to the printer); round totals for the public board.
-    // Clubs place orders from the live Club Hub until the Shop version is built here.
-    match /ngl_groupbuy_orders/{id} { allow read, update: if canAny(['groupbuy', 'finance']); allow delete: if isAdmin(); }
-    match /ngl_groupbuy_rounds/{id} { allow read: if true; allow write: if isAdmin(); }
+    // A club places its own order from Shop → Group buying: status 'placed', its own clubId, a sensible quantity, the logo paths
+    // under groupbuy/{round}/{this order}/, and in the same batch the round's totals go up by exactly this order (gbTotals).
+    match /ngl_groupbuy_orders/{id} {
+      allow read, update: if gbTeam();
+      allow read: if signedIn() && resource.data.clubId == request.auth.uid;
+      allow create: if gbNewOrder(id);
+      allow delete: if isAdmin();
+    }
+    function gbNewOrder(id) {
+      let d = request.resource.data;
+      let dir = 'groupbuy/' + d.round + '/' + id + '/';
+      return signedIn() && d.clubId == request.auth.uid && d.status == 'placed'
+        && d.round is string && d.round.matches('20[0-9]{2}-(02|05|08|11)') && d.product in ['JC001', 'LV874']
+        && d.qty is int && d.qty >= 1 && d.qty <= 2000 && d.sizes is map && d.sizes.size() <= 14
+        && d.setupFee in [0, 25] && d.deliveryFee == 20
+        && d.logoPath is string && d.logoPath.matches(dir + 'front-logo[.](png|jpg|jpeg|svg|pdf)')
+        && (d.back.logoPath == '' || d.back.logoPath.matches(dir + 'back-logo[.](png|jpg|jpeg|svg|pdf)'))
+        && !d.keys().hasAny(['invoiceNo', 'invoicedAt', 'invoiceTotal', 'payOrderId', 'paidAt', 'paidBy', 'sentToPrinterAt'])
+        && getAfter(/databases/$(database)/documents/ngl_groupbuy_rounds/$(d.round + '_' + d.product)).data.lastOrder == id;
+    }
+    // Live totals {shirts, orders, updatedAt, lastOrder}: anyone can read (the board). A club can only add its own new order:
+    // lastOrder = the order it is creating in the same batch, shirts up by that order's qty, orders up by one.
+    match /ngl_groupbuy_rounds/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['shirts', 'orders', 'updatedAt', 'lastOrder']) && gbTotals(id, 0, 0);
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shirts', 'orders', 'updatedAt', 'lastOrder'])
+                    && gbTotals(id, resource.data.get('shirts', 0), resource.data.get('orders', 0));
+    }
+    function gbTotals(id, shirts, orders) {
+      let d = request.resource.data;
+      let o = /databases/$(database)/documents/ngl_groupbuy_orders/$(d.lastOrder);
+      return signedIn() && d.lastOrder is string && d.shirts is int && d.orders is int
+        && !exists(o) && getAfter(o).data.clubId == request.auth.uid && getAfter(o).data.round + '_' + getAfter(o).data.product == id
+        && d.shirts == shirts + getAfter(o).data.qty && d.orders == orders + 1;
+    }
     // Parents (not signed in): look up ONE family code at a time (never list them), the club's live timetable, Graduations
     match /familyCodes/{code} { allow get: if true; allow list: if isAdmin(); allow write: if isAdmin() || clubsTeam(); }
     match /rotaLive/{clubId} { allow read: if true; allow write: if own(clubId) || isAdmin(); }

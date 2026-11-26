@@ -100,6 +100,11 @@ const code = p => p + '-' + Array.from(crypto.getRandomValues(new Uint8Array(5))
 const iso = d => (d && d.toDate ? d.toDate() : d instanceof Date ? d : new Date(d || Date.now())).toISOString().slice(0, 10);
 const minusMonths = (isoDate, m) => { const d = new Date(isoDate + 'T12:00'); d.setMonth(d.getMonth() - m); return iso(d); };
 
+// Group buying (js/shop/groupbuy-order.js; settings and sample data live in js/admin/groupbuy.js, loaded when first needed)
+const GB = () => import('./admin/groupbuy.js');
+const LOGO_EXT = f => { const e = String(f && f.name || '').split('.').pop().toLowerCase(); return ['png', 'jpg', 'jpeg', 'svg', 'pdf'].includes(e) ? e : 'png'; };
+const LOGO_TYPE = (f, e) => f.type || (e === 'svg' ? 'image/svg+xml' : e === 'pdf' ? 'application/pdf' : 'image/' + e);
+
 // ---------- Sample-data backend ----------
 const demoApi = {
   mode: 'demo',
@@ -113,8 +118,10 @@ const demoApi = {
   async licences(){ return demo.licences; },
   async competitions(){ return demo.competitions; },
   async music(){ return demo.music; },
-  async orders(){ return demo.orders; },
-  async order(id){ const o = demo.orders.find(x => x.id === id); if (!o) return null;
+  // The sample club's group-buying invoice (Shop & orders: Not paid · Finish payment) comes first
+  async orders(){ return [...(await (await GB()).demoPayOrders()), ...demo.orders]; },
+  async order(id){ const g = (await (await GB()).demoPayOrders()).find(x => x.id === id); if (g) return g;
+    const o = demo.orders.find(x => x.id === id); if (!o) return null;
     return {...o, lines: o.lines || [{n: o.details, qty: 1, unit: o.total}], delivery: 'SAADI Gymnastics, Redbourn, AL3 7PP', placedAt: o.date, paidAt: o.status === 'paid' ? o.date : null}; },
   async payByCard(){ throw new Error('Sample data: nothing is charged.'); },
   async products(){ return demo.products; },
@@ -123,6 +130,13 @@ const demoApi = {
   async syncFamilyEvents(){},
   async uploadMusic(){ throw new Error('Sample data: nothing is uploaded.'); },
   async placeOrder(){ throw new Error('Sample data: nothing is saved.'); },
+  // Group buying with sample data: the order is kept in memory only (it shows on the board and in NGL Admin until the page reloads)
+  async groupbuyPlace(order){ const m = await GB(), id = 'demo' + Math.random().toString(36).slice(2, 9);
+    const ref = 'NGL-' + order.round.replace('-', '') + '-' + id.slice(0, 5).toUpperCase();
+    m.demoPlace({...order, id, ref, clubId: m.DEMO_CLUB_ID, logoPath: `groupbuy/${order.round}/${id}/front-logo.png`, createdAt: {toDate: () => new Date()}});
+    return {id, ref, sample: true}; },
+  async groupbuyMine(){ return (await GB()).demoGroupOrders(); },
+  async groupbuyBoard(roundId, cb){ cb((await GB()).demoOpenTotals()); return () => {}; },
   async updateClub(){ throw new Error('Sample data: nothing is saved.'); },
   async signOut(){ location.replace(location.pathname); }
 };
@@ -260,6 +274,40 @@ const fbApi = {
     await fs.setDoc(fs.doc(D, 'orders', id), {clubId: A.currentUser.uid, clubName: c.name || '', path: paths.length === 1 ? paths[0] : 'general',
       details: lines.filter(l => l.k !== 'vat').map(l => `${l.qty} × ${l.n}`).join(', '), lines, total, delivery, status: 'awaiting-payment', createdAt: fs.serverTimestamp(), ...extra});
     return {id, total};
+  },
+  // Group buying: one order per club per product per round (status 'placed'), plus the round's live totals, in one batch.
+  // The logos upload straight after, to groupbuy/{round}/{order id}/front-logo.* and back-logo.* (storage.rules checks the order is the club's).
+  async groupbuyPlace(order, files = {}){
+    const {fs, A, D} = await fb(), uid = A.currentUser.uid;
+    const ref1 = fs.doc(fs.collection(D, 'ngl_groupbuy_orders')), id = ref1.id, dir = `groupbuy/${order.round}/${id}/`;
+    const ref = 'NGL-' + order.round.replace('-', '') + '-' + id.slice(0, 5).toUpperCase();
+    const logoPath = dir + 'front-logo.' + LOGO_EXT(files.front), backLogoPath = order.back.type === 'logo' && files.back ? dir + 'back-logo.' + LOGO_EXT(files.back) : '';
+    const doc = {...order, ref, clubId: uid, logoPath, back: {...order.back, logoPath: backLogoPath}, status: 'placed', createdAt: fs.serverTimestamp()};
+    const b = fs.writeBatch(D);
+    b.set(ref1, doc);
+    b.set(fs.doc(D, 'ngl_groupbuy_rounds', `${order.round}_${order.product}`), {shirts: fs.increment(order.qty), orders: fs.increment(1), updatedAt: fs.serverTimestamp(), lastOrder: id}, {merge: true});
+    await b.commit();
+    let logoErr = null;
+    try {
+      const st = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js');
+      const {getApp} = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'), S = st.getStorage(getApp());
+      const up = (f, path) => st.uploadBytes(st.ref(S, path), f, {contentType: LOGO_TYPE(f, LOGO_EXT(f))});
+      if (files.front) await up(files.front, logoPath);
+      if (backLogoPath) await up(files.back, backLogoPath);
+    } catch (e) { console.error(e); logoErr = e; }
+    return {id, ref, logoErr};
+  },
+  async groupbuyMine(){
+    const {fs, A, D} = await fb();
+    const q = await fs.getDocs(fs.query(fs.collection(D, 'ngl_groupbuy_orders'), fs.where('clubId', '==', A.currentUser.uid)));
+    return q.docs.map(d => ({id: d.id, ...d.data()})).sort((a, b) => ((b.createdAt && b.createdAt.seconds) || 9e9) - ((a.createdAt && a.createdAt.seconds) || 9e9));
+  },
+  // Live order board: ngl_groupbuy_rounds/{round}_{product} (anyone can read). cb({JC001: {n, orders}, …}, error)
+  async groupbuyBoard(roundId, cb){
+    const {fs, D} = await fb(), {PRODUCTS} = await GB(), now = {};
+    const offs = PRODUCTS.map(p => fs.onSnapshot(fs.doc(D, 'ngl_groupbuy_rounds', `${roundId}_${p.id}`),
+      s => { const d = s.exists() ? s.data() : {}; now[p.id] = {n: d.shirts || 0, orders: d.orders || 0}; cb({...now}); }, e => { console.warn(e); cb(null, e); }));
+    return () => offs.forEach(u => u());
   },
   // Graduations parents can see: familyEvents/{club uid}_{event id}, kept in step with clubs/{uid}.schoolEvents (medal counts stay private)
   async syncFamilyEvents(events){
