@@ -1,0 +1,87 @@
+/* Schools family app (js/family/schools.js). Phone first. Yellow #F8D438 always carries NAVY text. */
+.fs{--fs-y:#F8D438;--fs-navy:#28225c;--fs-bronze:#c98a4b;--fs-silver:#c9d1dc;--fs-gold:#f2a900;color:var(--ink,#1b1840);min-width:0}
+.fs *{box-sizing:border-box}
+.fs h2{font:800 18px/1.2 var(--cond,'Roboto Condensed',Arial,sans-serif);margin:0;color:var(--fs-navy)}
+.fs h3{font-size:16px;margin:0 0 4px;font-weight:800;color:var(--fs-navy)}
+.fs p{line-height:1.55;margin:0 0 10px}
+.fs-h1{font:900 28px/1.1 var(--cond,'Roboto Condensed',Arial,sans-serif);text-transform:uppercase;margin:0 0 8px;color:var(--fs-navy)}
+.fs-muted{color:var(--muted,#5f5b80)}
+.fs-eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted,#5f5b80);font-weight:800;margin:0 0 8px}
+.fs-card{background:#fff;border:1px solid var(--line,#e4e3ee);border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 1px 2px rgba(40,34,92,.05)}
+.fs-section-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:22px 2px 10px}
+
+/* Home / Routines / Graduation bar (was the bottom bar) */
+.fs-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:#fff;border:1px solid var(--line,#e4e3ee);margin:0 0 16px}
+.fs-nav a{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 4px;border-radius:10px;color:var(--muted,#5f5b80);font-weight:700;font-size:14px;text-decoration:none;min-width:0}
+.fs-nav a svg{width:20px;height:20px;flex:none}
+.fs-nav a.on{background:var(--fs-y);color:var(--fs-navy)}
+
+/* Home */
+.fs-welcome{background:linear-gradient(135deg,#2a245f,#0d1a4f);color:#fff;border-radius:20px;padding:20px;margin-bottom:6px;position:relative;overflow:hidden}
+.fs-welcome::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(248,212,56,.35),transparent 70%);pointer-events:none}
+.fs-welcome .fs-logo{display:block;height:44px;width:auto;margin:0 0 14px}
+.fs-welcome .fs-eyebrow{color:#c9cbee}
+.fs-club-name{font:900 26px/1.1 var(--cond,'Roboto Condensed',Arial,sans-serif);text-transform:uppercase;overflow-wrap:anywhere}
+.fs-club{font-size:14px;color:#c9cbee;margin-top:6px}
+.fs-journey{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+.fs-jstep{flex:0 0 auto;font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;border:2px solid var(--jc);color:#fff;white-space:nowrap;opacity:.75}
+.fs-jstep.on{background:var(--fs-y);border-color:var(--fs-y);color:var(--fs-navy);opacity:1}
+
+.fs-level-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:620px){.fs-level-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.fs-level-card{background:#fff;border:1px solid var(--line,#e4e3ee);border-radius:18px;padding:14px 12px 12px;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .12s ease,border-color .18s ease}
+.fs-level-card:active{transform:scale(.97)}
+.fs-level-card:hover,.fs-level-card:focus-visible{border-color:var(--fs-y);outline:none;box-shadow:0 0 0 3px rgba(248,212,56,.45)}
+.fs-level-card img{width:84px;height:84px;object-fit:cover;border-radius:50%;filter:drop-shadow(0 6px 10px rgba(40,34,92,.25))}
+.fs-lname{font-weight:900;font-size:17px;color:var(--fs-navy)}
+.fs-lmeta{font-size:12px;color:var(--muted,#5f5b80)}
+
+.fs-link-card{display:flex;align-items:center;gap:14px;cursor:pointer}
+.fs-ico{width:46px;height:46px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;background:var(--fs-y);color:var(--fs-navy)}
+.fs-ico svg{width:24px;height:24px}
+.fs-txt{flex:1;min-width:0}.fs-txt h3{margin:0 0 2px}.fs-txt p{margin:0;font-size:14px;color:var(--muted,#5f5b80)}
+.fs-chev{color:var(--muted,#5f5b80);flex:0 0 auto}
+.fs-coming{font-size:12px;font-weight:800;color:var(--fs-navy);background:#e4e3ee;border-radius:999px;padding:3px 9px;flex:none}
+
+/* Level */
+.fs-back{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--line,#e4e3ee);border-radius:999px;padding:6px 12px 6px 8px;color:var(--fs-navy);font-weight:700;font-size:14px;margin:0 0 12px}
+.fs-level-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.fs-level-head img{width:72px;height:72px;object-fit:cover;border-radius:50%;flex:0 0 auto;filter:drop-shadow(0 6px 10px rgba(40,34,92,.25))}
+.fs-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:#fff;border:1px solid var(--line,#e4e3ee);margin-bottom:16px;position:sticky;top:8px;z-index:10;box-shadow:0 2px 8px rgba(40,34,92,.08)}
+.fs-seg button{border:0;background:transparent;padding:11px 6px;border-radius:10px;font-weight:800;font-size:15px;color:var(--muted,#5f5b80)}
+.fs-seg button.active{background:var(--fs-y);color:var(--fs-navy)}
+.fs-video{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin-bottom:14px;cursor:pointer}
+.fs-video img{width:100%;height:100%;object-fit:cover;display:block;opacity:.85}
+.fs-play{position:absolute;inset:0;display:grid;place-items:center}
+.fs-play span{width:68px;height:68px;border-radius:50%;background:var(--fs-y);display:grid;place-items:center;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.fs-play svg{width:28px;height:28px;margin-left:4px;color:var(--fs-navy)}
+.fs-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.fs-skills{list-style:none;margin:0;padding:0;counter-reset:s}
+.fs-skills li{counter-increment:s;display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line,#e4e3ee);font-size:15px}
+.fs-skills li:first-child{border-top:0}
+.fs-skills li::before{content:counter(s);flex:0 0 auto;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--fs-y);font-size:13px;font-weight:800;color:var(--fs-navy)}
+.fs-vault-part + .fs-vault-part{margin-top:8px}
+.fs-level-nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+
+.fs-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 16px;border-radius:14px;border:0;background:var(--fs-y);color:var(--fs-navy);font-weight:900;font-size:16px;text-decoration:none}
+.fs-btn:active{transform:scale(.98)}
+.fs-btn.ghost{background:#fff;color:var(--fs-navy);border:1px solid var(--line,#e4e3ee);font-weight:700}
+
+/* Graduation */
+.fs-awards-row{display:flex;gap:10px;margin:14px 0 4px}
+.fs-award{flex:1;min-width:0;text-align:center;padding:12px 6px;border-radius:14px;background:var(--wash,#f4f4f9);border:1px solid var(--line,#e4e3ee)}
+.fs-dot{width:34px;height:34px;border-radius:50%;margin:0 auto 6px;border:3px solid rgba(40,34,92,.12)}
+.fs-award b{font-size:14px;color:var(--fs-navy)}
+.fs-medal-strip{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.fs-medal-strip img{width:46px;height:46px;object-fit:cover;border-radius:50%}
+.fs-event{border-left:5px solid var(--fs-y)}
+.fs-when{font-size:14px;color:var(--muted,#5f5b80);margin-bottom:8px}
+.fs-note{font-size:14px;color:var(--fs-navy);font-weight:600}
+.fs-facts{list-style:none;padding:0;margin:10px 0 0}
+.fs-facts li{padding:6px 0;font-size:15px;display:flex;gap:10px}
+.fs-facts li::before{content:"✓";color:var(--fs-navy);background:var(--fs-y);border-radius:50%;width:20px;height:20px;flex:none;display:grid;place-items:center;font-size:12px;font-weight:900;margin-top:1px}
+.fs-empty{text-align:center;padding:26px 18px}
+.fs-empty svg{width:40px;height:40px;color:var(--muted,#5f5b80);margin-bottom:8px}
+
+.fs-foot{text-align:center;font-size:12px;color:var(--muted,#5f5b80);margin-top:26px}
+.fs-foot button{background:none;border:0;color:var(--fs-navy);text-decoration:underline;font-size:12px;padding:6px}

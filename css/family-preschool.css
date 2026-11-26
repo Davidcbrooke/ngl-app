@@ -1,0 +1,65 @@
+/* Pre-School family page (js/family/preschool.js). Look of the old family app, scoped to #psFam. Pink accent #E84187. */
+#psFam{--pink:#E84187;--pink-d:#b0185f;--pink-l:#FCE8F1;--navy:#29235C;--teal:#1F8A9E;--ink:#24304a;--muted:#6b7487;--line:#ece6f0;
+  color:var(--ink);font:16px/1.5 var(--body,Roboto),Arial,sans-serif;margin:-16px -16px 0;overflow-x:hidden}
+#psFam *{box-sizing:border-box}
+#psFam .seven{display:flex;height:6px}#psFam .seven i{flex:1}
+#psFam .psf-hero{background:var(--pink);color:#fff;padding:18px 16px 54px;text-align:center;position:relative;overflow:hidden}
+#psFam .psf-hero:after{content:"";position:absolute;inset:0;background:radial-gradient(rgba(255,255,255,.12) 1.4px,transparent 1.5px) 0 0/18px 18px;pointer-events:none}
+#psFam .psf-hero img{width:min(260px,70vw);display:block;margin:6px auto 8px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.25));position:relative;z-index:1}
+#psFam .psf-hero p{margin:0;font:700 15px var(--cond);letter-spacing:.12em;text-transform:uppercase;position:relative;z-index:1}
+#psFam .psf-hero h1{margin:2px 0 0;font:800 26px/1.1 var(--cond);letter-spacing:.02em;text-transform:none;position:relative;z-index:1;color:#fff}
+#psFam .psf-main{max-width:640px;margin:-38px auto 0;padding:0 16px 16px;position:relative;z-index:2}
+#psFam .card{background:#fff;border:0;border-radius:18px;box-shadow:0 4px 18px rgba(41,35,92,.08);padding:18px;margin-bottom:16px}
+#psFam p,#psFam ul{margin:0;padding:0}
+#psFam .nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+#psFam .nav button{border:0;background:var(--pink-l);color:var(--pink-d);width:40px;height:40px;flex:none;border-radius:50%;font-size:20px;cursor:pointer;line-height:1}
+#psFam .nav button:disabled{opacity:.35;cursor:default}
+#psFam .nav .when{text-align:center;flex:1;min-width:0}
+#psFam .when b{display:block;font:800 20px/1.1 var(--cond);letter-spacing:.03em;text-transform:uppercase;color:var(--navy)}
+#psFam .when span{font-size:13px;color:var(--muted)}
+#psFam .chip{display:inline-block;flex:none;font:700 12px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:20px;background:var(--pink);color:#fff}
+#psFam .theme{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:4/5;width:100%;background:#eee center/cover}
+#psFam .tt{display:flex;align-items:center;gap:10px;margin:2px 0 12px;flex-wrap:wrap}
+#psFam .tt h2{margin:0;font:800 28px/1 var(--cond);color:var(--navy);text-transform:uppercase}
+#psFam h3{font:800 19px/1.15 var(--cond);letter-spacing:.04em;text-transform:uppercase;color:var(--navy);margin:0 0 10px;display:flex;align-items:center;gap:8px}
+#psFam .country{display:flex;gap:14px;align-items:center}
+#psFam .country img{width:92px;height:92px;flex:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.18))}
+#psFam .country .lv{font:700 13px var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--pink)}
+#psFam .country .nm{font:800 26px/1.05 var(--cond);color:var(--navy)}
+#psFam .country .sub{font-size:14px;color:var(--muted)}
+#psFam .skills{list-style:none;margin-top:14px;display:grid;gap:10px}
+#psFam .skills li{display:flex;gap:12px;align-items:center;background:var(--pink-l);border-radius:14px;padding:12px 14px;font-weight:500}
+#psFam .star{flex:none;width:36px;height:36px;border-radius:50%;background:var(--pink);color:#fff;display:flex;align-items:center;justify-content:center;font:700 13px var(--cond);position:relative}
+#psFam .star svg{position:absolute;inset:4px;width:28px;height:28px;opacity:.25}
+#psFam .note{font-size:14px;color:var(--muted);margin:12px 0 0;background:none;border:0;border-radius:0;padding:0}
+#psFam .home{list-style:none;display:grid;gap:8px}
+#psFam .home li{padding-left:28px;position:relative}
+#psFam .home li:before{content:"";position:absolute;left:4px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px #d5eef2}
+#psFam .journey{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+#psFam .journey div{text-align:center;font-size:11px;color:var(--muted);line-height:1.2;letter-spacing:-.02em;overflow-wrap:break-word}
+#psFam .journey img{width:100%;aspect-ratio:1;display:block;margin-bottom:4px;transition:.2s}
+#psFam .journey .todo img{filter:grayscale(1) opacity(.35)}
+#psFam .journey .now img{outline:3px solid var(--pink);outline-offset:2px;border-radius:50%}
+#psFam .journey .now{color:var(--pink-d);font-weight:700}
+#psFam .bar{height:10px;border-radius:10px;background:var(--line);overflow:hidden;margin:4px 0 14px}
+#psFam .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),#90276A)}
+#psFam .term{list-style:none}
+#psFam .term li{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+#psFam .term li:last-child{border:0}
+#psFam .term li.cur{background:var(--pink-l);border-radius:12px;padding:10px 8px;border-bottom-color:transparent}
+#psFam .term li:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-radius:12px}
+#psFam .term .d{font:800 14px/1.1 var(--cond);color:var(--navy);text-transform:uppercase;text-align:center}
+#psFam .term .d small{display:block;font:500 11px var(--body,Roboto);color:var(--muted);text-transform:none}
+#psFam .term .t b{display:block;font-weight:500}#psFam .term .t span{font-size:13px;color:var(--muted)}
+#psFam .term img{width:34px;height:34px}
+#psFam .empty{text-align:center;padding:30px 18px;color:var(--ink)}
+#psFam .empty h2{font:800 26px var(--cond);color:var(--navy);text-transform:uppercase;margin:12px 0 6px}
+#psFam .btn{display:inline-block;background:var(--pink);color:#fff;text-decoration:none;font:700 15px var(--cond);letter-spacing:.08em;text-transform:uppercase;padding:12px 18px;border-radius:30px;border:0;cursor:pointer}
+#psFam .bk{display:flex;gap:6px;background:var(--pink-l);border-radius:30px;padding:4px;margin-bottom:14px}
+#psFam .bk button{flex:1;border:0;background:transparent;padding:8px;border-radius:24px;font:700 15px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--pink-d);cursor:pointer;min-height:40px}
+#psFam .bk button.on{background:var(--pink);color:#fff}
+#psFam .demo{background:#fff6d6;color:#6b5400;font-size:13px;text-align:center;padding:8px 12px;border-radius:12px;margin-bottom:12px}
+#psFam .halfterm{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#C8202F;color:#fff;border-radius:14px;padding:10px 14px;margin:0 0 14px;font-size:15px;font-weight:600}
+#psFam .halfterm b{background:#fff;color:#C8202F;border-radius:999px;padding:4px 12px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;font-weight:900}
+#psFam .psf-foot{text-align:center;font-size:12px;color:var(--muted);padding:4px 16px 8px}
+#psFam .psf-foot a{color:var(--pink-d)}

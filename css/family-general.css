@@ -1,0 +1,39 @@
+/* General League for families (js/family/general.js). Blue General League accent #0071B3. Phone first. */
+.fg{--gl:#0071B3;--gl-dark:#005a8f;--gl-wash:#e6f1f8;min-width:0}
+.fg *{min-width:0}
+.fam-page.fg-wide{max-width:1100px;padding-bottom:0}
+
+.fg-hero{background:linear-gradient(160deg,var(--gl) 0%,var(--gl-dark) 100%);color:#fff;border-radius:18px;padding:20px;margin:0 0 20px}
+.fg-eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;opacity:.9;margin:0 0 8px}
+.fg-hero h1{color:#fff;font-size:clamp(30px,8vw,44px);margin:0 0 10px;text-wrap:balance}
+.fg-lead{margin:0;font-size:16px;line-height:1.5;color:#eaf4fb}
+
+.fg-h2{margin:0 0 10px}
+.fg-tiles{display:grid;gap:12px;grid-template-columns:1fr;margin:0 0 16px}
+@media(min-width:700px){.fg-tiles{grid-template-columns:1fr 1fr}}
+.fg-tile{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--gl);border-radius:16px;padding:14px;color:var(--ink);text-decoration:none;transition:transform .15s ease,box-shadow .15s ease}
+.fg-tile:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(0,60,100,.45)}
+.fg-tile:focus-visible{outline:3px solid var(--gl);outline-offset:2px}
+.fg-ic{flex:none;width:50px;height:50px;border-radius:14px;background:var(--gl);display:flex;align-items:center;justify-content:center}
+.fg-ic svg{width:28px;height:28px}
+.fg-tx{flex:1}
+.fg-tx i{display:block;font-style:normal;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gl);margin-bottom:2px}
+.fg-tx b{display:block;font-size:17px;font-weight:800;color:var(--navy);margin-bottom:2px}
+.fg-tx span{display:block;color:var(--muted);font-size:14px;line-height:1.4}
+.fg-go{flex:none;color:var(--gl)}.fg-go svg{width:20px;height:20px;display:block}
+.fg-more{text-align:center;color:var(--muted);margin:4px 0 0}
+.fg-more a,.fg-help a{color:var(--gl);font-weight:700}
+
+.fg-help{margin-top:24px;background:var(--gl-wash);border:1px solid #c5dff0;border-radius:14px;padding:16px 18px;font-size:15px;color:var(--ink)}
+.fg-help p{margin:0}.fg-help b{color:var(--navy)}
+.fg-help .fg-add{margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:14px}
+.fg-help .btn{background:var(--gl);cursor:pointer;font-family:inherit}
+
+/* A page: fills the screen under the bar and scrolls inside itself */
+.fg-bar{display:flex;align-items:center;gap:12px;margin:0 0 10px}
+.fg-bar b{color:var(--navy);font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fg-back{flex:none;display:inline-flex;align-items:center;gap:4px;color:#fff;background:var(--gl);text-decoration:none;font-weight:700;font-size:14px;padding:7px 13px 7px 8px;border-radius:99px}
+.fg-back svg{width:16px;height:16px}
+.fg-frame{width:100%;height:70vh;border:0;display:block;border-radius:16px;background:#fff;box-shadow:0 0 0 1px var(--line)}
+.fg-frame.dark{background:#0a1440}
+@media (prefers-reduced-motion:reduce){.fg-tile{transition:none}}

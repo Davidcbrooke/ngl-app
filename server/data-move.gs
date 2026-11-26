@@ -165,7 +165,7 @@ function rehearse(){
   Object.keys(fam).forEach(k => { const f = fam[k]; Object.keys(f).forEach(j => { if (f[j] === null) delete f[j]; }); writes.push(doc('familyCodes/' + k, f)); });
   // Parents' data: the clubs' live timetables (Recreational Rotations) and Graduations (Schools)
   const rota = listAll(LIVE, 'rotaLive'); rota.forEach(x => writes.push(doc('rotaLive/' + home(x.id), x.data)));
-  events.forEach(e => writes.push(doc('familyEvents/' + e.id, Object.assign({}, e.data, {clubId: home(e.data.clubId || '')}))));
+  events.forEach(e => writes.push(doc('familyEvents/' + e.id, Object.assign({}, e.data, {clubId: home(e.data.clubId || ''), programme: 'schools'}))));
   // Projected P&L scenarios
   const projRaw = getDoc(BOOK, 'ngl_finance/projection'); if (projRaw) writes.push(doc('finance/projection', fromVal_({mapValue: {fields: projRaw.fields || {}}})));
   report.family = {codes: Object.keys(fam).length, active: Object.values(fam).filter(f => f.status === 'active').length, preschool: psCodes.length, clashes, rotaLive: rota.length, events: events.length};
