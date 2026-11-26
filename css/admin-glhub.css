@@ -1,0 +1,91 @@
+/* NGL Admin · General League Hub: view as gymnast (js/admin/gl-hub.js). App colours from css/app.css; General League blue as the accent.
+   Every class starts gh- */
+.gh-root{--gh-gl:var(--gen);--gh-gl-dark:#00548a}
+.gh-col{max-width:640px}
+.gh-label{max-width:640px;font-weight:700;letter-spacing:.02em}
+.gh-label a{color:var(--navy)}
+.gh-card{margin-bottom:14px}
+.gh-eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:0 0 8px}
+.gh-title{font-size:24px;margin-bottom:6px}
+.gh-name{font:900 28px/1.1 var(--cond);margin:0 0 8px}
+.gh-muted{color:var(--muted)}
+.gh-card h3{font-size:16px;margin:0 0 4px;color:var(--navy)}
+.gh-card p{line-height:1.55;margin:0 0 10px}
+
+/* sub-tabs: Home, Stats, Comps, Card */
+.gh-tabs{--c:var(--gen)}
+.gh-tabs a{display:inline-flex;align-items:center;gap:6px}
+
+/* section titles */
+.gh-sec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:22px 2px 10px}
+.gh-sec h2{font-size:17px;margin:0}
+.gh-sec a{font-weight:700;font-size:14px}
+
+/* search results */
+a.card.gh-pick{display:block;padding:14px 16px;margin-bottom:10px}
+.gh-pick b{display:block;font-size:16px;color:var(--navy)}
+.gh-pick small{display:block;color:var(--muted);font-size:13px}
+
+/* GL blue accent card (league position, coming up) */
+.gh-accent{background:linear-gradient(135deg,var(--gh-gl),var(--gh-gl-dark));border-color:transparent;color:#fff}
+.gh-accent .gh-eyebrow{color:rgba(255,255,255,.85)}
+.gh-accent h3{color:#fff}
+.gh-bigpos{display:flex;align-items:baseline;gap:8px}
+.gh-bigpos .n{font:900 44px/1 var(--cond)}
+
+/* pills */
+.gh-pill{display:inline-block;font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--wash);color:var(--navy);border:1px solid var(--line);margin:0 6px 6px 0}
+.gh-pill.gl{background:var(--gh-gl);border-color:var(--gh-gl);color:#fff}
+.gh-pill.gh-pb{background:#fbd43a;border-color:#fbd43a;color:var(--navy);margin:0 0 0 6px}
+button.gh-pill{font-family:inherit;cursor:pointer}
+button.gh-pill:hover{border-color:var(--gh-gl)}
+
+/* stat tiles */
+.gh-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gh-stats3{grid-template-columns:repeat(3,1fr)}
+.gh-stat{background:var(--wash);border:1px solid var(--line);border-radius:12px;padding:12px}
+.gh-stat .k{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.gh-stat .v{font:900 22px var(--cond);color:var(--navy);margin-top:2px}
+
+/* competitions */
+.gh-comp{display:flex;gap:14px;align-items:flex-start}
+.gh-date{flex:0 0 52px;text-align:center;background:var(--wash);border:1px solid var(--line);border-radius:12px;padding:6px 0;color:var(--navy)}
+.gh-date .d{font:900 20px/1.1 var(--cond)}
+.gh-date .m{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.gh-accent .gh-date{background:rgba(255,255,255,.15);border-color:transparent;color:#fff}
+.gh-accent .gh-date .m{color:#fff}
+.gh-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.gh-scores div{background:var(--wash);border-radius:10px;padding:6px 8px;font-size:12px;color:var(--muted);min-width:0}
+.gh-scores b{display:block;font-size:15px;color:var(--navy)}
+
+/* progress graph */
+.gh-graph{display:block;max-width:100%;height:auto}
+.gh-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--muted)}
+.gh-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+/* best per apparatus, Training League challenges */
+table.gh-best{width:100%;border-collapse:collapse;font-size:14px}
+table.gh-best td{padding:9px 4px;border-top:0;border-bottom:1px solid var(--line)}
+table.gh-best tr:last-child td{border-bottom:0}
+table.gh-best td:last-child{text-align:right;font-weight:800;color:var(--navy)}
+
+/* Profile Card */
+.gh-canvas{display:block;width:min(300px,80vw);height:auto;margin:6px auto 14px;filter:drop-shadow(0 14px 30px rgba(6,10,40,.3))}
+.gh-cardbtns{display:flex;justify-content:center;gap:10px;margin-bottom:14px}
+.gh-foot{text-align:center;font-size:12px;color:var(--muted);margin-top:26px}
+
+@media(max-width:860px){
+  /* keep these small tables as tables on a phone (app.css stacks tables) */
+  table.gh-best,table.gh-best tbody{display:table;width:100%}
+  table.gh-best tr{display:table-row;padding:0;border:0}
+  table.gh-best td{display:table-cell;padding:9px 4px;border-bottom:1px solid var(--line)}
+  .gh-tabs a{padding:10px 10px}
+  .gh-pill{padding:6px 10px}
+  button.gh-pill{min-height:32px}
+}
+@media(max-width:420px){
+  .gh-scores{grid-template-columns:repeat(2,1fr)}
+  .gh-stats3{grid-template-columns:repeat(2,1fr)}
+  .gh-tabs{gap:0}
+  .gh-tabs a{padding:10px 8px;font-size:14px}
+}

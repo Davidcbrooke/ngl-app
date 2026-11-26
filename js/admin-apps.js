@@ -165,6 +165,7 @@ export const APPS = [
  {
   "group": "clubs",
   "id": "powerleague",
+  "to": "#/admin/powerleague",
   "colour": "#0071B3",
   "name": "Training League",
   "desc": "Add gymnasts to the Training League and enter their checked challenge results; the public league table updates straight away",
@@ -174,6 +175,7 @@ export const APPS = [
  {
   "group": "clubs",
   "id": "gl-hub",
+  "to": "#/admin/gl-hub",
   "access": "results",
   "colour": "#0071B3",
   "name": "General League Hub: view as gymnast",
@@ -184,6 +186,7 @@ export const APPS = [
  {
   "group": "clubs",
   "id": "rotation",
+  "to": "#/admin/rotation",
   "name": "Rotation Planner clubs",
   "desc": "Registered clubs and data imports for the Rotation Planner",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/NGL_Admin.html",

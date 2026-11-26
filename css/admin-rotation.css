@@ -1,0 +1,43 @@
+/* NGL Admin · Rotation Planner clubs (js/admin/rotation.js). App colours from css/app.css; every class starts ro- */
+.ro-src{color:var(--muted);font-size:13px;margin:-12px 0 16px}
+.ro-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.ro-stat{text-align:center}
+@media(max-width:600px){.ro-stats{grid-template-columns:minmax(0,1fr)}.ro-stat{display:flex;align-items:baseline;gap:12px;text-align:left}.ro-stat b{font-size:26px}}
+.ro-panel{padding:0;overflow:hidden}
+.ro-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line)}
+.ro-hdr h2{margin:0;font-size:18px}
+.ro-hdr-acts{display:flex;gap:8px;flex-wrap:wrap}
+.ro-note{margin:0;padding:10px 20px;background:#fff3e0;color:var(--warn);font-size:13px;border-bottom:1px solid var(--line)}
+.ro-showall{display:flex;align-items:center;gap:8px;padding:12px 20px;font-size:13.5px;color:var(--muted);border-bottom:1px solid var(--line);cursor:pointer}
+.ro-showall input{width:18px;height:18px;accent-color:var(--navy)}
+.ro-err{color:var(--red);font-weight:600}
+.ro-tw{overflow-x:auto}
+.ro-table th{padding:10px 16px;background:var(--wash)}
+.ro-table td{padding:12px 16px;vertical-align:middle}
+.ro-table tbody tr:hover td{background:#fafafd}
+.ro-name strong{color:var(--navy)}
+.ro-name .pill{margin-left:4px;vertical-align:1px}
+.ro-email a{color:var(--navy);white-space:nowrap}
+.ro-acts{white-space:nowrap}
+.ro-acts .btn+.btn{margin-left:6px}
+.ro-k{display:none}
+
+/* phone: app.css turns table rows into blocks; show each value's label */
+@media(max-width:860px){
+  .ro-table tr{padding:12px 16px}
+  .ro-table td{padding:2px 0}
+  .ro-table tbody tr:hover td{background:none}
+  .ro-k{display:inline-block;min-width:76px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  .ro-name{margin-bottom:4px}
+  .ro-email a{white-space:normal;overflow-wrap:anywhere}
+  .ro-acts{margin-top:8px;white-space:normal}
+}
+
+/* dialogs */
+.ro-dlg h2{font-size:20px}
+.ro-lbl{display:block;font-size:13px;font-weight:700;color:var(--navy);margin:10px 0 6px}
+.ro-dlg textarea{width:100%;height:200px;padding:10px;border:1.5px solid var(--line);border-radius:10px;font:13px/1.45 ui-monospace,Consolas,monospace;resize:vertical}
+.ro-dlg textarea:focus{border-color:var(--navy);outline:none}
+.ro-dlg-err{min-height:1.4em;margin:8px 0 0;color:var(--red);font-weight:600;font-size:13.5px}
+.ro-dlg-acts{justify-content:flex-end}
+.ro-viewline{margin:8px 0}

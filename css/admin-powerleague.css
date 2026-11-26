@@ -1,0 +1,63 @@
+/* NGL Admin · Training League (js/admin/powerleague.js). Same sections as the Training League admin, in the app's look; every class starts tl- */
+.tl-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tl-who{margin:0 0 12px;font-size:14px;overflow-wrap:anywhere}
+.tl-who a{color:var(--navy);font-weight:700}
+.tl-demo{margin:0 0 12px;font-size:13px;color:var(--warn);font-weight:700}
+.tl-card{margin-bottom:16px}
+.tl-note{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 6px}
+
+/* add a gymnast: labelled fields in a grid, the button lined up with the inputs */
+.tl-form{display:grid;gap:0 12px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));align-items:end}
+.tl-form .field{margin:10px 0 0;min-width:0}
+.tl-addbtn{margin-top:10px}
+.tl-addbtn .btn{min-height:42px}
+
+/* enter results */
+.tl-find{max-width:340px;margin-top:0}
+.tl-tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.tl-table th,.tl-table td{white-space:nowrap}
+.tl-table th{background:var(--wash)}
+.tl-table .num{text-align:center}
+.tl-table .tl-act{text-align:right}
+.tl-table .empty{white-space:normal}
+.tl-ovr{font:900 18px var(--cond);color:var(--navy)}
+.tl-mut{color:var(--muted)}
+
+/* results dialog */
+.modal.tl-modal{width:min(620px,100%)}
+.tl-dlg h2{margin-bottom:8px}
+.tl-dlgclub{font:500 15px var(--body);text-transform:none;color:var(--muted)}
+.tl-eform{display:grid;gap:0 12px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));margin-bottom:10px}
+.tl-eform .field{margin:8px 0 0;min-width:0}
+.tl-entries{margin-top:6px}
+.tl-entry{display:grid;grid-template-columns:1.5fr 1fr 1fr 44px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.tl-entry:last-child{border:0}
+.tl-entry input{min-width:0;width:100%;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:14px;background:#fff;color:var(--ink)}
+.tl-entry input:focus{outline:none;border-color:var(--navy)}
+.tl-ename{min-width:0}
+.tl-ename b{font-size:14px}
+.tl-hist{font-size:12px;color:var(--muted)}
+.btn.tl-danger{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn.tl-x{padding:6px 0;justify-content:center;width:44px}
+.tl-dlgbtns{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap}
+.tl-dlgr{display:flex;gap:8px}
+
+@media(max-width:860px){
+  /* the list becomes one stacked row per gymnast, each small fact with its label */
+  .tl-tablewrap{border:0;overflow:visible}
+  .tl-table tr{display:flex;flex-wrap:wrap;align-items:center;gap:2px 14px;padding:12px 0}
+  .tl-table td{white-space:normal}
+  .tl-table td.tl-nm{flex:1 1 60%;font-size:15px}
+  .tl-table td.tl-act{order:-1;margin-left:auto;flex:0 0 auto}
+  .tl-table td.tl-nm{order:-2}
+  .tl-table td.tl-club{flex:1 1 100%;color:var(--muted);font-size:13px}
+  .tl-table td[data-l]:not(.tl-nm):not(.tl-club){font-size:13px;text-align:left}
+  .tl-table td[data-l]:not(.tl-nm):not(.tl-club)::before{content:attr(data-l) ": ";color:var(--muted);font-weight:700;font-size:12px}
+  .tl-table td.tl-ovr{font-size:15px}
+  .tl-table td.empty{flex:1 1 100%;text-align:center}
+  .tl-find{max-width:none}
+  /* a challenge on its own line, then result, date and remove */
+  .tl-entry{grid-template-columns:1fr 1fr 44px}
+  .tl-ename{grid-column:1/-1}
+  .tl-entry>span:empty{display:none}
+}

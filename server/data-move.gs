@@ -108,12 +108,12 @@ function rehearse(){
     dups.forEach(x => { const l = licOf(x); Object.keys(l).forEach(k => { if (l[k].status === 'live' && lic[k].status !== 'live') lic[k] = l[k]; });
       const have = new Set(d.schoolsSub.map(s => String(s.name).trim().toLowerCase()));
       x.data.schoolsSub.forEach(s => { if (!have.has(String(s.name).trim().toLowerCase())) d.schoolsSub.push(s); });
-      ['recTerm', 'rotaJson', 'projection', 'secPlan', 'preschoolPlan', 'deliveryAddress', 'bgNumber', 'phone'].forEach(k => { if (d[k] == null && x.data[k] != null) d[k] = x.data[k]; }); });
+      ['recTerm', 'rotaJson', 'rotaUpdatedAt', 'projection', 'secPlan', 'preschoolPlan', 'deliveryAddress', 'bgNumber', 'phone'].forEach(k => { if (d[k] == null && x.data[k] != null) d[k] = x.data[k]; }); });
     const evs = events.filter(e => home(e.data.clubId) === c.id).map(e => ({id: e.id, title: e.data.title || '', schoolId: e.data.schoolId || '', schoolName: e.data.schoolName || '', date: e.data.date || '', time: e.data.time || '', venue: e.data.venue || '', bookingUrl: e.data.bookingUrl || ''}));
     const out = {name: d.name || '', contact: d.contact || '', email: d.email || '', bgNumber: d.bgNumber || '', phone: d.phone || '', deliveryAddress: d.deliveryAddress || '',
       licences: lic, schoolsList: d.schoolsSub, schoolEvents: evs, createdAt: d.createdAt || now, movedFrom: LIVE + '/clubs/' + c.id};
     if (dups.length) out.mergedFrom = dups.map(x => LIVE + '/clubs/' + x.id);
-    ['recTerm', 'rotaJson', 'projection', 'secPlan', 'interest', 'bookingEmails'].forEach(k => { if (d[k] != null) out[k] = d[k]; });
+    ['recTerm', 'rotaJson', 'rotaUpdatedAt', 'projection', 'secPlan', 'interest', 'bookingEmails'].forEach(k => { if (d[k] != null) out[k] = d[k]; });
     if (d.preschoolPlan) out.plans = {preschool: d.preschoolPlan};
     writes.push(doc('clubs/' + c.id, out));
     report.clubs.push({id: c.id, name: d.name || '', email: mask(d.email || ''), licences: Object.keys(lic).filter(k => lic[k].status === 'live').join(', ') || 'none',
@@ -130,7 +130,7 @@ function rehearse(){
     else if (id.indexOf('plan__') === 0) writes.push(doc('compPlans/' + id.slice(6), s.data));
     else writes.push(doc('staffing/' + id, s.data)); });   // Staffing: same doc id (= competition id), same document
   // Judging Pathway lists Staffing reads: same names and doc ids (pw:<assignmentId> links and signupId depend on them)
-  const judging = {}; ['ngl_judge_signups', 'ngl_judging_assignments', 'ngl_judges', 'ngl_judge_notifications', 'ngl_resources'].forEach(c => { const list = listAll(BOOK, c); judging[c] = list.length; list.forEach(x => writes.push(doc(c + '/' + x.id, x.data))); });
+  const judging = {}; ['ngl_judge_signups', 'ngl_judging_assignments', 'ngl_judges', 'ngl_judge_notifications', 'ngl_resources', 'ngl_power_league', 'ngl_power_league_private'].forEach(c => { const list = listAll(BOOK, c); judging[c] = list.length; list.forEach(x => writes.push(doc(c + '/' + x.id, x.data))); });
   report.apps = {justgoEvents: jg ? Object.keys(jg.events || {}).length : 0, plans: staffDocs.filter(s => s.id.indexOf('plan__') === 0).length, staffing: staffDocs.filter(s => s.id.indexOf('plan__') !== 0 && s.id !== 'summary__planning').length, judging};
 
   // Floor music: musicEvents (running order, absences, intros, announcements) and _builtin, same ids, from the live Club Hub project

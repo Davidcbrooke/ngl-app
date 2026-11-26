@@ -35,9 +35,11 @@ service cloud.firestore {
 
     // Club account: one document per club, id = the club's login uid
     match /clubs/{clubId} {
-      allow read: if own(clubId) || clubsTeam() || canAny(['music']);
+      allow read: if own(clubId) || clubsTeam() || canAny(['music', 'rotation']);
       allow create: if own(clubId) && !request.resource.data.keys().hasAny(['licences', 'isAdmin']);
       allow update: if clubsTeam() || (own(clubId) && unchanged(['licences', 'isAdmin']));
+      // Rotation Planner clubs: the team can import a club's rotation data, and nothing else
+      allow update: if canAny(['rotation']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rotaJson', 'rotaUpdatedAt']);
       allow delete: if isAdmin();
     }
 
@@ -103,6 +105,9 @@ service cloud.firestore {
     // the competition from Elevien (musicComps, written by the import tool)
     match /musicEvents/{id} { allow read, write: if canAny(['music', 'musicplayer']); }
     match /musicComps/{id} { allow read: if canAny(['music', 'musicplayer']); allow write: if isAdmin(); }
+    // Training League: the public league table reads it without signing in (first name, initial, club, results); BG numbers stay private
+    match /ngl_power_league/{id} { allow read: if true; allow write: if canAny(['powerleague']); }
+    match /ngl_power_league_private/{id} { allow read: if canAny(['powerleague', 'gl-hub', 'results']); allow write: if canAny(['powerleague']); }
     // Judging admin: notifications to judges, and the resources library
     match /ngl_judge_notifications/{id} { allow read, write: if canAny(['judging']); }
     match /ngl_resources/{id} { allow read, write: if canAny(['judging']); }
