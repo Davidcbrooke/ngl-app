@@ -73,7 +73,7 @@ service cloud.firestore {
       allow read, delete: if compsTeam() || emailIs(resource.data.email);
       allow create, update: if isAdmin();
       // (Floor music reads club names and emails here to match entries)
-      allow read: if canAny(['music']);
+      allow read: if canAny(['music', 'finance']);
     }
     // Floor music: NGL adds each club's gymnasts per competition (musicEntries/{compId}_{clubId});
     // the club uploads one record per gymnast (musicUploads/{compId}_{gymnastId}).
@@ -108,6 +108,8 @@ service cloud.firestore {
     // Training League: the public league table reads it without signing in (first name, initial, club, results); BG numbers stay private
     match /ngl_power_league/{id} { allow read: if true; allow write: if canAny(['powerleague']); }
     match /ngl_power_league_private/{id} { allow read: if canAny(['powerleague', 'gl-hub', 'results']); allow write: if canAny(['powerleague']); }
+    // NGL P&L: assumptions (settings) and typed actual costs / income targets (actuals)
+    match /finance/{id} { allow read, write: if canAny(['finance']); }
     // Judging admin: notifications to judges, and the resources library
     match /ngl_judge_notifications/{id} { allow read, write: if canAny(['judging']); }
     match /ngl_resources/{id} { allow read, write: if canAny(['judging']); }

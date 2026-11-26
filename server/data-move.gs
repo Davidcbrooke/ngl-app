@@ -49,7 +49,7 @@ function rehearse(){
   // Competitions
   const compOut = comps.map(c => { const d = c.data, name = d.name || d.title || c.id, date = isoDate(d.date);
     const path = /recreational/i.test(name + ' ' + (d.pathway || '')) ? 'recreational' : /performance|grades|classic/i.test(name) ? 'performance' : /schools/i.test(name) ? 'schools' : 'general';
-    return {id: c.id, name, path, date, time: d.time || '', maxPlaces: typeof d.maxPlaces === 'number' ? d.maxPlaces : null, level: d.level || '', where: d.venue || d.location || 'TBC', who: [d.level, d.gender && d.gender !== 'both' ? (d.gender === 'boys' ? 'Boys' : 'Girls') : ''].filter(Boolean).join(' · ') || 'All levels', status: 'open'}; })
+    return {id: c.id, name, path, date, time: d.time || '', apparatus: d.apparatus || '', gender: d.gender || '', maxPlaces: typeof d.maxPlaces === 'number' ? d.maxPlaces : null, level: d.level || '', where: d.venue || d.location || 'TBC', who: [d.level, d.gender && d.gender !== 'both' ? (d.gender === 'boys' ? 'Boys' : 'Girls') : ''].filter(Boolean).join(' · ') || 'All levels', status: 'open'}; })
     .filter(c => c.date);
   compOut.forEach(c => writes.push(doc('competitions/' + c.id, c)));
 
@@ -121,6 +121,8 @@ function rehearse(){
       reservations: (resByClub[c.id] || []).length}); });
 
   // NGL Admin apps: Ticket sales (JustGo summary) and Competition planning (from ngl_staffing plan__*)
+  // NGL P&L: the agreed assumptions (entry fees, costs, medals, annual lines)
+  const finRaw = getDoc(BOOK, 'ngl_finance/settings'); if (finRaw) writes.push(doc('finance/settings', fromVal_({mapValue: {fields: finRaw.fields || {}}})));
   const jgRaw = getDoc(BOOK, 'ngl_finance/justgo'), jg = jgRaw ? fromVal_({mapValue: {fields: jgRaw.fields || {}}}) : null;
   if (jg) writes.push(doc('justgoSales/summary', Object.assign({}, jg, {clubNames: [...new Set(bookings.map(b => String(b.data.club || '').trim()).filter(Boolean))], movedFrom: 'saadi-rotation/ngl_finance/justgo'})));
   const staffDocs = listAll(BOOK, 'ngl_staffing');

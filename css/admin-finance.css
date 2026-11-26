@@ -1,0 +1,86 @@
+/* NGL Admin · NGL P&L (js/admin/finance.js). App colours from css/app.css; every class starts fn- */
+.fn-root{min-width:0}
+.fn-card{margin-bottom:16px;min-width:0}
+.fn-sync{margin-bottom:16px;font-size:14px;border-left:4px solid var(--ok)}
+.fn-sync.old{border-left-color:var(--warn);background:#fffaf0}
+.fn-sync .btn{margin-left:6px}
+.fn-hint{color:var(--muted);font-size:13px;margin:10px 0 0}
+.fn-neg{color:var(--red)!important}
+
+/* season picker and headline numbers */
+.fn-top{display:flex;gap:16px;align-items:stretch;flex-wrap:wrap;margin-bottom:16px}
+.fn-season{margin:0;min-width:140px}
+.fn-kpis{display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1;min-width:0}
+.fn-kpis .stat{padding:12px 16px}
+
+/* P&L tables: always a real table; scrolls inside its card when too wide */
+.fn-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px}
+.fn-root .fn-t,.fn-root .fn-t thead,.fn-root .fn-t tbody,.fn-root .fn-t tr,.fn-root .fn-t td,.fn-root .fn-t th{display:revert}
+.fn-root .fn-t tr:first-child:has(th){display:table-row}
+.fn-root .fn-t td{border-top:1px solid var(--line);padding:9px 8px}
+.fn-t{min-width:480px;font-variant-numeric:tabular-nums}
+.fn-t th{white-space:nowrap}
+.fn-t .fn-n{text-align:right;white-space:nowrap}
+.fn-t .fn-l small{display:block;color:var(--muted);font-size:12.5px;font-weight:400}
+.fn-t .fn-l b{font-weight:600}
+.fn-t .fn-sec td{background:var(--wash);font:800 13px var(--cond);text-transform:uppercase;letter-spacing:.05em;color:var(--navy);padding:7px 8px}
+.fn-t .fn-sec small{font:400 12px var(--body);text-transform:none;letter-spacing:0;color:var(--muted);margin-left:6px}
+.fn-t .fn-tot td{font-weight:800;border-top:2px solid var(--navy)}
+.fn-t .fn-tot .fn-l b{font-weight:800}
+.fn-t .fn-net td{font:900 17px var(--cond);color:var(--navy);background:#f0eff8}
+.fn-up{color:var(--ok)}.fn-down{color:var(--red)}
+.fn-d{font-weight:600}
+.fn-t tr.fn-typed td{background:#fffaf0}
+.fn-comps{min-width:640px}
+.fn-comps tbody tr{cursor:pointer}
+.fn-comps tbody tr:hover td{background:var(--wash)}
+.fn-clink{color:var(--navy);text-decoration:none}.fn-clink:hover b{text-decoration:underline}
+.fn-comps small{color:var(--muted)}
+
+/* typed figures */
+.fn-tgt{display:inline-flex;align-items:center;gap:2px;color:var(--muted)}
+.fn-tgt input,.fn-lw input,.fn-lw select,.fn-ev select,.fn-f input{border:1.5px solid var(--line);border-radius:10px;padding:6px 8px;font:inherit;background:#fff;color:var(--ink)}
+.fn-tgt input{width:92px;text-align:right}
+.fn-tgt.on input{border-color:var(--warn);background:#fff3e0;font-weight:700;color:var(--ink)}
+.fn-tgt input:focus,.fn-lw input:focus,.fn-f input:focus{outline:none;border-color:var(--navy)}
+.fn-undo{display:block;margin:3px 0 0 auto;border:0;background:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;padding:2px 0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* competition page */
+.fn-ch{font-size:24px;display:flex;align-items:center;gap:8px}
+.fn-stats{margin-bottom:16px}
+
+/* JustGo events */
+.fn-unm{border-left:4px solid var(--warn)}
+.fn-ev{flex-wrap:wrap}
+.fn-ev select{max-width:100%;min-width:0;width:320px}
+
+/* league-wide lines */
+.fn-lw{display:grid;grid-template-columns:100px minmax(0,1fr) 120px 120px auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.fn-lw:first-of-type{border-top:0}
+.fn-money{display:flex;align-items:center;gap:3px;color:var(--muted)}.fn-money input{width:100%;min-width:0}
+
+/* settings */
+.fn-set summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.fn-set summary::-webkit-details-marker{display:none}
+.fn-set summary h2{margin:0}.fn-set summary small{color:var(--muted)}
+.fn-set summary::after{content:'+';margin-left:auto;color:var(--red);font-size:22px;line-height:1}
+.fn-set[open] summary::after{content:'–'}
+.fn-set h3{font:800 14px var(--cond);text-transform:uppercase;letter-spacing:.05em;color:var(--navy);margin:18px 0 6px}
+.fn-setpath{max-width:320px}
+.fn-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.fn-f{display:flex;flex-direction:column;gap:4px;font-size:13px;border-radius:10px;padding:6px 8px;min-width:0}
+.fn-f>span:first-child{color:var(--ink);font-weight:600}
+.fn-f.ov{background:#fff3e0}
+.fn-in{display:flex;align-items:center;gap:3px;color:var(--muted)}.fn-in input{width:110px}
+.fn-f .btn{align-self:flex-start}
+
+@media(max-width:860px){
+  .fn-kpis{grid-template-columns:1fr 1fr}
+  .fn-top{flex-direction:column}
+  .fn-lw{grid-template-columns:1fr 1fr;grid-template-areas:none}
+  .fn-lw input[type=text]{grid-column:1/-1}
+  .fn-ev select{width:100%}
+  .fn-stats{grid-template-columns:1fr 1fr}
+  .fn-t{min-width:0;font-size:13px}.fn-tgt input{width:66px;padding:6px 5px}.fn-root .fn-t td{padding:8px 4px}
+}

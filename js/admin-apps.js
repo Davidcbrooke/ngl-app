@@ -112,8 +112,9 @@ export const APPS = [
  {
   "group": "money",
   "id": "finance",
-  "name": "Finance",
-  "desc": "League P&L: competitions now, judging and licensing next",
+  "to": "#/admin/finance",
+  "name": "NGL P&L",
+  "desc": "One P&L for the season: forecast from reservations, actual from JustGo sales and paid orders",
   "url": "https://davidcbrooke.github.io/GYMNASTICS-RESULTS/NGL_Finance.html",
   "icon": "<path d=\"M16 6.5A4.5 4.5 0 0 0 8 9.5V13H6M8 13v3c0 1.5-1 3-2.5 3H18M6 13h8\"/>"
  },

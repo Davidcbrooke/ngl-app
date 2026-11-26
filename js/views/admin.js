@@ -37,7 +37,7 @@ function board(me){
 
 // Rebuilt admin apps, each in its own file (js/admin/<id>.js), loaded the first time it's opened. true = has its own stylesheet.
 // value = the app's stylesheet (css/admin-<name>.css), '' = none
-const MODS = {sales: '', planning: 'planning', staffing: 'staffing', music: 'music', musicplayer: 'music', results: 'results', judging: 'judging', powerleague: 'powerleague', 'gl-hub': 'glhub', rotation: 'rotation'};
+const MODS = {sales: '', finance: 'finance', planning: 'planning', staffing: 'staffing', music: 'music', musicplayer: 'music', results: 'results', judging: 'judging', powerleague: 'powerleague', 'gl-hub': 'glhub', rotation: 'rotation'};
 async function appModule(sub, me, rest){
   const a = APPS.find(x => x.id === sub);
   if (!canApp(me, a)) return head('NGL Admin') + NO_ACCESS;
