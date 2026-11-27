@@ -146,22 +146,32 @@ const BOOKING_PILL = c => { const link = /^(https:\/\/|demo:)/.test(c.justgoUrl 
   if (b === 'closed') return pill('Not open', ''); if (!link) return pill('No JustGo link', 'red');
   const gs = (d => (d.setMonth(d.getMonth() - 3), d.toISOString().slice(0, 10)))(new Date(c.date + 'T12:00'));
   return b === 'open' || new Date().toISOString().slice(0, 10) >= gs ? pill('General sale', 'ok') : pill('Reserved clubs · all from ' + date(gs), 'warn'); };
+// What the JustGo sales sync matched: when it last ran, and any "booked by" names not matched to a registered club
+function boughtCard(bk){
+  if (!bk) return '';
+  if (bk.err) return `<div class="card attn" style="margin-bottom:16px"><b>Booked places couldn’t be updated</b><small style="display:block">${esc(bk.err)}</small></div>`;
+  if (bk.none) return `<div class="card attn" style="margin-bottom:16px"><b>No JustGo sales yet</b><small style="display:block">Run the <b>Sync NGL sales</b> bookmark on MyBG so clubs see what they’ve booked.</small></div>`;
+  const un = Object.entries(bk.unmatched || {}).sort((a, b) => b[1] - a[1]);
+  return `<div class="card" style="margin-bottom:16px"><div class="row" style="border:0;padding-top:0"><div class="grow"><b>Booked places from JustGo</b><small>Last synced ${esc(String(bk.syncedAt).slice(0, 16).replace('T', ' '))} · ${bk.events} JustGo events · run <b>Sync NGL sales</b> on MyBG to update</small></div></div>
+    ${un.length ? `<details><summary style="cursor:pointer;font-size:14px"><b>${un.length} “booked by” name${un.length === 1 ? '' : 's'} not matched to a club</b> (${un.reduce((a, x) => a + x[1], 0)} places): these clubs won’t see them as Booked</summary><p style="font-size:13px;color:var(--muted);margin:6px 0">JustGo shows “Person-Club”. A name only matches when the club part matches a registered club’s name.</p><table>${un.map(([b, q]) => `<tr><td>${esc(b)}</td><td>${q}</td></tr>`).join('')}</table></details>` : '<small style="color:var(--ok)">Every booking matched a club.</small>'}
+    ${bk.noComp && bk.noComp.length ? `<p style="font-size:13px;margin:8px 0 0">Not matched to a competition: ${bk.noComp.map(esc).join(', ')}</p>` : ''}</div>`;
+}
 async function competitions(compId){
   if (compId === 'waiting') return waiting();
   const [cal, res, saved, pend] = await Promise.all([adm.calendar(), adm.reservations(), adm.calendarIsSaved ? adm.calendarIsSaved() : true, adm.pending()]);
   adm.syncPlaces(res, pend).catch(e => console.warn('places count not updated', e));   // clubs see places left / fully reserved
-  if (adm.syncBought) adm.syncBought().catch(e => console.warn('booked not updated', e));   // clubs see Booked (from the JustGo sales)
+  const bk = adm.syncBought ? await adm.syncBought().catch(e => (console.warn('booked not updated', e), {err: e.code || e.message})) : null;   // clubs see Booked (from the JustGo sales)
   if (compId) { const c = cal.find(x => x.id === compId); const rs = res.filter(r => r.compId === compId);
     return `<p style="margin:0 0 6px"><a href="#/admin/competitions">← All competitions</a></p><h2 style="font-size:24px">${esc(c.name)}</h2><p class="lead">${date(c.date)} · ${esc(c.where)} · ${esc(c.who)}</p>
     <div class="card">${rs.length ? `<table><tr><th>Club</th><th>Places</th><th>Ref</th><th>Status</th><th></th></tr>${rs.map(r => `<tr><td><a href="#/admin/clubs/${esc(r.clubId)}">${esc(r.clubName)}</a></td><td>${r.places}</td><td>${esc(r.ref || '')}</td><td>${pill(r.status, r.status === 'waiting' ? 'warn' : 'ok')}</td>
       <td style="white-space:nowrap">${r.status !== 'bought' ? `<button class="btn sm" data-act="adm-res" data-id="${esc(r.id)}" data-ref="${esc(r.ref)}" data-to="bought">Bought on JustGo</button> ` : ''}${r.status === 'reserved' ? `<button class="btn sm ghost" data-act="adm-res" data-id="${esc(r.id)}" data-ref="${esc(r.ref)}" data-to="waiting">To waiting list</button>` : r.status === 'waiting' ? `<button class="btn sm ghost" data-act="adm-res" data-id="${esc(r.id)}" data-ref="${esc(r.ref)}" data-to="reserved">Give places</button>` : ''}</td></tr>`).join('')}</table>`
       : '<p class="empty">No reservations yet.</p>'}</div>`; }
-  return `${saved ? '' : `<div class="card attn" style="margin-bottom:16px"><div class="row" style="border:0"><div class="grow"><b>The calendar isn’t in the database yet</b><small>Clubs see the built-in 2027 list. Save it to the database to edit dates and add competitions.</small></div><button class="btn sm" data-act="adm-import-cal">Save calendar</button></div></div>`}
+  return `${boughtCard(bk)}${saved ? '' : `<div class="card attn" style="margin-bottom:16px"><div class="row" style="border:0"><div class="grow"><b>The calendar isn’t in the database yet</b><small>Clubs see the built-in 2027 list. Save it to the database to edit dates and add competitions.</small></div><button class="btn sm" data-act="adm-import-cal">Save calendar</button></div></div>`}
   ${pend.length ? `<div class="card attn" style="margin-bottom:16px"><div class="row" style="border:0"><div class="grow"><b>${pend.reduce((a, p) => a + p.places, 0)} places waiting for a club</b><small>Booked before the club had a Club Hub account. They join automatically when the club confirms the same email; attach the rest here.</small></div><a class="btn sm" href="#/admin/competitions/waiting">Review</a></div></div>` : ''}
   <div class="btn-row" style="margin:0 0 12px"><button class="btn" data-act="adm-comp">Add a competition</button></div>
-  <div class="card"><table><tr><th>Date</th><th>Competition</th><th>Places</th><th>Clubs</th><th>Booking</th><th></th></tr>${cal.map(c => { const rs = res.filter(r => r.compId === c.id);
+  <div class="card"><table><tr><th>Date</th><th>Competition</th><th>Places</th><th>Booked (JustGo)</th><th>Clubs</th><th>Booking</th><th></th></tr>${cal.map(c => { const rs = res.filter(r => r.compId === c.id);
     return `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td>
-      <td>${rs.filter(r => r.status !== 'waiting').reduce((a, r) => a + r.places, 0)}${rs.some(r => r.status === 'waiting') ? ' + waiting' : ''}</td><td>${rs.length}</td><td>${BOOKING_PILL(c)}</td>
+      <td>${rs.filter(r => r.status !== 'waiting').reduce((a, r) => a + r.places, 0)}${rs.some(r => r.status === 'waiting') ? ' + waiting' : ''}</td><td>${bk && bk.per ? (bk.per[c.id] || '–') : '–'}</td><td>${rs.length}</td><td>${BOOKING_PILL(c)}</td>
       <td style="white-space:nowrap"><button class="btn sm" data-act="adm-booking" data-comp="${esc(c.id)}">Booking</button> <a class="btn sm ghost" href="#/admin/competitions/${esc(c.id)}">Reservations</a> <a class="btn sm ghost" href="#/admin/mailer/${esc(c.id)}">Booking emails</a> <button class="btn sm ghost" data-act="adm-comp" data-comp="${esc(c.id)}">Edit</button></td></tr>`; }).join('')}</table></div>`;
 }
 

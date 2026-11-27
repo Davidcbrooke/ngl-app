@@ -7,6 +7,11 @@
 @media (max-width:520px){.comp-stages{grid-template-columns:1fr}}
 .comp-mine{margin:0 0 16px;border-left:6px solid var(--red,#c6152e)}.comp-mine h2{margin:0 0 4px}.comp-mine .row{gap:10px;flex-wrap:wrap}
 .comp-sale{display:block;color:var(--muted);font-size:12px;margin-top:4px}.comp-you{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
-.comp-wrap{overflow-x:auto}.comp-all th.grp{text-align:center;border-bottom:2px solid var(--navy,#28225c)}.comp-all th.grp.you,.comp-all .you{background:#f6f5fb}
-.comp-all th.n,.comp-all td.n{text-align:center;white-space:nowrap}.comp-all .num{font-size:18px}.comp-all .num.red{color:#c6152e}.comp-all .num.ok{color:#1f8a4c}
+.comp-wrap{overflow:visible}.comp-all th.grp{text-align:center;border-bottom:2px solid var(--navy,#28225c)}.comp-all th.grp.you,.comp-all .you{background:#f6f5fb}
+.comp-all td.n{text-align:center;white-space:nowrap}.comp-all th.n{text-align:center;white-space:normal;line-height:1.25}.comp-all .num{font-size:18px}.comp-all .num.red{color:#c6152e}.comp-all .num.ok{color:#1f8a4c}
 .comp-all td.n .btn{margin-left:6px}
+/* column titles: smaller, wrap inside the column, and stay in view while scrolling (under the top bar) */
+.comp-all thead{position:sticky;top:var(--topH,70px);z-index:5}
+.comp-all thead th{background:#fff;font-size:11px;letter-spacing:.03em;padding:8px 6px;box-shadow:inset 0 -1px 0 var(--line)}
+.comp-all thead th.you{background:#f6f5fb}
+@media(max-width:860px){.comp-wrap{overflow-x:auto}.comp-all thead{position:static}}

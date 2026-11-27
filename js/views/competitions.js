@@ -101,9 +101,9 @@ export default async function competitions([sub = '']){
   } else {
     body = stages() + `<h2 style="margin:18px 0 8px">All competitions</h2>
     <div class="card comp-wrap"><table class="comp-all">
-      <tr><th rowspan="2">Date</th><th rowspan="2">Competition</th><th colspan="3" class="grp">The competition</th><th colspan="3" class="grp you">Your club</th></tr>
-      <tr><th class="n">Total places</th><th class="n">Reserved</th><th class="n">Available to reserve</th><th class="n you">Reserved</th><th class="n you">Booked</th><th class="n you">Still to book</th></tr>
-      ${comps.map(numbersRow).join('')}</table></div>
+      <thead><tr><th rowspan="2">Date</th><th rowspan="2">Competition</th><th colspan="3" class="grp">The competition</th><th colspan="3" class="grp you">Your club</th></tr>
+      <tr><th class="n">Total places</th><th class="n">Reserved</th><th class="n">Available to reserve</th><th class="n you">Reserved</th><th class="n you">Booked</th><th class="n you">Still to book</th></tr></thead><tbody>
+      ${comps.map(numbersRow).join('')}</tbody></table></div>
     <p class="lead" style="margin-top:14px">Reserving is free. Booked = bought on JustGo Events (updated when NGL syncs the sales). Not sure which competition? <a href="#/help/level">Which level should my gymnast enter?</a></p>`;
   }
   return head('Competitions', 'See what’s coming up, reserve places for free, buy them when they’re open, then upload floor music.') + tabs(SUB, sub, '#/competitions') + body;

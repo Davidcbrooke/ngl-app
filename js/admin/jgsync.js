@@ -12,7 +12,7 @@ export function listen(){
     try {
       const {fs, D} = await fb();
       await fs.setDoc(fs.doc(D, 'justgoSales', 'summary'), {events, syncedAt: ev.data.at || new Date().toISOString()}, {merge: true});
-      let booked = 0; try { booked = await (await import('./bought.js')).syncBought(); } catch (e) { console.warn('Booked not rebuilt', e); }
+      let booked = 0; try { booked = (await (await import('./bought.js')).syncBought()).n; } catch (e) { console.warn('Booked not rebuilt', e); }
       ev.source.postMessage({type: 'ngl-jg-saved', count: Object.keys(events).length, matched: booked}, ev.origin);
       toast('JustGo sales saved: ' + Object.keys(events).length + ' events');
       location.hash = '#/admin/sales';

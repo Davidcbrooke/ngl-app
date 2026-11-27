@@ -55,6 +55,7 @@ async function render(){
   const view = key === 'admin' ? admin : NAV.find(n => n[0] === key)[3];
   const html = await view(key === parts[0] ? parts.slice(1) : [], CTX);
   if (stale()) return;
+  { const t = $('.top'); if (t) document.documentElement.style.setProperty('--topH', Math.round(t.getBoundingClientRect().bottom) + 'px'); }
   $('#page').innerHTML = (CTX.staffOnly && key !== 'admin' && key !== 'help' ? `<div class="sample-note"><b>Sample club.</b> You’re logged in as the NGL team, not a club, so these pages show sample data. Nothing you do here changes a real club.</div>` : '') + html;
   document.dispatchEvent(new CustomEvent('ngl:rendered'));
   document.title = (key === 'home' ? '' : (key === 'admin' ? 'NGL Admin' : NAV.find(n => n[0] === key)[1]) + ' · ') + 'NGL Club Hub';
