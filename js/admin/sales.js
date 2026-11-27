@@ -13,15 +13,15 @@ const UI = {past: false};
 function pathway(c){ if (c.pathway && ACC[c.pathway]) return c.pathway; return (((c.name || '') + ' ' + (c.level || '')).toLowerCase().includes('rec')) ? 'recreational' : 'general'; }
 const cap = c => (typeof c.maxPlaces === 'number' && !isNaN(c.maxPlaces)) ? c.maxPlaces : null;
 /* JustGo's "booked by" is "Person name-Club name" when a club buys: match it to a club name from Club Hub reservations */
-const norm = t => String(t || '').toLowerCase().replace(/gymnastics?|club|academy|ltd|limited|c\.i\.c|cic|community|centre|center|the|&|and/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
-function clubOf(b, CLUBS){
+export const norm = t => String(t || '').toLowerCase().replace(/gymnastics?|club|academy|ltd|limited|c\.i\.c|cic|community|centre|center|the|&|and/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+export function clubOf(b, CLUBS){
   const nb = ' ' + norm(b) + ' ';
   const hit = CLUBS.filter(c => c.n && nb.includes(' ' + c.n + ' ')).sort((a, b) => b.n.length - a.n.length)[0];
   if (hit) return hit.name;
   return b.includes('-') ? b.replace(/^[^-]*-/, '').trim() : b + ' (individual)';
 }
 /* Same matching as NGL Finance: a saved match first, otherwise by date and name */
-function autoMatch(e, comps){
+export function autoMatch(e, comps){
   const same = comps.filter(c => c.date === e.date); if (!same.length) return '';
   if (same.length === 1) return same[0].id;
   const n = (e.name || '').toUpperCase();

@@ -66,7 +66,7 @@ async function start(){
   if (fam.hasArrival(q0)) { try { localStorage.setItem('ngl.pending', location.search); } catch (_) {} }
   if (q0.get('judge') === 'invite') { try { localStorage.setItem('ngl.judgeInvite', JSON.stringify({clubId: q0.get('jc') || '', club: q0.get('jn') || '', email: q0.get('je') || '', name: q0.get('jp') || ''})); localStorage.setItem('ngl.who', 'judge'); } catch (_) {}
     history.replaceState(null, '', location.pathname + (MODE === 'demo' ? '?demo&judge=new' : '') + '#/judge'); }
-  if (needGate()) return showGate();                 // phones: download the app first
+  if (needGate() && !q0.has('jgsync')) return showGate();                 // phones: download the app first (not for the JustGo sync tab)
   let pend = ''; try { pend = localStorage.getItem('ngl.pending') || ''; } catch (_) {}
   const qa = fam.hasArrival(q0) ? q0 : new URLSearchParams(pend);
   if (fam.hasArrival(qa) && await fam.arrive(qa)) return fam.showFamily();
@@ -89,6 +89,7 @@ async function start(){
   if (MODE === 'firebase' && c.none && !(await api.adminMe())) { const jg = await import('./views/judge.js'); if (await jg.hasProfile()) return jg.showJudge(); }
   let claimed = 0; try { claimed = await api.claimPending(); } catch (e) { console.warn('Earlier places not brought in', e.code || e); }
   CTX.admin = await api.adminMe(); CTX.isAdmin = !!CTX.admin; CTX.needsVerify = await api.needsVerify(); CTX.staffOnly = !!c.none && CTX.isAdmin;   // an NGL team login with no club (a brand-new club whose account is still saving is not)
+  if (q0.has('jgsync') && CTX.isAdmin) import('./admin/jgsync.js').then(m => m.listen());   // the "Sync NGL sales" bookmark on MyBG
   const live = Object.entries(lic).filter(([, v]) => v.status === 'live' || v.status === 'waived').length;
   $('#clubCard').innerHTML = CTX.staffOnly ? `<b>NGL team</b><span>${esc(c.email)}</span>` : `<b>${esc(c.name)}</b><span>${live} programme${live === 1 ? '' : 's'} active</span>`;
   const who = CTX.staffOnly ? ((CTX.admin && CTX.admin.name) || c.email) : (c.contact || c.name || '');

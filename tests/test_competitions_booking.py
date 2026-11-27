@@ -7,15 +7,14 @@ def test_four_stages_and_booking_states(page):
     txt = page.p.inner_text("#page")
     for s in ["coming up", "reserve places, free", "buy now", "upload floor music", "your reserved competitions"]:
         assert s in txt.lower()
-    # c1: reserved and its JustGo link is saved -> Open now, Buy now (in the reserved panel and the list)
-    assert "Open now" in txt
-    # c3: open to all -> Buy now for anyone
-    assert "Open now" in txt
-    # c2/c4: reserved, no link yet
-    assert "buy link coming soon" in txt
+    low = txt.lower()
+    # the competition as a whole, then this club
+    assert "fully reserved" in low and "places left" in low and "your club" in low
+    assert "12 reserved · open now" in low          # c1: reserved, link saved
+    assert "booked · 6 places" in low               # c2: bought on JustGo
+    assert "on the waiting list" in low
     assert page.p.locator("[data-act=book]").count() >= 2
-    # c3 is open to all (general sale): Buy now even though reservations fill it
-    assert "general sale" in txt.lower()
+    assert page.p.locator("[data-wait]").count() >= 1   # full competitions: join the waiting list
     page.p.click("[data-act=book] >> nth=0")
     assert "JustGo Events" in page.toast()
 

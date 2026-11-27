@@ -149,6 +149,7 @@ async function competitions(compId){
   if (compId === 'waiting') return waiting();
   const [cal, res, saved, pend] = await Promise.all([adm.calendar(), adm.reservations(), adm.calendarIsSaved ? adm.calendarIsSaved() : true, adm.pending()]);
   adm.syncPlaces(res, pend).catch(e => console.warn('places count not updated', e));   // clubs see places left / fully reserved
+  if (adm.syncBought) adm.syncBought().catch(e => console.warn('booked not updated', e));   // clubs see Booked (from the JustGo sales)
   if (compId) { const c = cal.find(x => x.id === compId); const rs = res.filter(r => r.compId === compId);
     return `<p style="margin:0 0 6px"><a href="#/admin/competitions">← All competitions</a></p><h2 style="font-size:24px">${esc(c.name)}</h2><p class="lead">${date(c.date)} · ${esc(c.where)} · ${esc(c.who)}</p>
     <div class="card">${rs.length ? `<table><tr><th>Club</th><th>Places</th><th>Ref</th><th>Status</th><th></th></tr>${rs.map(r => `<tr><td><a href="#/admin/clubs/${esc(r.clubId)}">${esc(r.clubName)}</a></td><td>${r.places}</td><td>${esc(r.ref || '')}</td><td>${pill(r.status, r.status === 'waiting' ? 'warn' : 'ok')}</td>

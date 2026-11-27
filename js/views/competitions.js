@@ -29,17 +29,21 @@ export const canBuy = c => !c.bought && hasLink(c) && ((c.reserved > 0 && !c.wai
 export const placesLeft = c => typeof c.maxPlaces === 'number' && c.maxPlaces > 0 ? Math.max(0, c.maxPlaces - (c.taken || 0)) : null;
 const waitBtn = c => `<button class="btn sm ghost" data-act="reserve" data-wait="1" data-comp="${esc(c.id)}">Join waiting list</button>`;
 const buyBtn = c => `<button class="btn sm" data-act="book" data-comp="${esc(c.id)}">Buy now ↗</button>`;
+// The competition as a whole: places left / Fully reserved, and whether it's on general sale
+export function compState(c){
+  const left = placesLeft(c), sale = stageOf(c) === 'open' ? 'On general sale' : hasLink(c) && stageOf(c) !== 'closed' ? 'General sale from ' + date(generalSaleFrom(c)) : '';
+  const p = left === 0 ? pill('Fully reserved', 'red') : left == null ? pill('Places available', 'ok') : pill(left + ' of ' + c.maxPlaces + ' places left', left <= 10 ? 'warn' : 'ok');
+  return p + (sale ? `<small class="comp-sale">${sale}</small>` : '');
+}
+// This club: booked / reserved / waiting, and what it can do next
 export function bookingState(c){
-  const mine = c.reserved > 0 && !c.waiting, b = stageOf(c);
-  if (c.bought) return {pill: pill('Bought', 'ok'), act: `<a class="btn sm ghost" href="#/competitions/music">Floor music</a>`};
-  if (canBuy(c)) return {pill: pill(mine ? 'Open now · ' + c.reserved + ' reserved' : 'Open now · general sale', 'ok'), act: buyBtn(c), open: true};
-  if (mine) return {pill: pill(c.reserved + ' reserved · buy link coming soon', ''), act: `<a class="btn sm ghost" href="#/competitions/places">My places</a>`};
+  const mine = c.reserved > 0 && !c.waiting, left = placesLeft(c);
+  if (c.booked > 0 || c.bought) return {pill: pill('Booked' + (c.booked ? ' · ' + c.booked + ' place' + (c.booked === 1 ? '' : 's') : ''), 'ok'), act: `<a class="btn sm ghost" href="#/competitions/music">Floor music</a>`};
+  if (canBuy(c)) return {pill: pill(mine ? c.reserved + ' reserved · open now' : 'Open now', 'ok'), act: buyBtn(c), open: true};
+  if (mine) return {pill: pill(c.reserved + ' reserved · buy link coming soon', ''), act: ''};
   if (c.waiting) return {pill: pill('On the waiting list', 'warn'), act: ''};
-  const left = placesLeft(c);
-  if (left === 0) return {pill: pill('Fully reserved', 'red'), act: waitBtn(c)};
-  const lefts = left == null ? '' : ' · ' + left + ' place' + (left === 1 ? '' : 's') + ' left';
-  if (b === 'reserved' && hasLink(c)) return {pill: pill('Reserved clubs buying now · general sale ' + date(generalSaleFrom(c)) + lefts, 'warn'), act: `<button class="btn sm ghost" data-act="reserve" data-comp="${esc(c.id)}">Reserve places, free</button>`};
-  return {pill: pill('Reserve now' + lefts, left != null && left <= 10 ? 'warn' : ''), act: `<button class="btn sm" data-act="reserve" data-comp="${esc(c.id)}">Reserve places, free</button>`};
+  if (left === 0) return {pill: '', act: waitBtn(c)};
+  return {pill: '', act: `<button class="btn sm" data-act="reserve" data-comp="${esc(c.id)}">Reserve places, free</button>`};
 }
 // Top of the page: every competition this club reserved, with Buy now where it's open
 function reservedPanel(comps){
@@ -79,8 +83,8 @@ export default async function competitions([sub = '']){
     body = `<div class="grid g3">${RESULTS.map(x => `<a class="card tile" href="${x[4]}" target="_blank" rel="noopener">${ic(x[0], x[3])}<div><b>${x[1]} ↗</b><br><small style="color:var(--muted)">${x[2]}</small></div></a>`).join('')}</div>
     <p class="lead" style="margin-top:14px">Share these with parents: <a href="#/club">My club → Family codes</a> has a link and QR code for the General League Family Hub.</p>`;
   } else {
-    body = stages() + reservedPanel(comps) + `<h2 style="margin:18px 0 8px">All competitions</h2><div class="card"><table><tr><th>Date</th><th>Competition</th><th>Booking</th><th></th></tr>${comps.map(c => { const st = bookingState(c); return `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td>
-      <td>${st.pill}</td><td style="text-align:right;white-space:nowrap">${st.act}</td></tr>`; }).join('')}</table></div>
+    body = stages() + reservedPanel(comps) + `<h2 style="margin:18px 0 8px">All competitions</h2><div class="card"><table class="comp-all"><tr><th>Date</th><th>Competition</th><th>Places</th><th>Your club</th></tr>${comps.map(c => { const st = bookingState(c); return `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td>
+      <td>${compState(c)}</td><td><div class="comp-you">${st.pill}${st.act}</div></td></tr>`; }).join('')}</table></div>
     <p class="lead" style="margin-top:14px">Reserving is free. Not sure which competition? <a href="#/help/level">Which level should my gymnast enter?</a></p>`;
   }
   return head('Competitions', 'See what’s coming up, reserve places for free, buy them when they’re open, then upload floor music.') + tabs(SUB, sub, '#/competitions') + body;

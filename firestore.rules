@@ -111,7 +111,7 @@ service cloud.firestore {
 
     // NGL Admin apps
     // Ticket sales: the JustGo sales summary the "Sync NGL sales" bookmark saves (events, map, syncedAt)
-    match /justgoSales/{id} { allow read: if salesTeam() || canAny(['competitions', 'planning']); allow write: if canAny(['finance']); }
+    match /justgoSales/{id} { allow read: if salesTeam() || canAny(['competitions', 'planning']); allow write: if canAny(['finance', 'sales']); }
     // Competition planning: one plan per competition, plus _template and _summary
     match /compPlans/{id} { allow read, write: if canAny(['planning', 'staffing']); }
     // Staffing: who's working each competition, judge requests
@@ -225,6 +225,9 @@ service cloud.firestore {
       // Booking emails: the MyBG link and the send log, by the Competitions or Competition planning team
       allow update: if canAny(['competitions', 'planning']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['justgoUrl', 'mailLog', 'booking']); }
     match /products/{id}     { allow read: if signedIn(); allow write: if isAdmin(); }
+    // Places each club bought on JustGo (from the JustGo sales sync): the club reads its own; NGL Admin rebuilds them
+    match /compBought/{id} { allow read: if compsTeam() || salesTeam() || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow write: if compsTeam() || salesTeam(); }
     // Places reserved per competition, so clubs see places left / fully reserved: one row per club, places only (no names).
     // A club keeps its own row ({compId}__{uid}); NGL Admin rebuilds them all from the reservations.
     match /compPlaces/{id} { allow read: if signedIn(); allow write: if compsTeam();
