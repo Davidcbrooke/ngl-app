@@ -61,3 +61,26 @@ function moveLogins(){
 
 // Run first: can the script read both old projects and the new one? (counts only)
 function checkAccess(){ SOURCES.concat([TARGET]).forEach(p => Logger.log(p + ': ' + users_(p).length + ' logins')); }
+
+// Sandbox-only logins that share an email with a real login (made in staging before the copy, so a different id):
+// remove them from STAGING only, then copy the real ones across with their real passwords. Dave approved 27 Nov 2026.
+function replaceSandboxLogins(){
+  if (TARGET !== 'ngl-club-hub-staging') throw new Error('Staging only');
+  const real = {}; SOURCES.forEach(p => users_(p).forEach(u => { if (u.email) (real[u.email.toLowerCase()] = real[u.email.toLowerCase()] || {})[u.localId] = 1; }));
+  const gone = users_(TARGET).filter(u => u.email && real[u.email.toLowerCase()] && !real[u.email.toLowerCase()][u.localId]);
+  Logger.log('Sandbox-only logins to replace: ' + gone.length + ' · ' + gone.map(u => mask(u.email)).join(', '));
+  if (gone.length) {
+    const r = UrlFetchApp.fetch(IT + '/v1/projects/' + TARGET + '/accounts:batchDelete', {method: 'post', contentType: 'application/json', headers: auth_(TARGET),
+      payload: JSON.stringify({localIds: gone.map(u => u.localId), force: true}), muteHttpExceptions: true});
+    if (r.getResponseCode() !== 200) throw new Error('Delete ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 300));
+    Logger.log('Removed from staging: ' + gone.length);
+  }
+  moveLogins();
+}
+
+// Run once: copies new logins into staging every night, 3am to 4am (UK). Needs the script.scriptapp scope.
+function setupNightly(){
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'moveLogins').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('moveLogins').timeBased().everyDays(1).atHour(3).inTimezone('Europe/London').create();
+  Logger.log('Nightly login copy set: moveLogins, every day 3am to 4am');
+}

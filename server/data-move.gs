@@ -285,3 +285,10 @@ function checkAccess(){
   Logger.log('bookings read: ' + (UrlFetchApp.fetch(base(BOOK) + '/ngl_competitions?pageSize=1', {headers: auth_(), muteHttpExceptions: true}).getResponseCode()));
   commit(STAGING, [doc('migration/check', {at: new Date()})]); Logger.log('staging write: ok');
 }
+
+// Run once: refreshes staging from live every night, 2am to 3am (UK). Needs the script.scriptapp scope.
+function setupNightly(){
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'rehearse').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('rehearse').timeBased().everyDays(1).atHour(2).inTimezone('Europe/London').create();
+  Logger.log('Nightly data move set: rehearse, every day 2am to 3am');
+}
