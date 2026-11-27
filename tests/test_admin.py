@@ -22,9 +22,9 @@ def test_admin_club_search(page):
 def test_club_has_no_admin(account):
     pg = account["page"]
     pg.route("#/home")
-    assert pg.p.locator(".admin-link").count() == 0
+    assert pg.p.locator(".admin-link").count() == 1      # always at the bottom of the menu
     pg.route("#/admin")
-    assert "admins only" in pg.p.inner_text("#page")
+    assert "admin staff only" in pg.p.inner_text("#page") and pg.p.locator("#admGate").count() == 1
 
 
 
@@ -71,3 +71,13 @@ def test_ticket_sales(page):
     assert "187" in t                                    # 104 + 61 + 22 gymnasts sold (the 4th JustGo event matches no competition)
     assert "SAADI Gymnastics" in t and "not matched" in t   # bookers turned into clubs; an unmatched JustGo event listed
     assert page.p.locator(".ts-comp").count() == 3
+
+
+def test_club_sees_staff_only_admin_login(page):
+    page.p.goto(page.base + "?demo&notadmin#/home")
+    page.p.wait_for_selector("#page h1")
+    assert page.p.locator("#nav .admin-link").count() == 1
+    page.route("#/admin")
+    txt = page.p.inner_text("#page")
+    assert "this is for ngl admin staff only" in txt.lower()
+    assert page.p.locator("#admGate #agEmail").count() == 1 and page.p.locator("#admGate #agPw").count() == 1

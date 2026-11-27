@@ -49,7 +49,7 @@ async function render(){
   $('#nav').innerHTML = NAV.filter(n => !CTX.staffOnly || n[0] === 'help').map(([k, l, i]) => {
     const badge = (k === 'shop' && unpaid) ? `<span class="badge">${unpaid}</span>` : '';
     return `<a href="#/${k}" class="${k === key ? 'on' : ''}" ${k === key ? 'aria-current="page"' : ''}>${svg(i)}<span>${l}</span>${badge}</a>`;
-  }).join('') + (CTX.isAdmin ? `<a href="#/admin" class="admin-link ${key === 'admin' ? 'on' : ''}">${svg('club')}<span>NGL Admin</span></a>` : '');
+  }).join('') + `<a href="#/admin" class="admin-link ${key === 'admin' ? 'on' : ''}" title="For NGL admin staff only">${svg('club')}<span>NGL Admin</span></a>`;   // always shown; staff log in with their own NGL account
   // phones: the menu scrolls sideways, so keep the current page's button in view
   if (matchMedia('(max-width:860px)').matches) { const on = $('#nav a.on'); if (on) on.scrollIntoView({block: 'nearest', inline: 'center'}); }
   const view = key === 'admin' ? admin : NAV.find(n => n[0] === key)[3];

@@ -117,3 +117,20 @@ document.addEventListener('submit', async e => {
     await adm.invite(name, email, picked); toast(`Invite sent to ${name}`); rerender(); }
   catch (x) { btn.disabled = false; fail(x); }
 });
+
+// NGL Admin staff login (the "This is for NGL admin staff only" screen): each person uses their own NGL admin account
+document.addEventListener('submit', async e => {
+  if (!e.target || e.target.id !== 'admGate') return;
+  e.preventDefault();
+  const f = e.target, err = f.querySelector('#agErr'), btn = f.querySelector('.btn'), email = f.querySelector('#agEmail').value.trim(), pw = f.querySelector('#agPw').value;
+  btn.disabled = true; err.textContent = '';
+  try {
+    const { default: api } = await import('./data.js'), { fb, authMessage } = await import('./firebase.js');
+    if (api.mode === 'demo') { err.textContent = 'Sample data: no login needed.'; btn.disabled = false; return; }
+    const { auth, A } = await fb();
+    try { await api.signIn(email, pw); }
+    catch (x) { err.textContent = authMessage(x); btn.disabled = false; return; }
+    if (!(await api.adminMe())) { await auth.signOut(A); err.textContent = 'That login isn’t on the NGL admin team. Ask Dave to add you in NGL Admin › Team.'; btn.disabled = false; return; }
+    location.hash = '#/admin'; location.reload();
+  } catch (x) { console.error(x); err.textContent = 'Couldn’t log in. Please try again.'; btn.disabled = false; }
+});

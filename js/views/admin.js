@@ -17,7 +17,12 @@ export default async function admin(parts = [], ctx = {}){
   const me = ctx.admin;
   if (!me) return head('NGL Admin') + (ctx.needsVerify && ctx.staffOnly   // an invited NGL team login that hasn't confirmed its email yet
     ? `<div class="card attn"><div class="row" style="border:0"><div class="grow"><b>Confirm your email to open NGL Admin</b><small>We’ll email you a link. Click it, then log out and in again.</small></div><button class="btn sm" data-act="verify">Send link</button></div></div>`
-    : `<div class="card empty">This area is for NGL admins only.</div>`);
+    : `<div class="card adm-gate"><h2 style="margin:0 0 6px">This is for NGL admin staff only</h2>
+      <p class="lead" style="margin:0 0 12px">Log in with your own NGL admin email and password. ${ctx.staffOnly ? '' : 'This logs your club out on this device; log back in as your club afterwards.'}</p>
+      <form id="admGate" autocomplete="on"><label class="field"><span>NGL admin email</span><input id="agEmail" type="email" autocomplete="username" required></label>
+      <label class="field"><span>Password</span><input id="agPw" type="password" autocomplete="current-password" required></label>
+      <p class="err" id="agErr"></p><div class="btn-row"><button class="btn">Log in to NGL Admin</button><a class="btn ghost" href="#/home">Back to the Club Hub</a></div></form>
+      <p style="font-size:13px;color:var(--muted);margin:12px 0 0">Not NGL staff? This area is for admins only. Your club’s own tools are all in the menu.</p></div>`);
   if (sub === 'app') return appFrame(id, me);
   if (MODS[sub] !== undefined) return appModule(sub, me, parts.slice(1));
   const known = SUB.some(s => s[0] === sub) ? sub : '';

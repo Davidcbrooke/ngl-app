@@ -116,7 +116,8 @@ const demoApi = {
   mode: 'demo',
   async user(){ return {uid: 'demo', email: demo.club.email}; },
   // Sample data shows the admin screens as an owner; ?demo&staff shows them as a team member with three apps ticked
-  async adminMe(){ return new URLSearchParams(location.search).has('staff') ? {email: 'christine@example.com', name: 'Christine', owner: false, sections: ['competitions', 'sales', 'music']} : {email: 'admin@nationalgymnasticsleague.co.uk', name: 'Dave Brooke', owner: true, sections: []}; },
+  async adminMe(){ if (new URLSearchParams(location.search).has('notadmin')) return null;   // sample data as a club with no NGL Admin access
+    return new URLSearchParams(location.search).has('staff') ? {email: 'christine@example.com', name: 'Christine', owner: false, sections: ['competitions', 'sales', 'music']} : {email: 'admin@nationalgymnasticsleague.co.uk', name: 'Dave Brooke', owner: true, sections: []}; },
   async isAdmin(){ return true; },
   async needsVerify(){ return false; },
   async claimPending(){ return 0; },
