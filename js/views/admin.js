@@ -136,10 +136,12 @@ async function orders(filter = 'post'){
   ${filter === 'unpaid' ? '<p class="lead" style="margin-top:12px">Not paid = the club started checkout but didn’t finish. Nothing to chase by hand: they finish payment from their Club Hub.</p>' : ''}`;
 }
 
-const BOOKING_PILL = c => !c.booking || c.booking === 'closed' ? pill('Not open', '') : c.booking === 'reserved' ? pill('Reserved clubs', c.justgoUrl ? 'warn' : 'red') : pill('Open to all', c.justgoUrl ? 'ok' : 'red');
+const BOOKING_PILL = c => { const link = /^(https:\/\/|demo:)/.test(c.justgoUrl || ''), b = c.booking || (link ? 'reserved' : 'closed');
+  return b === 'closed' ? pill('Not open', '') : !link ? pill('No JustGo link', 'red') : b === 'reserved' ? pill('Open: reserved clubs', 'ok') : pill('Open to all', 'ok'); };
 async function competitions(compId){
   if (compId === 'waiting') return waiting();
   const [cal, res, saved, pend] = await Promise.all([adm.calendar(), adm.reservations(), adm.calendarIsSaved ? adm.calendarIsSaved() : true, adm.pending()]);
+  adm.syncPlaces(res, pend).catch(e => console.warn('places count not updated', e));   // clubs see places left / fully reserved
   if (compId) { const c = cal.find(x => x.id === compId); const rs = res.filter(r => r.compId === compId);
     return `<p style="margin:0 0 6px"><a href="#/admin/competitions">← All competitions</a></p><h2 style="font-size:24px">${esc(c.name)}</h2><p class="lead">${date(c.date)} · ${esc(c.where)} · ${esc(c.who)}</p>
     <div class="card">${rs.length ? `<table><tr><th>Club</th><th>Places</th><th>Ref</th><th>Status</th><th></th></tr>${rs.map(r => `<tr><td><a href="#/admin/clubs/${esc(r.clubId)}">${esc(r.clubName)}</a></td><td>${r.places}</td><td>${esc(r.ref || '')}</td><td>${pill(r.status, r.status === 'waiting' ? 'warn' : 'ok')}</td>

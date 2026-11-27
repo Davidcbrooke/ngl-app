@@ -5,15 +5,17 @@ and the booking switch in NGL Admin (not open / reserved clubs first / open to a
 def test_four_stages_and_booking_states(page):
     page.go("#/competitions", demo=True)
     txt = page.p.inner_text("#page")
-    for s in ["Coming up", "Reserve places, free", "Book and pay", "Upload floor music"]:
-        assert s in txt
-    # c1: this club reserved and NGL opened booking to reserved clubs -> Book and pay
-    assert "Your priority booking" in txt
-    # c3: open to all -> Book and pay for anyone
-    assert "Open for booking" in txt
-    # c4: reserved, booking not open yet
-    assert "not open for booking yet" in txt
+    for s in ["coming up", "reserve places, free", "buy now", "upload floor music", "your reserved competitions"]:
+        assert s in txt.lower()
+    # c1: reserved and its JustGo link is saved -> Open now, Buy now (in the reserved panel and the list)
+    assert "Open now · 12 reserved" in txt
+    # c3: open to all -> Buy now for anyone
+    assert "Open now" in txt
+    # c2/c4: reserved, no link yet
+    assert "buy link coming soon" in txt
     assert page.p.locator("[data-act=book]").count() == 2
+    # c3 is full: Fully reserved + waiting list; c2 shows places left on the panel
+    assert "Fully reserved" in txt and page.p.locator("[data-wait]").count() == 1
     page.p.click("[data-act=book] >> nth=0")
     assert "JustGo Events" in page.toast()
 
@@ -26,12 +28,12 @@ def test_my_places_shows_book_button(page):
 
 def test_home_says_booking_is_open(page):
     page.go("#/home", demo=True)
-    assert "Booking is open" in page.p.inner_text("#page")
+    assert "Open now: buy your reserved places" in page.p.inner_text("#page")
 
 
 def test_admin_booking_switch(page):
     page.go("#/admin/competitions", demo=True)
-    assert "Reserved clubs" in page.p.inner_text("#page table")
+    assert "Open: reserved clubs" in page.p.inner_text("#page table")
     page.p.click("[data-act=adm-booking] >> nth=0")
     page.p.wait_for_selector(".modal [name=bk]")
     assert page.p.locator(".modal [name=bk]").count() == 3
@@ -40,3 +42,10 @@ def test_admin_booking_switch(page):
     page.p.check(".modal [name=bk][value=open]")
     page.p.click(".modal form .btn")
     assert "JustGo Events link" in page.toast()
+
+
+def test_join_waiting_list_when_full(page):
+    page.go("#/competitions", demo=True)
+    page.p.click("[data-wait]")
+    page.p.wait_for_selector(".modal >> text=fully reserved")
+    assert "Join waiting list" in page.p.inner_text(".modal")

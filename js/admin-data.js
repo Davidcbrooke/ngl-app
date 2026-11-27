@@ -37,7 +37,7 @@ const demoAdmin = {
   async musicEntries(compId){ return compId === 'c1' ? [{clubId: 'demo', clubName: demo.club.name, compId, gymnasts: demo.music[0].gymnasts}] : []; },
   async musicUploads(compId){ return compId === 'c1' ? [{clubId: 'demo', clubName: demo.club.name, gymnastId: 'g1', gymnastName: 'Amelia R', level: 1, fileName: 'amelia-floor.mp3', url: '#'}] : []; },
   async setLicence(){ throw new Error(SAMPLE); }, async markSent(){ throw new Error(SAMPLE); },
-  async saveComp(){ throw new Error(SAMPLE); }, async setReservation(){ throw new Error(SAMPLE); },
+  async saveComp(){ throw new Error(SAMPLE); }, async setReservation(){ throw new Error(SAMPLE); }, async syncPlaces(){ return 0; },
   async saveMusicEntry(){ throw new Error(SAMPLE); }, async importCalendar(){ throw new Error(SAMPLE); }
 };
 
@@ -77,6 +77,15 @@ const fbAdmin = {
   async saveComp(c){ const {fs, D} = await fb(); const {id, ...rest} = c; await fs.setDoc(fs.doc(D, 'competitions', id), rest, {merge: true}); },
   async setLicence(clubId, path, lic){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'clubs', clubId), {['licences.' + path]: lic}); },
   async markSent(orderId){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'orders', orderId), {status: 'sent', sentAt: fs.serverTimestamp()}); },
+  // Places taken per competition, for clubs to see (compPlaces). Rebuilt from reservations + places waiting for a club to register.
+  async syncPlaces(res, pend){ const {fs, D} = await fb(); const want = {};
+    res.filter(r => ['reserved', 'bought'].includes(r.status) && r.compId).forEach(r => { const k = r.compId + '__' + r.clubId; want[k] = {compId: r.compId, clubId: r.clubId, places: (want[k] ? want[k].places : 0) + (Number(r.places) || 0)}; });
+    pend.filter(p => p.status !== 'waiting' && p.compId).forEach(p => { const k = p.compId + '__pending-' + p.id; want[k] = {compId: p.compId, clubId: 'pending', places: Number(p.places) || 0}; });
+    const have = {}; (await fs.getDocs(fs.collection(D, 'compPlaces'))).docs.forEach(d => { have[d.id] = d.data(); });
+    const b = fs.writeBatch(D); let n = 0;
+    Object.keys(want).forEach(k => { if (!have[k] || have[k].places !== want[k].places) { b.set(fs.doc(D, 'compPlaces', k), want[k]); n++; } });
+    Object.keys(have).forEach(k => { if (!want[k]) { b.delete(fs.doc(D, 'compPlaces', k)); n++; } });
+    if (n) await b.commit(); return n; },
   async setReservation(ref, status){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'reservations', ref), {status, [status + 'At']: fs.serverTimestamp()}); },
   async musicEntries(compId){ const {fs, D} = await fb(); const q = await fs.getDocs(fs.query(fs.collection(D, 'musicEntries'), fs.where('compId', '==', compId))); return q.docs.map(d => d.data()); },
   async musicUploads(compId){ const {fs, D} = await fb(); const q = await fs.getDocs(fs.query(fs.collection(D, 'musicUploads'), fs.where('compId', '==', compId))); return q.docs.map(d => d.data()); },

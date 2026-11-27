@@ -41,18 +41,18 @@ export const ADM = {
 
   // Booking: who sees the Book and pay button (the JustGo Events link) in the Club Hub
   async 'adm-booking'(b){
-    const c = (await adm.calendar()).find(x => x.id === b.dataset.comp) || {}, now = c.booking || 'closed';
+    const c = (await adm.calendar()).find(x => x.id === b.dataset.comp) || {}, now = c.booking || (/^https:\/\//.test(c.justgoUrl || '') ? 'reserved' : 'closed');
     const opt = (v, t, d) => `<label class="row" style="gap:10px;cursor:pointer"><input type="radio" name="bk" value="${v}" ${now === v ? 'checked' : ''} style="width:auto"><div class="grow"><b>${t}</b><small>${d}</small></div></label>`;
     const m = modal(`<h2>Booking: ${esc(c.name || '')}</h2><form>
-      ${opt('closed', 'Not open for booking yet', 'Clubs can reserve places for free. Nobody sees the JustGo link.')}
-      ${opt('reserved', 'Reserved clubs first', 'Clubs with reserved places see Book and pay. Others see “Reserved clubs booking now” and can join the queue.')}
-      ${opt('open', 'Open to all', 'Every club sees Book and pay.')}
+      ${opt('closed', 'Not open yet', 'Clubs can reserve places for free. Nobody can buy yet.')}
+      ${opt('reserved', 'Open now for clubs that reserved', 'Clubs with reserved places see Open now and Buy now (straight to JustGo). Other clubs can still reserve to be next in line.')}
+      ${opt('open', 'Open to all clubs', 'Every club sees Open now and Buy now.')}
       <label class="field"><span>JustGo Events link</span><input id="url" type="url" value="${esc(c.justgoUrl || '')}" placeholder="https://…"></label>
       <div class="btn-row"><button class="btn">Save</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
     m.querySelector('form').addEventListener('submit', async e => { e.preventDefault();
       const booking = m.querySelector('[name=bk]:checked').value, justgoUrl = m.querySelector('#url').value.trim();
       if (booking !== 'closed' && !/^https:\/\//.test(justgoUrl)) return toast('Add the JustGo Events link first (starting https://).', false);
-      try { await adm.saveComp({id: c.id, booking, justgoUrl}); m.remove(); toast(booking === 'closed' ? 'Booking closed' : booking === 'reserved' ? 'Reserved clubs can now book' : 'Booking open to all clubs'); rerender(); } catch (x) { fail(x); } });
+      try { await adm.saveComp({id: c.id, booking, justgoUrl}); m.remove(); toast(booking === 'closed' ? 'Not open yet' : booking === 'reserved' ? 'Open now for clubs that reserved' : 'Open to all clubs'); rerender(); } catch (x) { fail(x); } });
   },
 
   async 'adm-import-cal'(){ try { await adm.importCalendar(); toast('Calendar saved to the database'); rerender(); } catch (x) { fail(x); } },
@@ -65,12 +65,13 @@ export const ADM = {
       <label class="field"><span>Date</span><input id="date" type="date" required value="${esc(c.date || '')}"></label>
       <label class="field"><span>Venue</span><input id="where" required value="${esc(c.where || '')}" placeholder="Club name, town (or TBC)"></label>
       <label class="field"><span>Who it’s for</span><input id="who" required value="${esc(c.who || '')}" placeholder="Girls Levels 1–4"></label>
+      <label class="field"><span>Maximum gymnast places (optional: clubs see places left and “Fully reserved”)</span><input id="maxPlaces" type="number" min="1" value="${c.maxPlaces == null ? '' : esc(c.maxPlaces)}"></label>
       <label class="field"><span>Floor music deadline (optional)</span><input id="musicBy" type="date" value="${esc(c.musicBy || '')}"></label>
       <label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="hidden" ${c.status === 'hidden' ? 'checked' : ''} style="width:auto"> Hide from clubs</label>
       <div class="btn-row"><button class="btn">Save</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
     m.querySelector('form').addEventListener('submit', async e => { e.preventDefault(); const v = id => m.querySelector('#' + id).value.trim();
       const rec = {id: c.id || slug(v('date') + '-' + v('name')), name: v('name'), path: v('path'), date: v('date'), where: v('where'), who: v('who'),
-        musicBy: v('musicBy'), status: m.querySelector('#hidden').checked ? 'hidden' : 'open'};
+        musicBy: v('musicBy'), maxPlaces: v('maxPlaces') ? Number(v('maxPlaces')) : null, status: m.querySelector('#hidden').checked ? 'hidden' : 'open'};
       try { await adm.saveComp(rec); m.remove(); toast('Competition saved'); rerender(); } catch (x) { fail(x); } });
   },
 

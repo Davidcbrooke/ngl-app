@@ -56,12 +56,15 @@ const ACT = {
 
   async reserve(b){
     const comps = await api.competitions(), c = comps.find(x => x.id === b.dataset.comp);
-    const m = modal(`<h2>Reserve places</h2><p class="lead"><b>${esc(c.name)}</b><br>${esc(c.where)} · ${esc(c.who)}</p>
-      <form><label class="field"><span>How many gymnast places?</span><input id="n" type="number" min="1" max="200" value="10" required></label>
-      <p class="lead" style="font-size:14px">No payment now. We email a private JustGo link to buy your places up to 5 months before; places not bought by 3 months before go to the waiting list.</p>
-      <p class="err" id="err"></p><div class="btn-row"><button class="btn">Reserve</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
+    const { placesLeft } = await import('./views/competitions.js'), left = placesLeft(c), wait = !!b.dataset.wait || left === 0;
+    const m = modal(`<h2>${wait ? 'Join the waiting list' : 'Reserve places'}</h2><p class="lead"><b>${esc(c.name)}</b><br>${esc(c.where)} · ${esc(c.who)}</p>
+      ${wait ? '<p class="lead" style="font-size:14px"><b>This competition is fully reserved.</b> Join the waiting list and we’ll offer you places if any come free.</p>'
+        : left != null ? `<p class="lead" style="font-size:14px"><b>${left} place${left === 1 ? '' : 's'} left.</b> Need more? Reserve what’s left and join the waiting list for the rest.</p>` : ''}
+      <form><label class="field"><span>How many gymnast places?</span><input id="n" type="number" min="1" max="${wait || left == null ? 200 : left}" value="${wait || left == null ? 10 : Math.min(10, left)}" required></label>
+      <p class="lead" style="font-size:14px">No payment now. When the competition opens you’ll see <b>Buy now</b> here; places not bought by 3 months before go to the waiting list.</p>
+      <p class="err" id="err"></p><div class="btn-row"><button class="btn">${wait ? 'Join waiting list' : 'Reserve'}</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
     m.querySelector('form').addEventListener('submit', async e => { e.preventDefault(); const btn = m.querySelector('.btn'); btn.disabled = true;
-      try { const ref = await api.reserve(c.id, m.querySelector('#n').value); m.remove(); toast('Reserved. Your reference is ' + ref); location.hash = '#/competitions/places'; rerender(); }
+      try { const ref = await api.reserve(c.id, m.querySelector('#n').value, wait); m.remove(); toast((wait ? 'You’re on the waiting list. Reference ' : 'Reserved. Your reference is ') + ref); location.hash = '#/competitions/places'; rerender(); }
       catch (x) { m.querySelector('#err').textContent = x.message.startsWith('Sample') ? x.message : 'Couldn’t reserve. Please try again.'; console.error(x); btn.disabled = false; } });
   },
 

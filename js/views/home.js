@@ -1,3 +1,4 @@
+import { canBuy } from './competitions.js';
 import api from '../data.js';
 import { esc, gbp, date, ic, pill, path } from '../ui.js';
 import { PATHWAYS } from '../config.js';
@@ -17,7 +18,7 @@ export default async function home(_, ctx = {}){
   const mine = comps.filter(x => x.reserved), places = mine.reduce((a, x) => a + x.reserved, 0), next = mine[0];
   const musicDue = music.map(m => ({...m, missing: m.gymnasts.filter(g => !g.file).length})).filter(m => m.missing);
   const needMusic = musicDue.reduce((a, m) => a + m.missing, 0), mc = musicDue[0];
-  const nextAny = next || comps[0], buy = mine.find(x => !x.bought && !x.waiting && x.justgoUrl && ['reserved', 'open'].includes(x.booking));
+  const nextAny = next || comps[0], buy = mine.find(x => canBuy(x));
   const done = Object.assign({reg: 1, res: mine.length ? 1 : 0}, JSON.parse(localStorage.ngl_done || '{}'));
   const n = CHECK.filter(x => done[x[0]]).length;
   const live = PATHWAYS.filter(p => ['live', 'waived'].includes(lic[p.k].status));
@@ -25,7 +26,7 @@ export default async function home(_, ctx = {}){
     ctx.needsVerify && ['Confirm your email', 'Brings in any competition places booked before you joined', '#/club', 'Confirm'],
     unpaid.length && [`${unpaid.length} order${unpaid.length > 1 ? 's' : ''} not paid yet`, `${gbp(due)} · finish payment to confirm`, '#/shop/orders', 'Finish payment', 1],
     needMusic && [`${needMusic} gymnast${needMusic === 1 ? '' : 's'} need${needMusic === 1 ? 's' : ''} floor music`, `${esc(mc.ev.title)} · by ${date(mc.ev.deadline, {day:'numeric', month:'short'})}${musicDue.length > 1 ? ' · and ' + (musicDue.length - 1) + ' more' : ''}`, '#/competitions/music', 'Upload'],
-    buy && [`Booking is open: book and pay for your places`, `${esc(buy.name)}${buy.buyBy ? ' · by ' + date(buy.buyBy) : ''}`, '#/competitions/places', 'Book'],
+    buy && [`Open now: buy your reserved places`, `${esc(buy.name)}${buy.buyBy ? ' · by ' + date(buy.buyBy) : ''}`, '#/competitions', 'Buy now'],
     !mine.length && ['Reserve places for 2027', 'Competitions are filling fast: reserving is free', '#/competitions', 'Reserve']
   ].filter(Boolean);
   return `<h1>Welcome, ${esc(c.name)}</h1><p class="lead">Everything your club does with the NGL, in one place.</p>

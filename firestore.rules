@@ -77,7 +77,7 @@ service cloud.firestore {
       allow read: if compsTeam() || salesTeam() || canAny(['planning', 'staffing']) || (signedIn() && resource.data.clubId == request.auth.uid);
       // A club books places as 'reserved', or brings in places booked with its confirmed email before it joined (pendingPlaces, same id).
       allow create: if compsTeam() || (signedIn() && request.resource.data.clubId == request.auth.uid
-                    && (request.resource.data.status == 'reserved' || claimsPending(id)));
+                    && (request.resource.data.status in ['reserved', 'waiting'] || claimsPending(id)));
       // A club can change its places or cancel while still 'reserved'; only NGL moves places to the waiting list or bought.
       allow update: if compsTeam() || (signedIn() && resource.data.clubId == request.auth.uid && resource.data.status == 'reserved'
                     && unchanged(['clubId', 'compId', 'ref']) && request.resource.data.status in ['reserved', 'cancelled']);
@@ -225,6 +225,12 @@ service cloud.firestore {
       // Booking emails: the MyBG link and the send log, by the Competitions or Competition planning team
       allow update: if canAny(['competitions', 'planning']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['justgoUrl', 'mailLog', 'booking']); }
     match /products/{id}     { allow read: if signedIn(); allow write: if isAdmin(); }
+    // Places reserved per competition, so clubs see places left / fully reserved: one row per club, places only (no names).
+    // A club keeps its own row ({compId}__{uid}); NGL Admin rebuilds them all from the reservations.
+    match /compPlaces/{id} { allow read: if signedIn(); allow write: if compsTeam();
+      allow create, update: if signedIn() && id == request.resource.data.compId + '__' + request.auth.uid && request.resource.data.clubId == request.auth.uid
+                            && request.resource.data.keys().hasOnly(['compId', 'clubId', 'places']) && request.resource.data.places is int && request.resource.data.places >= 0 && request.resource.data.places <= 500;
+      allow delete: if signedIn() && resource.data.clubId == request.auth.uid; }
     // Judging invites: a club invites its staff to the Judging Pathway (its own only); the Judging team sees them all
     match /judgeInvites/{id} { allow read: if canAny(['judging']) || (signedIn() && resource.data.clubId == request.auth.uid);
       allow create: if signedIn() && request.resource.data.clubId == request.auth.uid && request.resource.data.keys().hasOnly(['clubId', 'clubName', 'name', 'email', 'at'])

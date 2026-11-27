@@ -25,8 +25,8 @@ const demo = {
   },
   competitions: [
     {id:'c1', date:'2027-02-07', path:'general', name:'General League · East Region', where:'SAADI Gymnastics, Harpenden', who:'Girls Levels 1–4', reserved:12, ref:'NGL-7Q2K', buyBy:'2026-11-07', musicBy:'2027-01-24', booking:'reserved', justgoUrl:'demo:justgo'},
-    {id:'c2', date:'2027-02-14', path:'general', name:'General League · East Region', where:'SAADI Gymnastics, Harpenden', who:'Boys Levels 1–4', reserved:6, ref:'NGL-8M4D', buyBy:'2026-11-14'},
-    {id:'c3', date:'2027-02-21', path:'general', name:'General League · West Midlands', where:'TBC', who:'Girls & Boys', booking:'open', justgoUrl:'demo:justgo'},
+    {id:'c2', date:'2027-02-14', path:'general', name:'General League · East Region', where:'SAADI Gymnastics, Harpenden', who:'Boys Levels 1–4', reserved:6, ref:'NGL-8M4D', buyBy:'2026-11-14', maxPlaces:80, taken:74},
+    {id:'c3', date:'2027-02-21', path:'general', name:'General League · West Midlands', where:'TBC', who:'Girls & Boys', booking:'open', justgoUrl:'demo:justgo', maxPlaces:100, taken:100},
     {id:'c4', date:'2027-03-13', path:'recreational', name:'Recreational · Ruby & Pink', where:'Redbourn', who:'Every gymnast medals', reserved:30, ref:'NGL-3RP9', buyBy:'2026-12-13'},
     {id:'c5', date:'2027-04-24', path:'performance', name:'Performance League Grades', where:'TBC', who:'Classic Challenge preparation', waiting:true},
     {id:'c6', date:'2027-10-24', path:'general', name:'NGL National Finals 2027', where:'TBC', who:'By qualification', waiting:true}
@@ -205,10 +205,15 @@ const fbApi = {
     return q.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.status !== 'cancelled');
   },
   async competitions(){
-    const [res, cal] = await Promise.all([this.reservations(), this.calendar()]);
-    return cal.map(c => { const r = res.find(x => x.compId === c.id);
+    const [res, cal, taken] = await Promise.all([this.reservations(), this.calendar(), this.placesTaken().catch(() => ({}))]);
+    return cal.map(c0 => { const c = {...c0, taken: taken[c0.id] || 0}, r = res.find(x => x.compId === c.id);
       return r ? {...c, reserved: r.status === 'waiting' ? 0 : r.places, waiting: r.status === 'waiting', bought: r.status === 'bought', ref: r.ref, buyBy: minusMonths(c.date, 3)} : c; });
   },
+  // Places reserved by all clubs together, per competition (compPlaces: one row per club, places only, no names)
+  async placesTaken(){ const {fs, D} = await fb(); const q = await fs.getDocs(fs.collection(D, 'compPlaces')); const t = {};
+    q.docs.forEach(d => { const x = d.data(); t[x.compId] = (t[x.compId] || 0) + (Number(x.places) || 0); }); return t; },
+  async setPlacesRow(compId, places){ const {fs, A, D} = await fb(), ref = fs.doc(D, 'compPlaces', compId + '__' + A.currentUser.uid);
+    if (places > 0) await fs.setDoc(ref, {compId, clubId: A.currentUser.uid, places: Number(places)}); else await fs.deleteDoc(ref).catch(() => {}); },
   // Floor music. NGL admin adds musicEntries/{compId}_{clubId} from the start lists (gymnast id, name, level);
   // the club uploads one MP3 per gymnast to Storage music/{compId}/{clubId}/{gymnastId}.mp3 and a musicUploads record.
   async music(){
@@ -234,8 +239,9 @@ const fbApi = {
       fileName: file.name, size: file.size, path, url, uploadedAt: fs.serverTimestamp()});
   },
   async changeReservation(ref, places){
-    const {fs, D} = await fb();
+    const {fs, D} = await fb(), r = (await fs.getDoc(fs.doc(D, 'reservations', ref))).data() || {};
     await fs.updateDoc(fs.doc(D, 'reservations', ref), places > 0 ? {places: Number(places), changedAt: fs.serverTimestamp()} : {status: 'cancelled', cancelledAt: fs.serverTimestamp()});
+    if (r.compId) await this.setPlacesRow(r.compId, places).catch(e => console.warn('places count', e));
   },
   async orders(){
     const {fs, A, D} = await fb();
@@ -270,10 +276,11 @@ const fbApi = {
     return c;
   },
   async products(){ return PRODUCTS; },
-  async reserve(compId, places){
+  async reserve(compId, places, waiting = false){
     const {fs, A, D} = await fb(), c = await this.club();
     const ref = code('NGL');
-    await fs.setDoc(fs.doc(D, 'reservations', ref), {clubId: A.currentUser.uid, clubName: c.name || '', compId, places: Number(places), status: 'reserved', ref, createdAt: fs.serverTimestamp()});
+    await fs.setDoc(fs.doc(D, 'reservations', ref), {clubId: A.currentUser.uid, clubName: c.name || '', compId, places: Number(places), status: waiting ? 'waiting' : 'reserved', ref, createdAt: fs.serverTimestamp()});
+    if (!waiting) await this.setPlacesRow(compId, places).catch(e => console.warn('places count', e));
     return ref;
   },
   async placeOrder(lines, delivery, extra = {}){
