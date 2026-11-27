@@ -36,7 +36,7 @@ export const ADM = {
 
   async 'adm-res'(b){
     const lbl = {bought: 'marked bought on JustGo', waiting: 'moved to the waiting list', reserved: 'given places'};
-    try { await adm.setReservation(b.dataset.ref, b.dataset.to); toast(b.dataset.ref + ' ' + lbl[b.dataset.to]); rerender(); } catch (x) { fail(x); }
+    try { await adm.setReservation(b.dataset.id || b.dataset.ref, b.dataset.to); toast(b.dataset.ref + ' ' + lbl[b.dataset.to]); rerender(); } catch (x) { fail(x); }
   },
 
   // Booking: who sees the Book and pay button (the JustGo Events link) in the Club Hub

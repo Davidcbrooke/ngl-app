@@ -209,7 +209,7 @@ const fbApi = {
   async competitions(){
     const [res, cal, taken] = await Promise.all([this.reservations(), this.calendar(), this.placesTaken().catch(() => ({}))]);
     return cal.map(c0 => { const c = {...c0, taken: taken[c0.id] || 0}, r = res.find(x => x.compId === c.id);
-      return r ? {...c, reserved: r.status === 'waiting' ? 0 : r.places, waiting: r.status === 'waiting', bought: r.status === 'bought', ref: r.ref, buyBy: minusMonths(c.date, 3)} : c; });
+      return r ? {...c, reserved: r.status === 'waiting' ? 0 : r.places, waiting: r.status === 'waiting', bought: r.status === 'bought', ref: r.ref, resId: r.id, buyBy: minusMonths(c.date, 3)} : c; });
   },
   // Places reserved by all clubs together, per competition (compPlaces: one row per club, places only, no names)
   async placesTaken(){ const {fs, D} = await fb(); const q = await fs.getDocs(fs.collection(D, 'compPlaces')); const t = {};
@@ -240,8 +240,8 @@ const fbApi = {
     await fs.setDoc(fs.doc(D, 'musicUploads', compId + '_' + g.id), {clubId: uid, clubName: c.name || '', compId, gymnastId: g.id, gymnastName: g.n, level: g.level,
       fileName: file.name, size: file.size, path, url, uploadedAt: fs.serverTimestamp()});
   },
-  async changeReservation(ref, places){
-    const {fs, D} = await fb(), r = (await fs.getDoc(fs.doc(D, 'reservations', ref))).data() || {};
+  async changeReservation(id, places){   // id = the reservation's own record (several bookings can share a club's reference)
+    const {fs, D} = await fb(), ref = id, r = (await fs.getDoc(fs.doc(D, 'reservations', ref))).data() || {};
     await fs.updateDoc(fs.doc(D, 'reservations', ref), places > 0 ? {places: Number(places), changedAt: fs.serverTimestamp()} : {status: 'cancelled', cancelledAt: fs.serverTimestamp()});
     if (r.compId) await this.setPlacesRow(r.compId, places).catch(e => console.warn('places count', e));
   },

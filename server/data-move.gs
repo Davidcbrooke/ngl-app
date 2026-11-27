@@ -339,3 +339,87 @@ function justgoLinks_(go){
     if (r.getResponseCode() !== 200) throw new Error('Write ' + o.id + ' ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 200)); });
   Logger.log('Copied ' + out.length + ' links.');
 }
+
+// Places per competition, for clubs to see places left / Fully reserved (compPlaces: one row per club, places only, no names).
+// Same as NGL Admin › Competitions does when it opens. placesReport() only logs; placesBuild() also writes the rows.
+function placesReport(){ return places_(false); }
+function placesBuild(){ return places_(true); }
+function places_(go){
+  const comps = listAll(STAGING, 'competitions'), res = listAll(STAGING, 'reservations'), pend = listAll(STAGING, 'pendingPlaces');
+  const want = {}, waiting = {};
+  res.forEach(r => { const d = r.data; if (!d.compId) return;
+    if (d.status === 'waiting') { waiting[d.compId] = (waiting[d.compId] || 0) + (Number(d.places) || 0); return; }
+    if (!['reserved', 'bought'].includes(d.status)) return;
+    const k = d.compId + '__' + d.clubId; want[k] = {compId: d.compId, clubId: d.clubId, places: (want[k] ? want[k].places : 0) + (Number(d.places) || 0)}; });
+  pend.forEach(p => { const d = p.data; if (!d.compId) return;
+    if (d.status === 'waiting') { waiting[d.compId] = (waiting[d.compId] || 0) + (Number(d.places) || 0); return; }
+    want[d.compId + '__pending-' + p.id] = {compId: d.compId, clubId: 'pending', places: Number(d.places) || 0}; });
+  const tot = {}; Object.values(want).forEach(w => { tot[w.compId] = (tot[w.compId] || 0) + w.places; });
+  comps.sort((a, b) => String(a.data.date).localeCompare(String(b.data.date))).forEach(c => { const m = c.data.maxPlaces, t = tot[c.id] || 0;
+    Logger.log(c.data.date + ' · ' + (c.data.name || c.id) + ' · max ' + (m == null ? '–' : m) + ' · reserved ' + t + ' · waiting ' + (waiting[c.id] || 0) + (m != null && t >= m ? ' · FULL' : '')); });
+  if (!go) return;
+  const have = {}; listAll(STAGING, 'compPlaces').forEach(d => { have[d.id] = d.data; });
+  const name = p => base(STAGING).replace('https://firestore.googleapis.com/v1/', '') + '/' + p, w = [];
+  Object.keys(want).forEach(k => { if (!have[k] || have[k].places !== want[k].places) w.push(doc('compPlaces/' + k, want[k])); });
+  Object.keys(have).forEach(k => { if (!want[k]) w.push({delete: name('compPlaces/' + k)}); });
+  for (let i = 0; i < w.length; i += 400) commitRaw(STAGING, w.slice(i, i + 400));
+  Logger.log('Place rows written: ' + w.length);
+}
+
+// Diagnosis (read only): what the old Admin Hub's bookings look like, to find waiting lists and places the move missed
+function oldBookingsReport(){
+  const r = UrlFetchApp.fetch(base(BOOK) + ':listCollectionIds', {method: 'post', contentType: 'application/json', headers: auth_(), payload: JSON.stringify({pageSize: 300}), muteHttpExceptions: true});
+  Logger.log('Old collections: ' + (JSON.parse(r.getContentText()).collectionIds || []).join(', '));
+  const b = listAll(BOOK, 'ngl_bookings'), keys = {}, vals = {};
+  b.forEach(x => Object.keys(x.data).forEach(k => { keys[k] = (keys[k] || 0) + 1; const v = x.data[k];
+    if (['status', 'waitlist', 'type', 'state', 'list', 'onWaitlist', 'waiting'].includes(k)) { const s = k + '=' + JSON.stringify(v); vals[s] = (vals[s] || 0) + 1; } }));
+  Logger.log('Booking fields: ' + JSON.stringify(keys));
+  Logger.log('Status-like values: ' + JSON.stringify(vals));
+  Logger.log('One booking: ' + JSON.stringify(b[0] && b[0].data).slice(0, 900));
+  const c = listAll(BOOK, 'ngl_competitions'); Logger.log('Competition fields: ' + JSON.stringify(Object.keys((c[0] || {}).data || {})));
+  Logger.log('One competition: ' + JSON.stringify(c[0] && c[0].data).slice(0, 900));
+}
+function statusReport(){
+  ['reservations', 'pendingPlaces'].forEach(col => { const s = {}; listAll(STAGING, col).forEach(x => { const k = String(x.data.status); s[k] = (s[k] || 0) + 1; }); Logger.log(col + ': ' + JSON.stringify(s)); });
+  const old = listAll(BOOK, 'ngl_bookings').filter(b => b.data.waitlist === true);
+  Logger.log('Old waiting: ' + old.map(b => b.data.compDate + ' ' + b.data.club + ' ' + b.data.spaces + ' [' + (b.data.reference || b.id) + ']').join(' | '));
+  const live = {}; listAll(STAGING, 'reservations').forEach(r => { live[r.id] = r.data.status; }); listAll(STAGING, 'pendingPlaces').forEach(r => { live[r.id] = 'pending:' + r.data.status; });
+  Logger.log('Those in the live database now: ' + old.map(b => (b.data.reference || b.id) + '=' + (live[safeId(b.data.reference || b.id)] || 'MISSING')).join(', '));
+}
+
+/* ---------- Switch-over fix (27 Nov 2026): every old booking as its own reservation ----------
+   The old Admin Hub gives a club ONE reference for all its bookings, and the move saved each booking under its reference,
+   so a club's bookings overwrote each other (149 old bookings -> 68). This restores each old booking (ngl_bookings) as its
+   own record, id = the old booking's id, keeping the club the move had matched for that reference. Only the merged records
+   the move wrote (movedFrom saadi-rotation, never changed by a club since) are replaced; anything a club has changed is kept.
+   bookingsFixCheck() only reports; bookingsFix() writes. Then run placesBuild(). */
+function bookingsFixCheck(){ return bookingsFix_(false); }
+function bookingsFix(){ return bookingsFix_(true); }
+function bookingsFix_(go){
+  const old = listAll(BOOK, 'ngl_bookings'), res = listAll(STAGING, 'reservations'), pend = listAll(STAGING, 'pendingPlaces');
+  const byRef = {}; res.forEach(r => { byRef[r.id] = {col: 'reservations', d: r.data}; }); pend.forEach(p => { if (!byRef[p.id]) byRef[p.id] = {col: 'pendingPlaces', d: p.data}; });
+  const moved = x => String(x.d.movedFrom || '').indexOf('saadi-rotation/ngl_bookings/') === 0;
+  const touched = x => !!(x.d.changedAt || x.d.cancelledAt || x.d.boughtAt || x.d.waitingAt || x.d.reservedAt || x.d.claimedAt);
+  const writes = [], del = {}, keep = [], lost = [], now = new Date(); let n = {reservations: 0, pendingPlaces: 0};
+  old.forEach(b => { const d = b.data, ref = d.reference || b.id, home = byRef[safeId(ref)];
+    if (!home) { lost.push(ref + ' ' + (d.club || '')); return; }
+    if (!moved(home)) return;                                         // made by a club in the new app: not ours to replace
+    if (touched(home)) { keep.push(safeId(ref)); return; }            // changed since the switch: keep as it is
+    const id = safeId(b.id), status = d.waitlist ? 'waiting' : (d.bought || d.purchased ? 'bought' : 'reserved');
+    const base0 = {compId: d.compId || '', places: Number(d.spaces) || 0, status, ref, createdAt: d.bookedAt || d.createdAt || now, movedFrom: 'saadi-rotation/ngl_bookings/' + b.id};
+    const rec = home.col === 'reservations' ? Object.assign({clubId: home.d.clubId, clubName: home.d.clubName || ''}, base0)
+      : Object.assign({clubName: d.club || home.d.clubName || '', nameKey: home.d.nameKey || '', email: home.d.email || '', compName: d.compName || ''}, base0);
+    writes.push(doc(home.col + '/' + id, rec)); n[home.col]++;
+    if (id !== safeId(ref)) del[home.col + '/' + safeId(ref)] = 1; });
+  // the merged record goes, unless one of the restored bookings has the same id
+  const restored = {}; writes.forEach(w => { restored[w.update.name.split('/documents/')[1]] = 1; });
+  const name = p => base(STAGING).replace('https://firestore.googleapis.com/v1/', '') + '/' + p;
+  const dels = Object.keys(del).filter(p => !restored[p] && keep.indexOf(p.split('/')[1]) < 0).map(p => ({delete: name(p)}));
+  Logger.log('Old bookings: ' + old.length + ' · restore as reservations: ' + n.reservations + ' · as places waiting for a club: ' + n.pendingPlaces +
+    ' · merged records to remove: ' + dels.length + ' · kept (changed since the switch): ' + keep.length + (keep.length ? ' ' + keep.join(', ') : '') +
+    ' · no match: ' + lost.length + (lost.length ? ' ' + lost.join(' | ') : ''));
+  if (!go) return;
+  const all = writes.concat(dels);
+  for (let i = 0; i < all.length; i += 400) commitRaw(STAGING, all.slice(i, i + 400));
+  Logger.log('Done: ' + writes.length + ' written, ' + dels.length + ' removed. Now run placesBuild.');
+}

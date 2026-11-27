@@ -23,7 +23,8 @@ const isoDay = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,
 export const generalSaleFrom = c => { const d = new Date(String(c.date) + 'T12:00'); d.setMonth(d.getMonth() - 3); return isoDay(d); };
 export const stageOf = c => { const b = c.booking || (hasLink(c) ? 'reserved' : 'closed');
   return b === 'reserved' && hasLink(c) && isoDay(new Date()) >= generalSaleFrom(c) ? 'open' : b; };
-export const canBuy = c => !c.bought && hasLink(c) && (stageOf(c) === 'open' || (c.reserved > 0 && !c.waiting && stageOf(c) !== 'closed'));
+// Clubs that reserved can always buy theirs; on general sale other clubs can buy only while places are left (full = waiting list)
+export const canBuy = c => !c.bought && hasLink(c) && ((c.reserved > 0 && !c.waiting && stageOf(c) !== 'closed') || (stageOf(c) === 'open' && placesLeft(c) !== 0));
 // Places left (when NGL has set a maximum): maxPlaces minus places reserved by all clubs
 export const placesLeft = c => typeof c.maxPlaces === 'number' && c.maxPlaces > 0 ? Math.max(0, c.maxPlaces - (c.taken || 0)) : null;
 const waitBtn = c => `<button class="btn sm ghost" data-act="reserve" data-wait="1" data-comp="${esc(c.id)}">Join waiting list</button>`;
@@ -31,7 +32,7 @@ const buyBtn = c => `<button class="btn sm" data-act="book" data-comp="${esc(c.i
 export function bookingState(c){
   const mine = c.reserved > 0 && !c.waiting, b = stageOf(c);
   if (c.bought) return {pill: pill('Bought', 'ok'), act: `<a class="btn sm ghost" href="#/competitions/music">Floor music</a>`};
-  if (canBuy(c)) return {pill: pill(stageOf(c) === 'open' ? 'Open now · general sale' : 'Open now · ' + c.reserved + ' reserved', 'ok'), act: buyBtn(c), open: true};
+  if (canBuy(c)) return {pill: pill(mine ? 'Open now · ' + c.reserved + ' reserved' : 'Open now · general sale', 'ok'), act: buyBtn(c), open: true};
   if (mine) return {pill: pill(c.reserved + ' reserved · buy link coming soon', ''), act: `<a class="btn sm ghost" href="#/competitions/places">My places</a>`};
   if (c.waiting) return {pill: pill('On the waiting list', 'warn'), act: ''};
   const left = placesLeft(c);

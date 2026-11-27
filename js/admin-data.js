@@ -86,7 +86,7 @@ const fbAdmin = {
     Object.keys(want).forEach(k => { if (!have[k] || have[k].places !== want[k].places) { b.set(fs.doc(D, 'compPlaces', k), want[k]); n++; } });
     Object.keys(have).forEach(k => { if (!want[k]) { b.delete(fs.doc(D, 'compPlaces', k)); n++; } });
     if (n) await b.commit(); return n; },
-  async setReservation(ref, status){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'reservations', ref), {status, [status + 'At']: fs.serverTimestamp()}); },
+  async setReservation(id, status){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'reservations', id), {status, [status + 'At']: fs.serverTimestamp()}); },
   async musicEntries(compId){ const {fs, D} = await fb(); const q = await fs.getDocs(fs.query(fs.collection(D, 'musicEntries'), fs.where('compId', '==', compId))); return q.docs.map(d => d.data()); },
   async musicUploads(compId){ const {fs, D} = await fb(); const q = await fs.getDocs(fs.query(fs.collection(D, 'musicUploads'), fs.where('compId', '==', compId))); return q.docs.map(d => d.data()); },
   async saveMusicEntry(comp, club, gymnasts){

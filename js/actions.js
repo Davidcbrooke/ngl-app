@@ -139,7 +139,7 @@ const ACT = {
     const m = modal(`<h2>Change your reservation</h2><p class="lead"><b>${esc(c.name)}</b> · ref ${esc(c.ref)}</p>
       <form><label class="field"><span>Gymnast places</span><input id="n" type="number" min="1" max="200" value="${c.reserved}" required></label>
       <p class="err" id="err"></p><div class="btn-row"><button class="btn">Save</button><button class="btn ghost" type="button" data-cancel>Cancel reservation</button><button class="btn ghost" type="button" data-close>Close</button></div></form>`);
-    const go = async places => { try { await api.changeReservation(c.ref, places); m.remove(); toast(places ? 'Reservation changed to ' + places + ' places' : 'Reservation cancelled'); rerender(); }
+    const go = async places => { try { await api.changeReservation(c.resId || c.ref, places); m.remove(); toast(places ? 'Reservation changed to ' + places + ' places' : 'Reservation cancelled'); rerender(); }
       catch (x) { console.error(x); m.querySelector('#err').textContent = x.message.startsWith('Sample') ? x.message : 'Couldn’t save. Please try again.'; } };
     m.querySelector('form').addEventListener('submit', e => { e.preventDefault(); go(Number(m.querySelector('#n').value)); });
     m.querySelector('[data-cancel]').addEventListener('click', () => { if (m.querySelector('[data-cancel]').dataset.sure) go(0); else { const x = m.querySelector('[data-cancel]'); x.dataset.sure = 1; x.textContent = 'Tap again to cancel'; x.style.color = 'var(--red)'; } });
