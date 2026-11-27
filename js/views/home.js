@@ -30,6 +30,7 @@ export default async function home(_, ctx = {}){
     !mine.length && ['Reserve places for 2027', 'Competitions are filling fast: reserving is free', '#/competitions', 'Reserve']
   ].filter(Boolean);
   return `<h1>Welcome, ${esc(c.name)}</h1><p class="lead">Everything your club does with the NGL, in one place.</p>
+  ${localStorage.getItem('ngl-welcome-new-hub') ? '' : `<div class="card new-hub"><div class="grow"><b>Welcome to the new NGL Club Hub</b><span>We've listened to your feedback and made some changes to make it easier to use: one login, one menu, and everything for your club in one place.</span></div><button class="btn sm ghost" data-act="hide-welcome">Got it</button></div>`}
   <div class="grid g4" style="margin-bottom:16px">
     <a class="card stat" href="#/shop/orders"><b>${gbp(due)}</b><span>Not paid yet · ${unpaid.length} order${unpaid.length === 1 ? '' : 's'}</span></a>
     <a class="card stat" href="#/competitions/places"><b>${places}</b><span>Competition places reserved</span></a>

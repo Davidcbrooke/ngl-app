@@ -22,6 +22,8 @@ export const totals = lines => { const items = lines.reduce((a, l) => a + l.qty 
   const post = postageFor(qty); return {items, post, total: items + post, qty}; };
 
 const ACT = {
+  // Home: the "Welcome to the new Club Hub" note, hidden once the club has read it (on this device)
+  'hide-welcome'(b){ try { localStorage.setItem('ngl-welcome-new-hub', '1'); } catch (e) {} b.closest('.new-hub')?.remove(); },
   // Judging: invite a coach or member of staff to the Judging Pathway (their own login, linked to this club)
   async 'judge-invite'(){
     const m = modal(`<h2>Invite a judge</h2><p class="lead">They get a link to register on the NGL Judging Pathway with your club filled in. They use their own login and only see the judge screens.</p><form>

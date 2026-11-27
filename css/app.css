@@ -330,3 +330,6 @@ a.card:hover{border-color:#cfcde3}.nav a{color:#dcdcf2}.nav a.on{color:var(--nav
 }
 
 .sample-note{background:#fff6d6;border:1px solid #f2d27a;color:#5a4500;border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:14px}
+.new-hub{display:flex;align-items:center;gap:14px;margin:12px 0 16px;border-left:5px solid var(--red);background:#fff}
+.new-hub b{display:block;font:900 18px/1.2 var(--cond);text-transform:uppercase;color:var(--navy);margin-bottom:4px}.new-hub span{color:var(--muted)}
+.new-hub .grow{flex:1;min-width:0}
