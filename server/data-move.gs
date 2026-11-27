@@ -319,3 +319,23 @@ function cleanTest_(go){
   for (let i = 0; i < gone.length; i += 400) commitRaw(STAGING, gone.slice(i, i + 400).map(p => ({delete: name(p)})));
   Logger.log('Deleted ' + gone.length + ' test documents.');
 }
+
+// Switch-over fix (27 Nov 2026): the data move didn't bring each competition's JustGo Events link. Copy ONLY that field from the
+// old Admin Hub's competitions (saadi-rotation ngl_competitions) onto the same competition in the live database. Nothing else changes.
+// justgoLinksCheck() lists what it would copy; justgoLinksCopy() copies.
+function justgoLinksCheck(){ return justgoLinks_(false); }
+function justgoLinksCopy(){ return justgoLinks_(true); }
+function justgoLinks_(go){
+  const isLink = v => typeof v === 'string' && /^https:\/\/[^ ]*(justgo|mybg|britishgymnastics)/i.test(v);
+  const old = listAll(BOOK, 'ngl_competitions'), now = {}; listAll(STAGING, 'competitions').forEach(c => { now[c.id] = c.data; });
+  const out = [];
+  old.forEach(c => { const d = c.data, k = ['justgoUrl', 'justGoUrl', 'mybgLink', 'myBgLink', 'bookingLink', 'link', 'url'].find(f => isLink(d[f])) || Object.keys(d).find(f => isLink(d[f]));
+    if (!k) return; if (!now[c.id]) { Logger.log('No live competition for ' + c.id + ' (' + (d.name || '') + ')'); return; }
+    if (now[c.id].justgoUrl === d[k]) return; out.push({id: c.id, name: d.name || c.id, field: k, url: d[k]}); });
+  Logger.log('Links to copy: ' + out.length + '\n' + out.map(o => o.name + ' [' + o.field + '] ' + o.url).join('\n'));
+  if (!go) return;
+  out.forEach(o => { const r = UrlFetchApp.fetch(base(STAGING) + '/competitions/' + encodeURIComponent(o.id) + '?updateMask.fieldPaths=justgoUrl', {method: 'patch',
+      contentType: 'application/json', headers: auth_(), payload: JSON.stringify({fields: {justgoUrl: {stringValue: o.url}}}), muteHttpExceptions: true});
+    if (r.getResponseCode() !== 200) throw new Error('Write ' + o.id + ' ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 200)); });
+  Logger.log('Copied ' + out.length + ' links.');
+}

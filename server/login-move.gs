@@ -90,3 +90,15 @@ function cleanTestLogins(){
   }
   Logger.log('Removed ' + gone.length + ' test logins. Logins now: ' + users_(TARGET).length);
 }
+
+// The two NGL admin logins came across with "email not confirmed", so the app didn't give them NGL Admin. Mark them confirmed
+// (Dave's own long-used addresses, 27 Nov 2026). Nothing else about the logins changes.
+function confirmNglAdmins(){
+  const want = ['admin@nationalgymnasticsleague.co.uk', 'bookingoffice@saadigymnastics.co.uk'];
+  users_(TARGET).filter(u => want.includes(String(u.email || '').toLowerCase())).forEach(u => {
+    if (u.emailVerified) { Logger.log(mask(u.email) + ': already confirmed'); return; }
+    const r = UrlFetchApp.fetch(IT + '/v1/projects/' + TARGET + '/accounts:update', {method: 'post', contentType: 'application/json', headers: auth_(TARGET),
+      payload: JSON.stringify({localId: u.localId, emailVerified: true}), muteHttpExceptions: true});
+    Logger.log(mask(u.email) + ': ' + (r.getResponseCode() === 200 ? 'confirmed' : 'failed ' + r.getResponseCode() + ' ' + r.getContentText().slice(0, 200)));
+  });
+}
