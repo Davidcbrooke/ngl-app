@@ -294,7 +294,7 @@ function checkAccess(){
 /* ---------- SWITCH-OVER (27 Nov 2026): ngl-club-hub-staging becomes the LIVE Club Hub database ---------- */
 // Once goLiveLock() has run, rehearse() refuses: it would overwrite clubs' new bookings and orders with the old hubs' data.
 function assertNotLive_(){ if (getDoc(STAGING, 'migration/golive')) throw new Error('This database is LIVE since switch-over. The data move is locked and must not run again.'); }
-function goLiveLock(){ commitRaw(STAGING, [doc('migration/golive', {at: new Date(), by: Session.getActiveUser().getEmail() || 'NGL'})]); Logger.log('Locked: the data move will not run again.'); }
+function goLiveLock(){ commitRaw(STAGING, [doc('migration/golive', {at: new Date(), by: 'switch-over'})]); Logger.log('Locked: the data move will not run again.'); }
 
 // Test data made by the automatic tests in the sandbox: clubs called AUTOTEST… and judges with made-up example.com/.org emails,
 // and everything that belongs to them. cleanTestDataCheck() only lists; cleanTestData() deletes.
