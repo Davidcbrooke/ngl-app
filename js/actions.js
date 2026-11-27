@@ -22,6 +22,13 @@ export const totals = lines => { const items = lines.reduce((a, l) => a + l.qty 
   const post = postageFor(qty); return {items, post, total: items + post, qty}; };
 
 const ACT = {
+  // Book and pay: the competition's event on JustGo Events (only offered when NGL has opened booking to this club)
+  async book(b){
+    const c = (await api.competitions()).find(x => x.id === b.dataset.comp);
+    if (!c || !c.justgoUrl) return toast('Booking isn’t open for this competition yet.', false);
+    if (c.justgoUrl.startsWith('demo:')) return toast('Sample data: in the real Club Hub this opens the competition on JustGo Events to pay.');
+    window.open(c.justgoUrl, '_blank', 'noopener');
+  },
   // QR code for a family link (the one NGL app + the club's code); printable for the noticeboard
   async 'fam-qr'(b){
     const { appLink } = await import('./config.js'), { loadScript } = await import('./pathways/index.js');

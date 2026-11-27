@@ -221,7 +221,7 @@ service cloud.firestore {
     // Shared content every signed-in club can read: competitions calendar, products, rules
     match /competitions/{id} { allow read: if signedIn(); allow write: if compsTeam();
       // Booking emails: the MyBG link and the send log, by the Competitions or Competition planning team
-      allow update: if canAny(['competitions', 'planning']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['justgoUrl', 'mailLog']); }
+      allow update: if canAny(['competitions', 'planning']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['justgoUrl', 'mailLog', 'booking']); }
     match /products/{id}     { allow read: if signedIn(); allow write: if isAdmin(); }
     match /resources/{id}    { allow read: if signedIn(); allow write: if isAdmin(); }
 

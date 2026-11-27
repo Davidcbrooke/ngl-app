@@ -136,6 +136,7 @@ async function orders(filter = 'post'){
   ${filter === 'unpaid' ? '<p class="lead" style="margin-top:12px">Not paid = the club started checkout but didn’t finish. Nothing to chase by hand: they finish payment from their Club Hub.</p>' : ''}`;
 }
 
+const BOOKING_PILL = c => !c.booking || c.booking === 'closed' ? pill('Not open', '') : c.booking === 'reserved' ? pill('Reserved clubs', c.justgoUrl ? 'warn' : 'red') : pill('Open to all', c.justgoUrl ? 'ok' : 'red');
 async function competitions(compId){
   if (compId === 'waiting') return waiting();
   const [cal, res, saved, pend] = await Promise.all([adm.calendar(), adm.reservations(), adm.calendarIsSaved ? adm.calendarIsSaved() : true, adm.pending()]);
@@ -147,10 +148,10 @@ async function competitions(compId){
   return `${saved ? '' : `<div class="card attn" style="margin-bottom:16px"><div class="row" style="border:0"><div class="grow"><b>The calendar isn’t in the database yet</b><small>Clubs see the built-in 2027 list. Save it to the database to edit dates and add competitions.</small></div><button class="btn sm" data-act="adm-import-cal">Save calendar</button></div></div>`}
   ${pend.length ? `<div class="card attn" style="margin-bottom:16px"><div class="row" style="border:0"><div class="grow"><b>${pend.reduce((a, p) => a + p.places, 0)} places waiting for a club</b><small>Booked before the club had a Club Hub account. They join automatically when the club confirms the same email; attach the rest here.</small></div><a class="btn sm" href="#/admin/competitions/waiting">Review</a></div></div>` : ''}
   <div class="btn-row" style="margin:0 0 12px"><button class="btn" data-act="adm-comp">Add a competition</button></div>
-  <div class="card"><table><tr><th>Date</th><th>Competition</th><th>Places</th><th>Clubs</th><th></th></tr>${cal.map(c => { const rs = res.filter(r => r.compId === c.id);
+  <div class="card"><table><tr><th>Date</th><th>Competition</th><th>Places</th><th>Clubs</th><th>Booking</th><th></th></tr>${cal.map(c => { const rs = res.filter(r => r.compId === c.id);
     return `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td>
-      <td>${rs.filter(r => r.status !== 'waiting').reduce((a, r) => a + r.places, 0)}${rs.some(r => r.status === 'waiting') ? ' + waiting' : ''}</td><td>${rs.length}</td>
-      <td style="white-space:nowrap"><a class="btn sm ghost" href="#/admin/competitions/${esc(c.id)}">Reservations</a> <a class="btn sm ghost" href="#/admin/mailer/${esc(c.id)}">Booking emails</a> <button class="btn sm ghost" data-act="adm-comp" data-comp="${esc(c.id)}">Edit</button></td></tr>`; }).join('')}</table></div>`;
+      <td>${rs.filter(r => r.status !== 'waiting').reduce((a, r) => a + r.places, 0)}${rs.some(r => r.status === 'waiting') ? ' + waiting' : ''}</td><td>${rs.length}</td><td>${BOOKING_PILL(c)}</td>
+      <td style="white-space:nowrap"><button class="btn sm" data-act="adm-booking" data-comp="${esc(c.id)}">Booking</button> <a class="btn sm ghost" href="#/admin/competitions/${esc(c.id)}">Reservations</a> <a class="btn sm ghost" href="#/admin/mailer/${esc(c.id)}">Booking emails</a> <button class="btn sm ghost" data-act="adm-comp" data-comp="${esc(c.id)}">Edit</button></td></tr>`; }).join('')}</table></div>`;
 }
 
 // Places booked before the club registered, grouped by the club name on the booking, with the likely club suggested

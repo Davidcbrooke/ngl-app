@@ -1,7 +1,31 @@
 import api from '../data.js';
 import { esc, date, dot, pill, tabs, head, ic } from '../ui.js';
+if (!document.querySelector('link[data-comp-css]')) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/competitions.css'; l.dataset.compCss = '1'; document.head.appendChild(l); }
 
-const SUB = [['', 'All competitions'], ['places', 'My places'], ['music', 'Floor music'], ['results', 'Results & league tables']];
+const SUB = [['', 'Coming up'], ['places', 'My places'], ['music', 'Floor music'], ['results', 'Results & league tables']];
+
+// The four stages a club goes through for every competition
+const STAGES = [
+  ['Coming up', 'See every NGL competition for your pathways', '#/competitions'],
+  ['Reserve places, free', 'Tell us how many gymnasts. Nothing to pay', '#/competitions'],
+  ['Book and pay', 'When booking opens, pay on JustGo Events. Reserved clubs book first', '#/competitions/places'],
+  ['Upload floor music', 'One MP3 per gymnast once the start lists are out', '#/competitions/music']
+];
+const stages = () => `<div class="comp-stages">${STAGES.map((s, i) => `<a class="card comp-stage" href="${s[2]}"><span class="comp-num">${i + 1}</span><div><b>${s[0]}</b><small>${s[1]}</small></div></a>`).join('')}</div>`;
+
+// Where a club is with one competition, and what it can do next (booking: 'closed' | 'reserved' | 'open', set in NGL Admin)
+export function bookingState(c){
+  const mine = c.reserved > 0 && !c.waiting, b = c.booking || 'closed', link = c.justgoUrl;
+  if (c.bought) return {pill: pill('Booked', 'ok'), act: `<a class="btn sm ghost" href="#/competitions/music">Floor music</a>`};
+  const book = `<button class="btn sm" data-act="book" data-comp="${esc(c.id)}">Book and pay ↗</button>`;
+  if (b === 'open' && link) return {pill: mine ? pill(c.reserved + ' reserved', 'ok') : pill('Open for booking', 'ok'), act: book, open: true};
+  if (b === 'reserved' && link && mine) return {pill: pill('Your priority booking', 'ok'), act: book, open: true};
+  if (b === 'reserved') return {pill: c.waiting ? pill('Waiting list', 'warn') : pill('Reserved clubs booking now', 'warn'),
+    act: c.waiting ? '' : `<button class="btn sm ghost" data-act="reserve" data-comp="${esc(c.id)}">Reserve: next in line</button>`};
+  if (mine) return {pill: pill(c.reserved + ' reserved · not open for booking yet', ''), act: `<a class="btn sm ghost" href="#/competitions/places">My places</a>`};
+  if (c.waiting) return {pill: pill('Waiting list', 'warn'), act: ''};
+  return {pill: pill('Not open for booking yet', ''), act: `<button class="btn sm" data-act="reserve" data-comp="${esc(c.id)}">Reserve places, free</button>`};
+}
 const RESULTS = [
   ['table', '2027 league table', 'Live results and the National League Table for the 2027 season', 'var(--gen)', 'https://www.nationalgymnasticsleague.co.uk/2027-season-results-and-league-table'],
   ['comp', '2026 results', 'Last season’s results, league table and National Qualifiers', 'var(--red)', 'https://www.nationalgymnasticsleague.co.uk/resultsandleaguetable'],
@@ -14,11 +38,11 @@ export default async function competitions([sub = '']){
   if (sub === 'places') {
     const mine = comps.filter(c => c.reserved || c.waiting);
     body = !mine.length ? `<div class="card empty">No places reserved yet. <a href="#/competitions">See all competitions</a></div>` :
-    `<p class="lead">These are reservations, not entries. We email a private JustGo link to buy your places up to 5 months before; places not bought by 3 months before go to the waiting list. You can change or cancel a reservation until then.</p>
-    <div class="card"><table><tr><th>Competition</th><th>Date</th><th>Places</th><th>Buy on JustGo by</th><th>Ref</th><th></th></tr>
-    ${mine.map(c => `<tr><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td><td>${date(c.date)}</td>
-      <td>${c.waiting ? pill('Waiting list', 'warn') : c.reserved}</td><td>${c.buyBy ? date(c.buyBy) : '–'}</td><td>${esc(c.ref || '')}</td>
-      <td style="white-space:nowrap"><button class="btn sm ghost" data-act="ics" data-comp="${c.id}">Add to calendar</button>${c.ref && !c.waiting ? ` <button class="btn sm ghost" data-act="change-res" data-comp="${c.id}">Change</button>` : ''}</td></tr>`).join('')}</table></div>
+    `<p class="lead">Reserving is free and holds your places. When booking opens, clubs that reserved book first: a <b>Book and pay</b> button appears here and takes you to the competition on JustGo Events. Places not bought by the date shown go to the waiting list.</p>
+    <div class="card"><table><tr><th>Competition</th><th>Date</th><th>Places</th><th>Booking</th><th>Book by</th><th></th></tr>
+    ${mine.map(c => { const st = bookingState(c); return `<tr><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}${c.ref ? ' · ref ' + esc(c.ref) : ''}</small></td><td>${date(c.date)}</td>
+      <td>${c.waiting ? pill('Waiting list', 'warn') : c.reserved}</td><td>${st.pill}</td><td>${c.buyBy && !c.bought ? date(c.buyBy) : '–'}</td>
+      <td style="white-space:nowrap">${st.open ? st.act + ' ' : ''}<button class="btn sm ghost" data-act="ics" data-comp="${c.id}">Add to calendar</button>${c.ref && !c.waiting && !c.bought ? ` <button class="btn sm ghost" data-act="change-res" data-comp="${c.id}">Change</button>` : ''}</td></tr>`; }).join('')}</table></div>
     <div class="btn-row"><button class="btn ghost" data-act="ics" data-comp="all">Add all to my calendar</button></div>`;
   } else if (sub === 'music') {
     const music = await api.music();
@@ -33,10 +57,9 @@ export default async function competitions([sub = '']){
     body = `<div class="grid g3">${RESULTS.map(x => `<a class="card tile" href="${x[4]}" target="_blank" rel="noopener">${ic(x[0], x[3])}<div><b>${x[1]} ↗</b><br><small style="color:var(--muted)">${x[2]}</small></div></a>`).join('')}</div>
     <p class="lead" style="margin-top:14px">Share these with parents: <a href="#/club">My club → Family codes</a> has a link and QR code for the General League Family Hub.</p>`;
   } else {
-    body = `<div class="card"><table><tr><th>Date</th><th>Competition</th><th></th><th></th></tr>${comps.map(c => `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td>
-      <td>${c.waiting ? pill('Waiting list', 'warn') : c.reserved ? pill(c.reserved + ' reserved', 'ok') : ''}</td>
-      <td style="text-align:right">${c.reserved || c.waiting ? '<a class="btn sm ghost" href="#/competitions/places">My places</a>' : `<button class="btn sm" data-act="reserve" data-comp="${c.id}">Reserve places</button>`}</td></tr>`).join('')}</table></div>
+    body = stages() + `<div class="card"><table><tr><th>Date</th><th>Competition</th><th>Booking</th><th></th></tr>${comps.map(c => { const st = bookingState(c); return `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td>
+      <td>${st.pill}</td><td style="text-align:right;white-space:nowrap">${st.act}</td></tr>`; }).join('')}</table></div>
     <p class="lead" style="margin-top:14px">Reserving is free. Not sure which competition? <a href="#/help/level">Which level should my gymnast enter?</a></p>`;
   }
-  return head('Competitions', 'Every pathway’s competitions, reserved and managed in one place.') + tabs(SUB, sub, '#/competitions') + body;
+  return head('Competitions', 'See what’s coming up, reserve places for free, book and pay when booking opens, then upload floor music.') + tabs(SUB, sub, '#/competitions') + body;
 }

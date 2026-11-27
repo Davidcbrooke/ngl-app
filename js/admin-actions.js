@@ -39,6 +39,22 @@ export const ADM = {
     try { await adm.setReservation(b.dataset.ref, b.dataset.to); toast(b.dataset.ref + ' ' + lbl[b.dataset.to]); rerender(); } catch (x) { fail(x); }
   },
 
+  // Booking: who sees the Book and pay button (the JustGo Events link) in the Club Hub
+  async 'adm-booking'(b){
+    const c = (await adm.calendar()).find(x => x.id === b.dataset.comp) || {}, now = c.booking || 'closed';
+    const opt = (v, t, d) => `<label class="row" style="gap:10px;cursor:pointer"><input type="radio" name="bk" value="${v}" ${now === v ? 'checked' : ''} style="width:auto"><div class="grow"><b>${t}</b><small>${d}</small></div></label>`;
+    const m = modal(`<h2>Booking: ${esc(c.name || '')}</h2><form>
+      ${opt('closed', 'Not open for booking yet', 'Clubs can reserve places for free. Nobody sees the JustGo link.')}
+      ${opt('reserved', 'Reserved clubs first', 'Clubs with reserved places see Book and pay. Others see “Reserved clubs booking now” and can join the queue.')}
+      ${opt('open', 'Open to all', 'Every club sees Book and pay.')}
+      <label class="field"><span>JustGo Events link</span><input id="url" type="url" value="${esc(c.justgoUrl || '')}" placeholder="https://…"></label>
+      <div class="btn-row"><button class="btn">Save</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
+    m.querySelector('form').addEventListener('submit', async e => { e.preventDefault();
+      const booking = m.querySelector('[name=bk]:checked').value, justgoUrl = m.querySelector('#url').value.trim();
+      if (booking !== 'closed' && !/^https:\/\//.test(justgoUrl)) return toast('Add the JustGo Events link first (starting https://).', false);
+      try { await adm.saveComp({id: c.id, booking, justgoUrl}); m.remove(); toast(booking === 'closed' ? 'Booking closed' : booking === 'reserved' ? 'Reserved clubs can now book' : 'Booking open to all clubs'); rerender(); } catch (x) { fail(x); } });
+  },
+
   async 'adm-import-cal'(){ try { await adm.importCalendar(); toast('Calendar saved to the database'); rerender(); } catch (x) { fail(x); } },
 
   async 'adm-comp'(b){

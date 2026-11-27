@@ -21,9 +21,9 @@ const demo = {
     masters:     {status:'soon', label:'Coming soon'}
   },
   competitions: [
-    {id:'c1', date:'2027-02-07', path:'general', name:'General League · East Region', where:'SAADI Gymnastics, Harpenden', who:'Girls Levels 1–4', reserved:12, ref:'NGL-7Q2K', buyBy:'2026-11-07', musicBy:'2027-01-24'},
+    {id:'c1', date:'2027-02-07', path:'general', name:'General League · East Region', where:'SAADI Gymnastics, Harpenden', who:'Girls Levels 1–4', reserved:12, ref:'NGL-7Q2K', buyBy:'2026-11-07', musicBy:'2027-01-24', booking:'reserved', justgoUrl:'demo:justgo'},
     {id:'c2', date:'2027-02-14', path:'general', name:'General League · East Region', where:'SAADI Gymnastics, Harpenden', who:'Boys Levels 1–4', reserved:6, ref:'NGL-8M4D', buyBy:'2026-11-14'},
-    {id:'c3', date:'2027-02-21', path:'general', name:'General League · West Midlands', where:'TBC', who:'Girls & Boys'},
+    {id:'c3', date:'2027-02-21', path:'general', name:'General League · West Midlands', where:'TBC', who:'Girls & Boys', booking:'open', justgoUrl:'demo:justgo'},
     {id:'c4', date:'2027-03-13', path:'recreational', name:'Recreational · Ruby & Pink', where:'Redbourn', who:'Every gymnast medals', reserved:30, ref:'NGL-3RP9', buyBy:'2026-12-13'},
     {id:'c5', date:'2027-04-24', path:'performance', name:'Performance League Grades', where:'TBC', who:'Classic Challenge preparation', waiting:true},
     {id:'c6', date:'2027-10-24', path:'general', name:'NGL National Finals 2027', where:'TBC', who:'By qualification', waiting:true}

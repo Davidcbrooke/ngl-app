@@ -1,0 +1,7 @@
+.comp-stages{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 16px}
+.comp-stage{display:flex;gap:12px;align-items:flex-start;text-decoration:none;color:inherit}
+.comp-stage b{display:block}
+.comp-stage small{color:var(--muted);display:block;margin-top:2px}
+.comp-num{flex:none;width:30px;height:30px;border-radius:50%;background:#28225c;color:#fff;font-weight:900;display:grid;place-items:center}
+@media (max-width:900px){.comp-stages{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.comp-stages{grid-template-columns:1fr}}
