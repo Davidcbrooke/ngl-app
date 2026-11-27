@@ -1,7 +1,7 @@
 // NGL Club Hub: the app shell. One menu, one search, hash routes (#/section/sub)
 // so every screen has its own link that can be shared or bookmarked.
 import { ENV } from './config.js';
-import api, { MODE } from './data.js';
+import api, { useSampleClub, MODE } from './data.js';
 import { showAuth } from './views/auth.js';
 import { needGate, showGate, showWelcome } from './views/welcome.js';
 import './actions.js';
@@ -43,10 +43,10 @@ async function render(){
   const my = ++RENDER_SEQ, stale = () => my !== RENDER_SEQ;
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   let key = parts[0] === 'admin' ? 'admin' : NAV.some(n => n[0] === parts[0]) ? parts[0] : 'home';
-  if (CTX.staffOnly && !['admin', 'help'].includes(key)) key = 'admin';   // NGL team login with no club
+  if (CTX.staffOnly) useSampleClub(key !== 'admin');   // NGL team login with no club: club pages show the sample club
   const unpaid = CTX.staffOnly ? 0 : (await api.orders()).filter(o => o.status === 'awaiting-payment').length;
   if (stale()) return;
-  $('#nav').innerHTML = NAV.filter(n => !CTX.staffOnly || n[0] === 'help').map(([k, l, i]) => {
+  $('#nav').innerHTML = NAV.map(([k, l, i]) => {
     const badge = (k === 'shop' && unpaid) ? `<span class="badge">${unpaid}</span>` : '';
     return `<a href="#/${k}" class="${k === key ? 'on' : ''}" ${k === key ? 'aria-current="page"' : ''}>${svg(i)}<span>${l}</span>${badge}</a>`;
   }).join('') + `<a href="#/admin" class="admin-link ${key === 'admin' ? 'on' : ''}" title="For NGL admin staff only">${svg('club')}<span>NGL Admin</span></a>`;   // always shown; staff log in with their own NGL account
@@ -55,7 +55,7 @@ async function render(){
   const view = key === 'admin' ? admin : NAV.find(n => n[0] === key)[3];
   const html = await view(key === parts[0] ? parts.slice(1) : [], CTX);
   if (stale()) return;
-  $('#page').innerHTML = html;
+  $('#page').innerHTML = (CTX.staffOnly && key !== 'admin' && key !== 'help' ? `<div class="sample-note"><b>Sample club.</b> You’re logged in as the NGL team, not a club, so these pages show sample data. Nothing you do here changes a real club.</div>` : '') + html;
   document.dispatchEvent(new CustomEvent('ngl:rendered'));
   document.title = (key === 'home' ? '' : (key === 'admin' ? 'NGL Admin' : NAV.find(n => n[0] === key)[1]) + ' · ') + 'NGL Club Hub';
 }

@@ -36,7 +36,7 @@ const demoAdmin = {
   async calendar(){ return CALENDAR; },
   async musicEntries(compId){ return compId === 'c1' ? [{clubId: 'demo', clubName: demo.club.name, compId, gymnasts: demo.music[0].gymnasts}] : []; },
   async musicUploads(compId){ return compId === 'c1' ? [{clubId: 'demo', clubName: demo.club.name, gymnastId: 'g1', gymnastName: 'Amelia R', level: 1, fileName: 'amelia-floor.mp3', url: '#'}] : []; },
-  async setLicence(){ throw new Error(SAMPLE); }, async markSent(){ throw new Error(SAMPLE); },
+  async setLicence(){ throw new Error(SAMPLE); }, async markSent(){ throw new Error(SAMPLE); }, async markTest(){ throw new Error(SAMPLE); },
   async saveComp(){ throw new Error(SAMPLE); }, async setReservation(){ throw new Error(SAMPLE); }, async syncPlaces(){ return 0; },
   async saveMusicEntry(){ throw new Error(SAMPLE); }, async importCalendar(){ throw new Error(SAMPLE); }
 };
@@ -76,6 +76,7 @@ const fbAdmin = {
   async importCalendar(){ const {fs, D} = await fb(); for (const c of CALENDAR) await fs.setDoc(fs.doc(D, 'competitions', c.id), {...c, status: 'open'}); },
   async saveComp(c){ const {fs, D} = await fb(); const {id, ...rest} = c; await fs.setDoc(fs.doc(D, 'competitions', id), rest, {merge: true}); },
   async setLicence(clubId, path, lic){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'clubs', clubId), {['licences.' + path]: lic}); },
+  async markTest(orderId, on){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'orders', orderId), {test: !!on}); },
   async markSent(orderId){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'orders', orderId), {status: 'sent', sentAt: fs.serverTimestamp()}); },
   // Places taken per competition, for clubs to see (compPlaces). Rebuilt from reservations + places waiting for a club to register.
   async syncPlaces(res, pend){ const {fs, D} = await fb(); const want = {};

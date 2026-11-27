@@ -171,7 +171,7 @@ function model(season){
   const list = ALL.filter(c => (c.date || '').startsWith(season)).sort((a, b) => (a.date + (a.time || '') + a.name).localeCompare(b.date + (b.time || '') + b.name));
   const rows = list.map(compFigures);
   const sum = (side, k) => rows.reduce((a, r) => a + (r[side][k] || 0), 0);
-  const orders = D.orders.filter(o => ['paid', 'sent'].includes(o.status) && inLicYear(o.paidAt || o.date, season));
+  const orders = D.orders.filter(o => !o.test && ['paid', 'sent'].includes(o.status) && inLicYear(o.paidAt || o.date, season));
   const T = D.actuals.targets || {}, tk = (g, k) => `${season}_${g}_${k}`;
   const inc = [], cost = [];
   inc.push({label: 'Entry fees', sub: `${sum('F', 'gymnasts')} reserved · ${sum('B', 'gymnasts')} sold on JustGo`, f: sum('F', 'entry'), a: sum('B', 'entry'), id: 'entry'});

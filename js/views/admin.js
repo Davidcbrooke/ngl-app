@@ -10,7 +10,7 @@ const SUB = [['', 'Overview'], ['clubs', 'Clubs'], ['orders', 'Orders'], ['compe
 const allowed = (me, k) => k === '' || (k === 'team' ? !!me.owner : can(me, SCREENS[k]));
 const NO_ACCESS = '<div class="card empty">You don’t have access to this area. Ask Dave to tick it for you in NGL Admin → Team.</div>';
 const on = L => L && ['live', 'waived'].includes(L.status);
-const statusPill = o => o.status === 'sent' ? pill('Posted', 'ok') : o.status === 'paid' ? pill('Paid · to post', 'warn') : o.status === 'on-hold' ? pill('On hold · price check failed', 'red') : pill('Not paid', 'red');
+const statusPill = o => (o.test ? pill('Test · not counted', '') + ' ' : '') + (o.status === 'sent' ? pill('Posted', 'ok') : o.status === 'paid' ? pill('Paid · to post', 'warn') : o.status === 'on-hold' ? pill('On hold · price check failed', 'red') : pill('Not paid', 'red'));
 
 export default async function admin(parts = [], ctx = {}){
   const [sub = '', id] = parts;
@@ -70,7 +70,7 @@ async function overview(me){
   const cC = can(me, SCREENS.clubs), cO = can(me, SCREENS.orders), cR = can(me, SCREENS.competitions);
   const [cl, ord, res] = await Promise.all([cC ? adm.clubs() : [], cO ? adm.orders() : [], cR ? adm.reservations() : []]);
   const week = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
-  const toPost = ord.filter(o => o.status === 'paid'), paid = ord.filter(o => ['paid', 'sent'].includes(o.status));
+  const real = ord.filter(o => !o.test), toPost = real.filter(o => o.status === 'paid'), paid = real.filter(o => ['paid', 'sent'].includes(o.status));   // test orders never count
   const yearStart = new Date().getFullYear() + '-01-01';
   const stats = [
     cC && `<a class="card stat" href="#/admin/clubs"><b>${cl.length}</b><span>Clubs · ${cl.filter(c => c.createdAt >= week).length} new this week</span></a>`,
@@ -131,13 +131,14 @@ async function clubPage(c){
 
 async function orders(filter = 'post'){
   const ord = await adm.orders();
-  const F = {post: ['To post', o => o.status === 'paid'], unpaid: ['Not paid', o => o.status === 'awaiting-payment'], all: ['All', () => true]};
+  const F = {post: ['To post', o => o.status === 'paid' && !o.test], unpaid: ['Not paid', o => o.status === 'awaiting-payment' && !o.test], test: ['Test orders', o => o.test], all: ['All', () => true]};
   const list = ord.filter(F[filter] ? F[filter][1] : F.post[1]);
   return `<div class="paths">${Object.entries(F).map(([k, [l, f]]) => `<a class="${k === filter ? 'on' : ''}" style="--c:var(--navy)" href="#/admin/orders/${k}">${l} (${ord.filter(f).length})</a>`).join('')}</div>
   <div class="card">${list.length ? `<table><tr><th>Date</th><th>Order</th><th>Club</th><th>Details</th><th>Total</th><th>Status</th><th></th></tr>
     ${list.map(o => `<tr><td>${date(o.date, {day: 'numeric', month: 'short'})}</td><td><b>${esc(o.id)}</b></td><td><a href="#/admin/clubs/${esc(o.clubId)}">${esc(o.clubName)}</a></td><td>${esc(o.details)}${o.delivery ? `<br><small style="color:var(--muted)">→ ${esc(o.delivery)}</small>` : ''}</td><td>${gbp(o.total)}</td><td>${statusPill(o)}</td>
-      <td>${o.status === 'paid' ? `<button class="btn sm" data-act="adm-sent" data-order="${esc(o.id)}">Mark posted</button>` : ''}</td></tr>`).join('')}</table>`
+      <td style="white-space:nowrap">${o.status === 'paid' && !o.test ? `<button class="btn sm" data-act="adm-sent" data-order="${esc(o.id)}">Mark posted</button> ` : ''}<button class="btn sm ghost" data-act="adm-test" data-order="${esc(o.id)}" data-on="${o.test ? '' : '1'}" title="Test orders are left out of Taken this year, Orders to post and the NGL P&L">${o.test ? 'Count it again' : 'Test: don’t count'}</button></td></tr>`).join('')}</table>`
     : `<p class="empty">${filter === 'post' ? 'Nothing to post. Paid orders appear here automatically.' : 'No orders.'}</p>`}</div>
+  <p class="lead" style="margin-top:12px;font-size:13px">Test orders (your own trial purchases) are left out of Taken this year, Orders to post and the NGL P&amp;L. Mark one with <b>Test: don’t count</b>; <b>Count it again</b> undoes it.</p>
   ${filter === 'unpaid' ? '<p class="lead" style="margin-top:12px">Not paid = the club started checkout but didn’t finish. Nothing to chase by hand: they finish payment from their Club Hub.</p>' : ''}`;
 }
 

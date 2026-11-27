@@ -9,6 +9,7 @@ const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, 
 const yearOn = () => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().slice(0, 10); };
 
 export const ADM = {
+  async 'adm-test'(b){ try { await adm.markTest(b.dataset.order, !!b.dataset.on); toast(b.dataset.order + (b.dataset.on ? ' left out of the totals (test)' : ' counted again')); rerender(); } catch (x) { fail(x); } },
   async 'adm-sent'(b){ try { await adm.markSent(b.dataset.order); toast(b.dataset.order + ' marked as posted'); rerender(); } catch (x) { fail(x); } },
 
   async 'adm-lic'(b){

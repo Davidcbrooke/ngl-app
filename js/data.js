@@ -367,5 +367,10 @@ const fbApi = {
 };
 
 export { demo, DEFAULT_LICENCES, code, iso };
-const api = MODE === 'demo' ? demoApi : fbApi;
+// An NGL team login with no club (e.g. admin@) still has the Club Hub menu: club pages then show the sample club,
+// while logins and NGL Admin stay on the live database. app.js switches this per screen.
+let SAMPLE_CLUB = false;
+export const useSampleClub = on => { SAMPLE_CLUB = !!on; };
+const OWN = new Set(['user', 'adminMe', 'isAdmin', 'needsVerify', 'claimPending', 'sendVerify', 'signIn', 'register', 'reset', 'signOut']);
+const api = MODE === 'demo' ? demoApi : new Proxy(fbApi, {get: (t, k) => SAMPLE_CLUB && !OWN.has(k) && k in demoApi ? demoApi[k] : t[k]});
 export default api;
