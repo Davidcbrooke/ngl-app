@@ -22,6 +22,17 @@ export const totals = lines => { const items = lines.reduce((a, l) => a + l.qty 
   const post = postageFor(qty); return {items, post, total: items + post, qty}; };
 
 const ACT = {
+  // Judging: invite a coach or member of staff to the Judging Pathway (their own login, linked to this club)
+  async 'judge-invite'(){
+    const m = modal(`<h2>Invite a judge</h2><p class="lead">They get a link to register on the NGL Judging Pathway with your club filled in. They use their own login and only see the judge screens.</p><form>
+      <label class="field"><span>Name</span><input id="jn" required autocomplete="off"></label>
+      <label class="field"><span>Email</span><input id="je" type="email" required autocomplete="off"></label>
+      <div class="btn-row"><button class="btn">Create invite</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
+    m.querySelector('form').addEventListener('submit', async e => { e.preventDefault();
+      try { const inv = await api.inviteJudge(m.querySelector('#jn').value.trim(), m.querySelector('#je').value.trim()); m.remove(); await showInvite(inv); rerender(); }
+      catch (x) { toast(x.message, false); } });
+  },
+  async 'judge-link'(b){ const inv = (await api.judgeInvites()).find(i => i.id === b.dataset.id); if (inv) await showInvite(inv); },
   // Book and pay: the competition's event on JustGo Events (only offered when NGL has opened booking to this club)
   async book(b){
     const c = (await api.competitions()).find(x => x.id === b.dataset.comp);
@@ -165,3 +176,14 @@ document.addEventListener('click', e => {
   const f = ACT[b.dataset.act] || ADM[b.dataset.act] || PS[b.dataset.act] || REC[b.dataset.act] || SCH[b.dataset.act] || GL[b.dataset.act] || GBO[b.dataset.act] || APPACTS[b.dataset.act]; if (!f) return;
   e.preventDefault(); f(b);
 });
+
+// The invite: a link to copy, or an email from the club's own mail app (nothing is sent by NGL)
+async function showInvite(inv){
+  const { inviteLink } = await import('./views/judging.js'), c = await api.club(), u = await api.user();
+  const link = inviteLink({id: u.uid, name: c.name}, inv);
+  const body = `Hi ${inv.name.split(' ')[0]},\n\nWe'd like you to join the NGL Judging Pathway for ${c.name}. You can learn and qualify step by step (the Elevien academy, quizzes and shadowing), and judge NGL competitions, including from home.\n\nRegister here (it takes two minutes):\n${link}\n\nThanks!`;
+  const m = modal(`<h2>Invite for ${esc(inv.name)}</h2><p class="lead">Send ${esc(inv.name.split(' ')[0])} this link. It opens the Judging Pathway with your club filled in.</p>
+    <p style="word-break:break-all;font-size:14px;background:var(--bg,#f4f4f8);padding:10px;border-radius:10px">${esc(link)}</p>
+    <div class="btn-row"><button class="btn" data-copy>Copy link</button><a class="btn ghost" href="mailto:${encodeURIComponent(inv.email)}?subject=${encodeURIComponent('Join the NGL Judging Pathway')}&body=${encodeURIComponent(body)}">Email it</a><button class="btn ghost" data-close>Close</button></div>`);
+  m.querySelector('[data-copy]').addEventListener('click', async () => { try { await navigator.clipboard.writeText(link); toast('Link copied'); } catch (_) { toast('Select the link and copy it', false); } });
+}

@@ -47,7 +47,7 @@ def test_download_page(page):
 def test_seven_menu_items_in_order(page):
     page.go(demo=True)
     labels = [t.strip() for t in page.p.locator("#nav a:not(.admin-link) span:first-of-type").all_inner_texts()]
-    assert labels == ["Home", "Competitions", "Rules & resources", "Programmes", "Rotation Planner", "Shop & orders", "Group Buying", "Be Better", "My club", "Help"]
+    assert labels == ["Home", "Competitions", "Rules & resources", "Programmes", "Judging", "Rotation Planner", "Shop & orders", "Group Buying", "Be Better", "My club", "Help"]
 
 
 def test_search_finds_rules(page):

@@ -18,12 +18,14 @@ import admin from './views/admin.js';
 import groupbuy from './views/groupbuy.js';
 import better from './views/better.js';
 import tools from './tools/rotation.js';
+import judging from './views/judging.js';
 
 const NAV = [
   ['home', 'Home', 'home', home],
   ['competitions', 'Competitions', 'comp', competitions],
   ['rules', 'Rules & resources', 'rules', rules],
   ['programmes', 'Programmes', 'prog', programmes],
+  ['judging', 'Judging', 'table', judging],
   ['tools', 'Rotation Planner', 'plan', tools],
   ['shop', 'Shop & orders', 'shop', shop],
   ['groupbuy', 'Group Buying', 'group', groupbuy],
@@ -48,6 +50,8 @@ async function render(){
     const badge = (k === 'shop' && unpaid) ? `<span class="badge">${unpaid}</span>` : '';
     return `<a href="#/${k}" class="${k === key ? 'on' : ''}" ${k === key ? 'aria-current="page"' : ''}>${svg(i)}<span>${l}</span>${badge}</a>`;
   }).join('') + (CTX.isAdmin ? `<a href="#/admin" class="admin-link ${key === 'admin' ? 'on' : ''}">${svg('club')}<span>NGL Admin</span></a>` : '');
+  // phones: the menu scrolls sideways, so keep the current page's button in view
+  if (matchMedia('(max-width:860px)').matches) { const on = $('#nav a.on'); if (on) on.scrollIntoView({block: 'nearest', inline: 'center'}); }
   const view = key === 'admin' ? admin : NAV.find(n => n[0] === key)[3];
   const html = await view(key === parts[0] ? parts.slice(1) : [], CTX);
   if (stale()) return;
@@ -60,6 +64,8 @@ async function start(){
   const q0 = new URLSearchParams(location.search), fam = await import('./views/family.js');
   // Came from an old family site or a club's QR code: keep what it brought (also on the phone, for Android's installed app)
   if (fam.hasArrival(q0)) { try { localStorage.setItem('ngl.pending', location.search); } catch (_) {} }
+  if (q0.get('judge') === 'invite') { try { localStorage.setItem('ngl.judgeInvite', JSON.stringify({clubId: q0.get('jc') || '', club: q0.get('jn') || '', email: q0.get('je') || '', name: q0.get('jp') || ''})); localStorage.setItem('ngl.who', 'judge'); } catch (_) {}
+    history.replaceState(null, '', location.pathname + (MODE === 'demo' ? '?demo&judge=new' : '') + '#/judge'); }
   if (needGate()) return showGate();                 // phones: download the app first
   let pend = ''; try { pend = localStorage.getItem('ngl.pending') || ''; } catch (_) {}
   const qa = fam.hasArrival(q0) ? q0 : new URLSearchParams(pend);

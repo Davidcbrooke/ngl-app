@@ -3,7 +3,8 @@
  * Apps Script web app "NGL card payments STAGING" in the bookingoffice@ Google account.
  * Same flow as the live script (card-payments.gs), but:
  *   - reads and writes the STAGING database (Firebase project ngl-club-hub-staging), collection "orders" only;
- *   - refuses to run unless STRIPE_SECRET_KEY is a Stripe TEST key (sk_test_ / rk_test_), so no real money moves.
+ *   - SWITCH-OVER (27 Nov 2026): ngl-club-hub-staging is now the LIVE Club Hub database. The Stripe key decides the mode:
+ *     a TEST key (sk_test_/rk_test_) takes test cards only; Dave pastes the LIVE key (sk_live_/rk_live_) into Script properties to take real payments.
  * PRICE CHECK (26 Nov 2026): a club writes its own order, so the order's prices are never trusted. Before Stripe is asked
  * for a payment (checkout_), and again before anything is switched on (activate_), the order is checked against NGL's
  * price list, prices.json, fetched from the app's own address (PRICES_URL, kept for 5 minutes):
@@ -19,7 +20,7 @@
  * The check itself is validateOrder_ in the second script file "validate-order" (server/validate-order.js, pasted unchanged).
  * Deploy: web app, Execute as Me, access Anyone. Script property STRIPE_SECRET_KEY = Stripe TEST secret key.
  */
-const PRICES_URL = 'https://davidcbrooke.github.io/ngl-app/prices.json';   // the app's own price list (live: the live app's address)
+const PRICES_URL = 'https://club.nationalgymnasticsleague.co.uk/prices.json';   // the app's own price list
 const PROJECT = 'ngl-club-hub-staging';
 const FS = 'https://firestore.googleapis.com/v1/projects/' + PROJECT + '/databases/(default)/documents/';
 const COLLS = ['orders'];
@@ -81,7 +82,7 @@ function checkout_(b) {
     'line_items[0][quantity]': '1',
     'line_items[0][price_data][currency]': 'gbp',
     'line_items[0][price_data][unit_amount]': String(pence),
-    'line_items[0][price_data][product_data][name]': 'NGL order ' + orderId + ' (TEST)',
+    'line_items[0][price_data][product_data][name]': 'NGL order ' + orderId + (isTestKey_() ? ' (TEST)' : ''),
     'line_items[0][price_data][product_data][description]': label,
     customer_email: club.email || '',
     client_reference_id: uid,
@@ -161,9 +162,10 @@ function safeReturn_(u) {
   u = String(u || '');
   return /^https:\/\/(club\.nationalgymnasticsleague\.co\.uk|nglschools\.co\.uk|(www\.)?nglrecreational\.co\.uk|davidcbrooke\.github\.io)\//.test(u) ? u : '';
 }
+function isTestKey_(){ return /^(sk|rk)_test_/.test(PropertiesService.getScriptProperties().getProperty('STRIPE_SECRET_KEY') || ''); }
 function stripe_(method, path, params) {
   const key = PropertiesService.getScriptProperties().getProperty('STRIPE_SECRET_KEY') || '';
-  if (!/^(sk|rk)_test_/.test(key)) throw new Error('Staging needs a Stripe TEST key (sk_test_ or rk_test_).');
+  if (!/^(sk|rk)_(test|live)_/.test(key)) throw new Error('No Stripe secret key saved (Script properties → STRIPE_SECRET_KEY).');
   const opt = {method: method, headers: {Authorization: 'Bearer ' + key}, muteHttpExceptions: true};
   if (params) opt.payload = params;
   const r = UrlFetchApp.fetch('https://api.stripe.com/v1/' + path, opt);

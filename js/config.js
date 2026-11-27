@@ -1,7 +1,6 @@
 // Which environment this copy runs in. The sandbox uses sample data only;
 // nothing it does can reach a real club's account, orders or licences.
 export const ENV = location.hostname === 'club.nationalgymnasticsleague.co.uk' ? 'live' : 'sandbox';
-export const DATA = 'demo';            // switch to 'firebase' when sign-in is wired up (next stage)
 
 // Staging database: a separate Firebase project with test data only (London, europe-west2).
 // Web config is public by design; access is controlled by firestore.rules.

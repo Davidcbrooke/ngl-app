@@ -45,7 +45,8 @@ class Page:
         self.p.on("pageerror", lambda e: self.errors.append(str(e)))
 
     def go(self, hash_="#/home", demo=False):
-        self.p.goto(self.base + ("?demo" if demo else "") + hash_)
+        # Not sample data: ?db connects to the database (live since switch-over). Only signed-out screens use it; nothing is written.
+        self.p.goto(self.base + ("?demo" if demo else "?db") + hash_)
         self.p.wait_for_selector("#page h1, #authRoot h1", timeout=20000)
 
     def route(self, hash_):
@@ -80,6 +81,9 @@ def phone(browser, base_url):
 @pytest.fixture(scope="session")
 def account(browser, base_url):
     """One fresh test club on the staging database. Made-up example.com email, so no emails are sent."""
+    # Switch-over (27 Nov 2026): the staging project became the LIVE Club Hub database, so tests no longer
+    # create clubs in it. They come back when a new, separate staging project is set up.
+    pytest.skip("Real-database tests are off: ngl-club-hub-staging is now the live database")
     email = f"autotest-{secrets.token_hex(4)}@example.com"
     pw = "Test-" + secrets.token_hex(8)
     pg = Page(browser, base_url)
@@ -102,3 +106,10 @@ def account(browser, base_url):
                          if (A.currentUser) await A.currentUser.delete(); }""", [email, pw])
     finally:
         pg.ctx.close()
+
+
+def pytest_collection_modifyitems(items):
+    # Switch-over (27 Nov 2026): tests that write to the database are off; that database is now the live Club Hub
+    for it in items:
+        if "staging" in it.name:
+            it.add_marker(pytest.mark.skip(reason="Writes to the database, which is now live"))

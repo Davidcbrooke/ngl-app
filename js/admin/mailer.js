@@ -433,7 +433,7 @@ export default async function mailer(me = {}, parts = []){
     }
     const sameComp = S.comp && S.comp.id === c.id;
     S.comp = c; S.group = mailGroup(c);
-    if (!sameComp) { S.links = Object.fromEntries(S.group.map(g => [g.id, g.justgoUrl || ''])); S.avail = availDefaults(S.group); }
+    if (!sameComp) { S.links = Object.fromEntries(S.group.map(g => [g.id, /^https:\/\//.test(g.justgoUrl || '') ? g.justgoUrl : ''])); S.avail = availDefaults(S.group); }
     S.tpl = TPL_NAME[tpl] ? tpl : mailDefaultTpl();
     S.clubs = mailClubs(S.group, S.tpl); S.skip = {}; S.sel = 0; S.status = {msg: '', cls: ''};
     S.key = key;

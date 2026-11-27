@@ -14,6 +14,7 @@ const REC_BANDS = {xs: '1 to 24 recreational gymnasts', sm: '25 to 49 recreation
 const PS_BANDS = {xs: '1–24 Pre-School gymnasts', sm: '25–49 Pre-School gymnasts', s: '50–99 Pre-School gymnasts', m: '100 or more Pre-School gymnasts'};
 
 function rehearse(){
+  assertNotLive_();
   const t0 = Date.now(), report = {startedAt: new Date(), clubs: [], unmatched: {reservations: [], music: [], orders: []}, counts: {}};
   // 1. READ live (GET only)
   const clubs = listAll(LIVE, 'clubs'), schoolsOrders = listAll(LIVE, 'orders'), recOrders = listAll(LIVE, 'recOrders');
@@ -144,7 +145,10 @@ function rehearse(){
   const remapJ = d => (d && d.judgeUid && judgeMap[d.judgeUid]) ? Object.assign({}, d, {judgeUid: judgeMap[d.judgeUid]}) : d;
   const judging = {}; ['ngl_judge_signups', 'ngl_judging_assignments', 'ngl_judges', 'ngl_judge_notifications', 'ngl_resources', 'ngl_power_league', 'ngl_power_league_private', 'ngl_groupbuy_orders', 'ngl_groupbuy_rounds'].forEach(c => {
     const list = c === 'ngl_judges' ? judgesRaw : listAll(BOOK, c); judging[c] = list.length;
-    list.forEach(x => writes.push(doc(c + '/' + (c === 'ngl_judges' ? (judgeMap[x.id] || x.id) : x.id), remapJ(x.data)))); });
+    list.forEach(x => { let d = remapJ(x.data);
+      // a judge's club (typed by the judge) linked to the club's account when exactly one club has that name, so the club sees them under Judging
+      if (c === 'ngl_judges' && !d.clubId) { const m = nameIndex[norm(d.club)] || []; if (m.length === 1) d = Object.assign({}, d, {clubId: home(m[0])}); }
+      writes.push(doc(c + '/' + (c === 'ngl_judges' ? (judgeMap[x.id] || x.id) : x.id), d)); }); });
   report.judgesRelinked = Object.keys(judgeMap).length;
   // Rotation Planner: clubs' feedback (Club Hub project) and NGL's sponsor logos (old planner database, public read)
   const rotaFb = listAll(LIVE, 'rotaFeedback'); rotaFb.forEach(x => writes.push(doc('rotaFeedback/' + x.id, Object.assign({}, x.data, {uid: home(x.data.uid || '')}))));
@@ -286,9 +290,32 @@ function checkAccess(){
   commit(STAGING, [doc('migration/check', {at: new Date()})]); Logger.log('staging write: ok');
 }
 
-// Run once: refreshes staging from live every night, 2am to 3am (UK). Needs the script.scriptapp scope.
-function setupNightly(){
-  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'rehearse').forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('rehearse').timeBased().everyDays(1).atHour(2).inTimezone('Europe/London').create();
-  Logger.log('Nightly data move set: rehearse, every day 2am to 3am');
+
+/* ---------- SWITCH-OVER (27 Nov 2026): ngl-club-hub-staging becomes the LIVE Club Hub database ---------- */
+// Once goLiveLock() has run, rehearse() refuses: it would overwrite clubs' new bookings and orders with the old hubs' data.
+function assertNotLive_(){ if (getDoc(STAGING, 'migration/golive')) throw new Error('This database is LIVE since switch-over. The data move is locked and must not run again.'); }
+function goLiveLock(){ commitRaw(STAGING, [doc('migration/golive', {at: new Date(), by: Session.getActiveUser().getEmail() || 'NGL'})]); Logger.log('Locked: the data move will not run again.'); }
+
+// Test data made by the automatic tests in the sandbox: clubs called AUTOTEST… and judges with made-up example.com/.org emails,
+// and everything that belongs to them. cleanTestDataCheck() only lists; cleanTestData() deletes.
+function cleanTestDataCheck(){ return cleanTest_(false); }
+function cleanTestData(){ return cleanTest_(true); }
+function cleanTest_(go){
+  const fake = e => /@example\.(com|org|net)$/i.test(String(e || ''));
+  const test = n => /^autotest/i.test(String(n || '').trim());
+  const ids = {};
+  listAll(STAGING, 'clubs').forEach(c => { if (test(c.data.name) || fake(c.data.email)) ids[c.id] = 1; });
+  listAll(STAGING, 'ngl_judges').forEach(j => { if (fake(j.data.email) || test(j.data.name)) ids[j.id] = 1; });
+  const isTest = d => { const x = d.data || {}; return ['clubId', 'judgeUid', 'uid', 'createdBy', 'ownerUid'].some(k => x[k] && ids[x[k]]) || test(x.clubName) || fake(x.email) || Object.keys(ids).some(u => d.id.indexOf(u) >= 0); };
+  const r = UrlFetchApp.fetch(base(STAGING) + ':listCollectionIds', {method: 'post', contentType: 'application/json', headers: auth_(), payload: JSON.stringify({pageSize: 300}), muteHttpExceptions: true});
+  if (r.getResponseCode() !== 200) throw new Error('List collections ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 200));
+  const cols = JSON.parse(r.getContentText()).collectionIds || [], gone = [], counts = {};
+  cols.filter(c => c !== 'migration').forEach(c => listAll(STAGING, c).forEach(d => { if (ids[d.id] || isTest(d)) { gone.push(c + '/' + d.id); counts[c] = (counts[c] || 0) + 1; } }));
+  // the schools list under each test club
+  Object.keys(ids).forEach(u => listAll(STAGING, 'clubs/' + u + '/schools').forEach(d => { gone.push('clubs/' + u + '/schools/' + d.id); counts['clubs/…/schools'] = (counts['clubs/…/schools'] || 0) + 1; }));
+  Logger.log('Test accounts: ' + Object.keys(ids).length + ' · documents to delete: ' + gone.length + ' · ' + JSON.stringify(counts));
+  if (!go) { Logger.log('Check only: nothing deleted. ' + gone.slice(0, 40).join(', ')); return; }
+  const name = p => base(STAGING).replace('https://firestore.googleapis.com/v1/', '') + '/' + p;
+  for (let i = 0; i < gone.length; i += 400) commitRaw(STAGING, gone.slice(i, i + 400).map(p => ({delete: name(p)})));
+  Logger.log('Deleted ' + gone.length + ' test documents.');
 }

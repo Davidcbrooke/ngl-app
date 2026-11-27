@@ -1,12 +1,11 @@
-// Firebase loader: same SDK version as today's hubs. Points at the staging
-// project in the sandbox; the live project is only used after switch-over.
-import { ENV, FIREBASE_STAGING } from './config.js';
+// Firebase loader: same SDK version as today's hubs. The project called ngl-club-hub-staging became the LIVE
+// Club Hub database at switch-over (27 Nov 2026); the old hubs' projects (ngl-schools, saadi-rotation) are no longer written to by the app.
+import { FIREBASE_STAGING } from './config.js';
 
 const V = '10.12.2';
 let FB = null;
 export async function fb(){
   if (FB) return FB;
-  if (ENV === 'live') throw new Error('Live database not connected yet (switch-over step).');
   const [app, auth, fs] = await Promise.all([
     import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`),
     import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`),

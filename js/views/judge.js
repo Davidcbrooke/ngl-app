@@ -166,7 +166,7 @@ const pathwayHTML = () => `<div class="jg-eyebrow">The Journey</div><h2 class="j
     [3, '3. Senior Judge', 'BG Regional Judge or above', ['Main-judge any competition', 'First priority for paid remote judging', '£50 per Sunday competition']]]
     .map(([n, t, u, li]) => `<div class="jg-pwcard"><span class="jg-pwi">${ic(n)}</span><b>${t}</b><small>${u}</small><ul>${li.map(x => `<li>${x}</li>`).join('')}</ul></div>`).join('')}</div>`;
 
-let authMode = 'login';
+let authMode = (() => { try { return localStorage.getItem('ngl.judgeInvite') ? 'register' : 'login'; } catch (_) { return 'login'; } })();   // a club's invite opens on Register
 function authHTML(){
   const reg = authMode === 'register';
   return `<div class="card jg-auth"><div class="jg-cardhead"><h2>Join the NGL Judging Pathway</h2><p>Register once, judge forever</p></div>
@@ -402,6 +402,12 @@ function drawShell(){
       <br><a href="#" data-jg="switch-club">I’m a club</a> · <a href="#" data-jg="switch-parent">I’m a parent</a></footer></div>`;
   root.hidden = false; document.querySelector('.app').hidden = true;
 }
+// A club's invite link (?judge=invite): the club and the person, kept on this device until they register
+function invite(){ try { return JSON.parse(localStorage.getItem('ngl.judgeInvite') || 'null'); } catch (_) { return null; } }
+// The judge's profile is linked to the inviting club (so the club sees them) while they keep the club name the invite gave
+function inviteClub(club){ const i = invite(); return i && i.clubId && (!club || club.toLowerCase() === String(i.club).toLowerCase()) ? {clubId: i.clubId} : {}; }
+function fillInvite(){ const i = invite(); if (!i) return; const set = (id, v) => { const el = document.getElementById(id); if (el && !el.value && v) el.value = v; };
+  set('jgRgName', i.name); set('jgRgEmail', i.email); set('jgRgClub', i.club); set('jgCpClub', i.club); }
 function drawPage(){
   const page = document.getElementById('jgPage'); if (!page) return;
   const k = tabKey();
@@ -411,6 +417,7 @@ function drawPage(){
     + (J.LIVE ? '' : '<p class="jg-demo">Sample data: nothing here is saved and nobody is emailed.</p>')
     + TABS.find(t => t[0] === k)[2]();
   if (k === 'signup') S.comps.forEach(c => updatePieceInfo(c.id));
+  fillInvite();
   document.title = TABS.find(t => t[0] === k)[1] + ' · NGL Judging Pathway';
   document.dispatchEvent(new CustomEvent('ngl:rendered'));
 }
@@ -470,7 +477,7 @@ async function doRegister(f){
     let photoUrl = '';
     if (photoFile) { try { photoUrl = await J.uploadPhoto(user.uid, photoFile); } catch (e) { console.warn('Photo not uploaded', e.code || e); /* photo upload failing shouldn't block registration */ } }
     // A judge has a pathway profile only: no clubs/{uid} document is made
-    const profile = { name, club, email, phone, qualifications, qualification: highestQual, photoUrl, priorShadowed, priorSecondJudged, createdAt: new Date().toISOString() };
+    const profile = { name, club, email, phone, qualifications, qualification: highestQual, photoUrl, priorShadowed, priorSecondJudged, createdAt: new Date().toISOString(), ...inviteClub(club) };
     await J.saveProfile(user.uid, profile);
     window.NGL_JUDGE_LASTERR = '';
     await showJudge();
@@ -500,7 +507,7 @@ async function completeProfile(f){
   const btn = f.querySelector('#jgBtnComplete'); btn.disabled = true; btn.textContent = 'Saving…';
   try {
     const profile = { name, club, email: S.user.email || '', phone, qualifications, qualification: highestLevelOfRows(QUAL_STATE.completeProfile), photoUrl: '',
-      priorShadowed: 0, priorSecondJudged: 0, createdAt: new Date().toISOString() };
+      priorShadowed: 0, priorSecondJudged: 0, createdAt: new Date().toISOString(), ...inviteClub(club) };
     await J.saveProfile(S.user.uid, profile);
     window.NGL_JUDGE_LASTERR = '';
     await showJudge();
@@ -633,7 +640,7 @@ function bind(root){
     else if (act === 'switch-club' || act === 'switch-parent') {
       try { localStorage.setItem('ngl.who', act === 'switch-club' ? 'club' : ''); if (act === 'switch-parent') localStorage.removeItem('ngl.who'); } catch (_) {}
       if (S.user) await J.signOut();
-      history.replaceState(null, '', location.pathname + (J.LIVE ? '' : '?demo'));
+      history.replaceState(null, '', location.pathname + (J.LIVE ? (new URLSearchParams(location.search).has('db') ? '?db' : '') : '?demo'));
       if (act === 'switch-club') location.reload(); else (await import('./welcome.js')).showParent();
     }
   });

@@ -194,8 +194,10 @@ service cloud.firestore {
     function judgeFields() { return ['name', 'club', 'phone', 'qualifications', 'qualification', 'photoUrl', 'quizBestWag', 'quizBestMag']; }
     match /ngl_judges/{uid} {
       allow get: if own(uid);
+      // a club sees the judges linked to it (invited by the club, or matched by club name at switch-over)
+      allow read: if signedIn() && resource.data.clubId == request.auth.uid;
       allow create: if own(uid)
-                    && request.resource.data.keys().hasOnly(['name', 'club', 'email', 'phone', 'qualifications', 'qualification', 'photoUrl', 'priorShadowed', 'priorSecondJudged', 'createdAt'])
+                    && request.resource.data.keys().hasOnly(['name', 'club', 'clubId', 'email', 'phone', 'qualifications', 'qualification', 'photoUrl', 'priorShadowed', 'priorSecondJudged', 'createdAt'])
                     && request.resource.data.name is string && request.resource.data.name != ''
                     && request.resource.data.email is string && request.resource.data.email.lower() == request.auth.token.email.lower()
                     && request.resource.data.priorShadowed is int && request.resource.data.priorShadowed >= 0 && request.resource.data.priorShadowed <= 500
@@ -223,6 +225,11 @@ service cloud.firestore {
       // Booking emails: the MyBG link and the send log, by the Competitions or Competition planning team
       allow update: if canAny(['competitions', 'planning']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['justgoUrl', 'mailLog', 'booking']); }
     match /products/{id}     { allow read: if signedIn(); allow write: if isAdmin(); }
+    // Judging invites: a club invites its staff to the Judging Pathway (its own only); the Judging team sees them all
+    match /judgeInvites/{id} { allow read: if canAny(['judging']) || (signedIn() && resource.data.clubId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.clubId == request.auth.uid && request.resource.data.keys().hasOnly(['clubId', 'clubName', 'name', 'email', 'at'])
+                    && request.resource.data.email is string && request.resource.data.name is string;
+      allow delete: if canAny(['judging']) || (signedIn() && resource.data.clubId == request.auth.uid); }
     match /resources/{id}    { allow read: if signedIn(); allow write: if isAdmin(); }
 
     // The full Recreational programme: clubs with a live Recreational licence, and NGL owners

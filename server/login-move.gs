@@ -78,9 +78,15 @@ function replaceSandboxLogins(){
   moveLogins();
 }
 
-// Run once: copies new logins into staging every night, 3am to 4am (UK). Needs the script.scriptapp scope.
-function setupNightly(){
-  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'moveLogins').forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('moveLogins').timeBased().everyDays(1).atHour(3).inTimezone('Europe/London').create();
-  Logger.log('Nightly login copy set: moveLogins, every day 3am to 4am');
+
+// Switch-over: remove the made-up test logins (example.com / .org / .net) the automatic tests left in the database
+function cleanTestLogins(){
+  const gone = users_(TARGET).filter(u => /@example\.(com|org|net)$/i.test(String(u.email || '')));
+  Logger.log('Test logins: ' + gone.length);
+  for (let i = 0; i < gone.length; i += 1000) {
+    const r = UrlFetchApp.fetch(IT + '/v1/projects/' + TARGET + '/accounts:batchDelete', {method: 'post', contentType: 'application/json', headers: auth_(TARGET),
+      payload: JSON.stringify({localIds: gone.slice(i, i + 1000).map(u => u.localId), force: true}), muteHttpExceptions: true});
+    if (r.getResponseCode() !== 200) throw new Error('Delete ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 300));
+  }
+  Logger.log('Removed ' + gone.length + ' test logins. Logins now: ' + users_(TARGET).length);
 }

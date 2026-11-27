@@ -1,11 +1,14 @@
 // Data layer. Every screen asks this file for data, never Firebase directly,
 // so the sandbox (sample data) and live (Firebase) run exactly the same screens.
-import { RULES_BASE, CARD_PAY_URL, ADMIN_EMAILS } from './config.js';
+import { RULES_BASE, CARD_PAY_URL, ADMIN_EMAILS, ENV } from './config.js';
 import { fb } from './firebase.js';
 import PRICES from './prices.js';
 
-// Sample data when the address has ?demo, otherwise the staging database.
-export const MODE = new URLSearchParams(location.search).has('demo') ? 'demo' : 'firebase';
+// Sample data when the address has ?demo. Since switch-over the database is the LIVE one, so any other address
+// (the old sandbox link, local tests) shows sample data only; ?db on another address is a deliberate exception for Dave/Claude.
+const Q0 = new URLSearchParams(location.search);
+const demoInvites = [{id: 'demo0', name: 'Priya Shah', email: 'priya@example.com', at: '2026-11-20'}];
+export const MODE = Q0.has('demo') || (ENV !== 'live' && !Q0.has('db')) ? 'demo' : 'firebase';
 
 const demo = {
   club: {name:'SAADI Gymnastics', contact:'Dave Brooke', email:'demo@club.example', bgNumber:'BG123456',
@@ -131,6 +134,9 @@ const demoApi = {
   async changeReservation(){ throw new Error('Sample data: nothing is saved.'); },
   async syncFamilyEvents(){},
   async syncFamilyPlan(){},
+  async clubJudges(){ return [{name: 'Megan Hart', email: 'megan@example.com', qualification: 'Club'}, {name: 'Tom Ellis', email: 'tom@example.com', qualification: 'None'}]; },
+  async judgeInvites(){ return demoInvites; },
+  async inviteJudge(name, email){ const i = {id: 'demo' + demoInvites.length, name, email, at: new Date().toISOString().slice(0, 10)}; demoInvites.push(i); return i; },
   async uploadMusic(){ throw new Error('Sample data: nothing is uploaded.'); },
   async placeOrder(){ throw new Error('Sample data: nothing is saved.'); },
   // Group buying with sample data: the order is kept in memory only (it shows on the board and in NGL Admin until the page reloads)
@@ -322,6 +328,13 @@ const fbApi = {
   },
   // Pre-School: the term plan parents see lives on the club's family code (familyCodes/{code}.plan)
   async syncFamilyPlan(code, plan){ const {fs, D} = await fb(); await fs.updateDoc(fs.doc(D, 'familyCodes', code), {plan, updatedAt: fs.serverTimestamp()}); },
+  // Judging (club side): judges whose profile carries this club's id, and the club's invites
+  async clubJudges(){ const {fs, A, D} = await fb(); const q = await fs.getDocs(fs.query(fs.collection(D, 'ngl_judges'), fs.where('clubId', '==', A.currentUser.uid)));
+    return q.docs.map(d => ({id: d.id, ...d.data()})).sort((a, b) => String(a.name).localeCompare(String(b.name))); },
+  async judgeInvites(){ const {fs, A, D} = await fb(); const q = await fs.getDocs(fs.query(fs.collection(D, 'judgeInvites'), fs.where('clubId', '==', A.currentUser.uid)));
+    return q.docs.map(d => ({id: d.id, ...d.data()})); },
+  async inviteJudge(name, email){ const {fs, A, D} = await fb(), c = await this.club(), r = fs.doc(fs.collection(D, 'judgeInvites'));
+    const i = {clubId: A.currentUser.uid, clubName: c.name || '', name, email: email.toLowerCase(), at: new Date().toISOString().slice(0, 10)}; await fs.setDoc(r, i); return {id: r.id, ...i}; },
   async updateClub(fields){
     const {fs, A, D} = await fb();
     await fs.setDoc(fs.doc(D, 'clubs', A.currentUser.uid), fields, {merge: true});
