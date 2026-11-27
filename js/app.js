@@ -1,7 +1,7 @@
 // NGL Club Hub: the app shell. One menu, one search, hash routes (#/section/sub)
 // so every screen has its own link that can be shared or bookmarked.
 import { ENV } from './config.js';
-import api, { useSampleClub, MODE } from './data.js';
+import api, { MODE } from './data.js';
 import { showAuth } from './views/auth.js';
 import { needGate, showGate, showWelcome } from './views/welcome.js';
 import './actions.js';
@@ -43,10 +43,14 @@ async function render(){
   const my = ++RENDER_SEQ, stale = () => my !== RENDER_SEQ;
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   let key = parts[0] === 'admin' ? 'admin' : NAV.some(n => n[0] === parts[0]) ? parts[0] : 'home';
-  if (CTX.staffOnly) useSampleClub(key !== 'admin');   // NGL team login with no club: club pages show the sample club
+  // NGL team login with no club: only NGL Admin and Help (no sample club pages); "Back to the Club Hub" logs out so a club can log in
+  if (CTX.staffOnly && key !== 'admin' && key !== 'help') { location.hash = '#/admin'; return; }
   const unpaid = CTX.staffOnly ? 0 : (await api.orders()).filter(o => o.status === 'awaiting-payment').length;
   if (stale()) return;
-  $('#nav').innerHTML = NAV.map(([k, l, i]) => {
+  $('#nav').innerHTML = CTX.staffOnly ? NAV.filter(n => n[0] === 'help').map(([k, l, i]) => `<a href="#/${k}" class="${k === key ? 'on' : ''}">${svg(i)}<span>${l}</span></a>`).join('')
+    + `<a href="#/admin" class="admin-link ${key === 'admin' ? 'on' : ''}">${svg('club')}<span>NGL Admin</span></a>`
+    + `<a href="#/home" class="back-hub" data-act="signout" title="Logs out of NGL Admin so you can log in as a club">${svg('home')}<span>Back to the Club Hub</span></a>`
+    : NAV.map(([k, l, i]) => {
     const badge = (k === 'shop' && unpaid) ? `<span class="badge">${unpaid}</span>` : '';
     return `<a href="#/${k}" class="${k === key ? 'on' : ''}" ${k === key ? 'aria-current="page"' : ''}>${svg(i)}<span>${l}</span>${badge}</a>`;
   }).join('') + `<a href="#/admin" class="admin-link ${key === 'admin' ? 'on' : ''}" title="For NGL admin staff only">${svg('club')}<span>NGL Admin</span></a>`;   // always shown; staff log in with their own NGL account
@@ -56,7 +60,7 @@ async function render(){
   const html = await view(key === parts[0] ? parts.slice(1) : [], CTX);
   if (stale()) return;
   { const t = $('.top'); if (t) document.documentElement.style.setProperty('--topH', Math.round(t.getBoundingClientRect().bottom) + 'px'); }
-  $('#page').innerHTML = (CTX.staffOnly && key !== 'admin' && key !== 'help' ? `<div class="sample-note"><b>Sample club.</b> You’re logged in as the NGL team, not a club, so these pages show sample data. Nothing you do here changes a real club.</div>` : '') + html;
+  $('#page').innerHTML = html;
   document.dispatchEvent(new CustomEvent('ngl:rendered'));
   document.title = (key === 'home' ? '' : (key === 'admin' ? 'NGL Admin' : NAV.find(n => n[0] === key)[1]) + ' · ') + 'NGL Club Hub';
 }
