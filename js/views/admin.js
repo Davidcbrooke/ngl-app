@@ -137,7 +137,9 @@ async function orders(filter = 'post'){
 }
 
 const BOOKING_PILL = c => { const link = /^(https:\/\/|demo:)/.test(c.justgoUrl || ''), b = c.booking || (link ? 'reserved' : 'closed');
-  return b === 'closed' ? pill('Not open', '') : !link ? pill('No JustGo link', 'red') : b === 'reserved' ? pill('Open: reserved clubs', 'ok') : pill('Open to all', 'ok'); };
+  if (b === 'closed') return pill('Not open', ''); if (!link) return pill('No JustGo link', 'red');
+  const gs = (d => (d.setMonth(d.getMonth() - 3), d.toISOString().slice(0, 10)))(new Date(c.date + 'T12:00'));
+  return b === 'open' || new Date().toISOString().slice(0, 10) >= gs ? pill('General sale', 'ok') : pill('Reserved clubs · all from ' + date(gs), 'warn'); };
 async function competitions(compId){
   if (compId === 'waiting') return waiting();
   const [cal, res, saved, pend] = await Promise.all([adm.calendar(), adm.reservations(), adm.calendarIsSaved ? adm.calendarIsSaved() : true, adm.pending()]);

@@ -61,7 +61,7 @@ const ACT = {
       ${wait ? '<p class="lead" style="font-size:14px"><b>This competition is fully reserved.</b> Join the waiting list and we’ll offer you places if any come free.</p>'
         : left != null ? `<p class="lead" style="font-size:14px"><b>${left} place${left === 1 ? '' : 's'} left.</b> Need more? Reserve what’s left and join the waiting list for the rest.</p>` : ''}
       <form><label class="field"><span>How many gymnast places?</span><input id="n" type="number" min="1" max="${wait || left == null ? 200 : left}" value="${wait || left == null ? 10 : Math.min(10, left)}" required></label>
-      <p class="lead" style="font-size:14px">No payment now. When the competition opens you’ll see <b>Buy now</b> here; places not bought by 3 months before go to the waiting list.</p>
+      <p class="lead" style="font-size:14px">No payment now. When the competition opens you’ll see <b>Buy now</b> here. Buy before it goes on general sale (3 months before) to keep your places.</p>
       <p class="err" id="err"></p><div class="btn-row"><button class="btn">${wait ? 'Join waiting list' : 'Reserve'}</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
     m.querySelector('form').addEventListener('submit', async e => { e.preventDefault(); const btn = m.querySelector('.btn'); btn.disabled = true;
       try { const ref = await api.reserve(c.id, m.querySelector('#n').value, wait); m.remove(); toast((wait ? 'You’re on the waiting list. Reference ' : 'Reserved. Your reference is ') + ref); location.hash = '#/competitions/places'; rerender(); }

@@ -1,4 +1,4 @@
-import { canBuy } from './competitions.js';
+import { canBuy, generalSaleFrom } from './competitions.js';
 import api from '../data.js';
 import { esc, gbp, date, ic, pill, path } from '../ui.js';
 import { PATHWAYS } from '../config.js';
@@ -26,7 +26,7 @@ export default async function home(_, ctx = {}){
     ctx.needsVerify && ['Confirm your email', 'Brings in any competition places booked before you joined', '#/club', 'Confirm'],
     unpaid.length && [`${unpaid.length} order${unpaid.length > 1 ? 's' : ''} not paid yet`, `${gbp(due)} · finish payment to confirm`, '#/shop/orders', 'Finish payment', 1],
     needMusic && [`${needMusic} gymnast${needMusic === 1 ? '' : 's'} need${needMusic === 1 ? 's' : ''} floor music`, `${esc(mc.ev.title)} · by ${date(mc.ev.deadline, {day:'numeric', month:'short'})}${musicDue.length > 1 ? ' · and ' + (musicDue.length - 1) + ' more' : ''}`, '#/competitions/music', 'Upload'],
-    buy && [`Open now: buy your reserved places`, `${esc(buy.name)}${buy.buyBy ? ' · by ' + date(buy.buyBy) : ''}`, '#/competitions', 'Buy now'],
+    buy && [`Open now: buy your reserved places`, `${esc(buy.name)} · general sale from ${date(generalSaleFrom(buy))}`, '#/competitions', 'Buy now'],
     !mine.length && ['Reserve places for 2027', 'Competitions are filling fast: reserving is free', '#/competitions', 'Reserve']
   ].filter(Boolean);
   return `<h1>Welcome, ${esc(c.name)}</h1><p class="lead">Everything your club does with the NGL, in one place.</p>

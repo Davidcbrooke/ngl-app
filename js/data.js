@@ -29,6 +29,7 @@ const demo = {
     {id:'c3', date:'2027-02-21', path:'general', name:'General League · West Midlands', where:'TBC', who:'Girls & Boys', booking:'open', justgoUrl:'demo:justgo', maxPlaces:100, taken:100},
     {id:'c4', date:'2027-03-13', path:'recreational', name:'Recreational · Ruby & Pink', where:'Redbourn', who:'Every gymnast medals', reserved:30, ref:'NGL-3RP9', buyBy:'2026-12-13'},
     {id:'c5', date:'2027-04-24', path:'performance', name:'Performance League Grades', where:'TBC', who:'Classic Challenge preparation', waiting:true},
+    {id:'c7', date:'2027-09-18', path:'general', name:'General League · South Region', where:'TBC', who:'Girls Levels 1–4', maxPlaces:60, taken:60},
     {id:'c6', date:'2027-10-24', path:'general', name:'NGL National Finals 2027', where:'TBC', who:'By qualification', waiting:true}
   ],
   // Floor music: one entry per competition the club has gymnasts in (from the start lists)

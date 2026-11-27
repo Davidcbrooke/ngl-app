@@ -1,7 +1,7 @@
 // NGL Admin buttons (data-act="adm-…"). Every write goes through admin-data.js; the database rules check it's an admin.
 import adm from './admin-data.js';
 import { PATHWAYS } from './config.js';
-import { modal, toast, esc } from './ui.js';
+import { modal, toast, esc, date } from './ui.js';
 
 const rerender = () => window.NGL_RENDER && window.NGL_RENDER();
 const fail = x => { console.error(x); toast(String(x.message || '').startsWith('Sample') ? x.message : 'Couldn’t save. Please try again.', false); };
@@ -45,7 +45,7 @@ export const ADM = {
     const opt = (v, t, d) => `<label class="row" style="gap:10px;cursor:pointer"><input type="radio" name="bk" value="${v}" ${now === v ? 'checked' : ''} style="width:auto"><div class="grow"><b>${t}</b><small>${d}</small></div></label>`;
     const m = modal(`<h2>Booking: ${esc(c.name || '')}</h2><form>
       ${opt('closed', 'Not open yet', 'Clubs can reserve places for free. Nobody can buy yet.')}
-      ${opt('reserved', 'Open now for clubs that reserved', 'Clubs with reserved places see Open now and Buy now (straight to JustGo). Other clubs can still reserve to be next in line.')}
+      ${opt('reserved', 'Reserved clubs now, everyone 3 months before', 'Clubs with reserved places can buy now. From ' + date(c.date ? (d => (d.setMonth(d.getMonth() - 3), d.toISOString().slice(0, 10)))(new Date(c.date + 'T12:00')) : '') + ' it goes on general sale automatically.')}
       ${opt('open', 'Open to all clubs', 'Every club sees Open now and Buy now.')}
       <label class="field"><span>JustGo Events link</span><input id="url" type="url" value="${esc(c.justgoUrl || '')}" placeholder="https://…"></label>
       <div class="btn-row"><button class="btn">Save</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form>`);
