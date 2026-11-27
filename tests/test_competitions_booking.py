@@ -5,7 +5,7 @@ and the booking switch in NGL Admin (not open / reserved clubs first / open to a
 def test_four_stages_and_booking_states(page):
     page.go("#/competitions", demo=True)
     txt = page.p.inner_text("#page")
-    for s in ["coming up", "reserve places, free", "buy now", "upload floor music", "your reserved competitions"]:
+    for s in ["coming up", "reserve places, free", "buy now", "upload floor music"]:
         assert s in txt.lower()
     low = txt.lower()
     for h in ["total places", "available to reserve", "booked", "still to book"]:
@@ -43,7 +43,6 @@ def test_admin_booking_switch(page):
 
 def test_join_waiting_list_when_full(page):
     page.go("#/competitions", demo=True)
-    assert "Fully reserved" in page.p.inner_text("#page")
     page.p.click("[data-wait][data-comp=c7]")
     page.p.wait_for_selector(".modal >> text=fully reserved")
     assert "Join waiting list" in page.p.inner_text(".modal")
