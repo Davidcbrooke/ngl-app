@@ -45,6 +45,22 @@ export function bookingState(c){
   if (left === 0) return {pill: '', act: waitBtn(c)};
   return {pill: '', act: `<button class="btn sm" data-act="reserve" data-comp="${esc(c.id)}">Reserve places, free</button>`};
 }
+// One row: the competition as a whole (total, reserved, available) and this club (reserved, booked, still to book)
+function numbersRow(c){
+  const max = typeof c.maxPlaces === 'number' && c.maxPlaces > 0 ? c.maxPlaces : null, taken = c.taken || 0, left = placesLeft(c);
+  const mine = c.reserved > 0 && !c.waiting ? c.reserved : 0, booked = c.booked || 0, toBook = Math.max(0, mine - booked);
+  const sale = stageOf(c) === 'open' ? 'On general sale' : hasLink(c) && stageOf(c) !== 'closed' ? 'General sale from ' + date(generalSaleFrom(c)) : '';
+  const avail = c.waiting ? `${pill('On waiting list', 'warn')}`
+    : left === 0 ? `<b class="num red">0</b> <button class="btn sm ghost" data-act="reserve" data-wait="1" data-comp="${esc(c.id)}">Join waiting list</button>`
+    : `<b class="num">${left == null ? '–' : left}</b>${mine || c.bought ? '' : ` <button class="btn sm" data-act="reserve" data-comp="${esc(c.id)}">Reserve</button>`}`;
+  const buy = toBook > 0 && canBuy(c) ? ` <button class="btn sm" data-act="book" data-comp="${esc(c.id)}">Buy now ↗</button>`
+    : toBook > 0 && !hasLink(c) ? '<small class="comp-sale">buy link coming soon</small>' : '';
+  const generalBuy = !mine && !booked && left !== 0 && canBuy(c) ? ` <button class="btn sm" data-act="book" data-comp="${esc(c.id)}">Buy now ↗</button>` : '';
+  return `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small>${sale ? `<small class="comp-sale">${sale}</small>` : ''}</td>
+    <td class="n"><b class="num">${max == null ? '–' : max}</b></td><td class="n"><b class="num">${taken}</b></td><td class="n">${avail}</td>
+    <td class="n you"><b class="num">${mine || '–'}</b></td><td class="n you"><b class="num ${booked ? 'ok' : ''}">${booked || '–'}</b></td>
+    <td class="n you">${mine ? `<b class="num ${toBook ? 'red' : 'ok'}">${toBook}</b>${buy}` : generalBuy || '–'}</td></tr>`;
+}
 // Top of the page: every competition this club reserved, with Buy now where it's open
 function reservedPanel(comps){
   const mine = comps.filter(c => c.reserved > 0 && !c.waiting);
@@ -83,9 +99,12 @@ export default async function competitions([sub = '']){
     body = `<div class="grid g3">${RESULTS.map(x => `<a class="card tile" href="${x[4]}" target="_blank" rel="noopener">${ic(x[0], x[3])}<div><b>${x[1]} ↗</b><br><small style="color:var(--muted)">${x[2]}</small></div></a>`).join('')}</div>
     <p class="lead" style="margin-top:14px">Share these with parents: <a href="#/club">My club → Family codes</a> has a link and QR code for the General League Family Hub.</p>`;
   } else {
-    body = stages() + reservedPanel(comps) + `<h2 style="margin:18px 0 8px">All competitions</h2><div class="card"><table class="comp-all"><tr><th>Date</th><th>Competition</th><th>Places</th><th>Your club</th></tr>${comps.map(c => { const st = bookingState(c); return `<tr><td><b>${date(c.date)}</b></td><td>${dot(c.path)} <b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.where)} · ${esc(c.who)}</small></td>
-      <td>${compState(c)}</td><td><div class="comp-you">${st.pill}${st.act}</div></td></tr>`; }).join('')}</table></div>
-    <p class="lead" style="margin-top:14px">Reserving is free. Not sure which competition? <a href="#/help/level">Which level should my gymnast enter?</a></p>`;
+    body = stages() + `<h2 style="margin:18px 0 8px">All competitions</h2>
+    <div class="card comp-wrap"><table class="comp-all">
+      <tr><th rowspan="2">Date</th><th rowspan="2">Competition</th><th colspan="3" class="grp">The competition</th><th colspan="3" class="grp you">Your club</th></tr>
+      <tr><th class="n">Total places</th><th class="n">Reserved</th><th class="n">Available to reserve</th><th class="n you">Reserved</th><th class="n you">Booked</th><th class="n you">Still to book</th></tr>
+      ${comps.map(numbersRow).join('')}</table></div>
+    <p class="lead" style="margin-top:14px">Reserving is free. Booked = bought on JustGo Events (updated when NGL syncs the sales). Not sure which competition? <a href="#/help/level">Which level should my gymnast enter?</a></p>`;
   }
   return head('Competitions', 'See what’s coming up, reserve places for free, buy them when they’re open, then upload floor music.') + tabs(SUB, sub, '#/competitions') + body;
 }

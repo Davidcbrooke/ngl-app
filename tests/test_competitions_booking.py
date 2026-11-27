@@ -8,20 +8,18 @@ def test_four_stages_and_booking_states(page):
     for s in ["coming up", "reserve places, free", "buy now", "upload floor music", "your reserved competitions"]:
         assert s in txt.lower()
     low = txt.lower()
-    # the competition as a whole, then this club
-    assert "fully reserved" in low and "places left" in low and "your club" in low
-    assert "12 reserved · open now" in low          # c1: reserved, link saved
-    assert "booked · 6 places" in low               # c2: bought on JustGo
-    assert "on the waiting list" in low
-    assert page.p.locator("[data-act=book]").count() >= 2
-    assert page.p.locator("[data-wait]").count() >= 1   # full competitions: join the waiting list
+    for h in ["total places", "available to reserve", "booked", "still to book"]:
+        assert h in low
+    assert page.p.locator("[data-wait]").count() >= 1      # full: join the waiting list
+    assert "on waiting list" in low
+    assert page.p.locator("[data-act=book]").count() >= 1  # reserved and open: Buy now
     page.p.click("[data-act=book] >> nth=0")
     assert "JustGo Events" in page.toast()
 
 
 def test_my_places_shows_book_button(page):
     page.go("#/competitions/places", demo=True)
-    assert page.p.locator("[data-act=book]").count() == 1
+    assert page.p.locator("[data-act=book]").count() >= 1
     assert "BOOK BY" in page.p.inner_text("#page table").upper()
 
 

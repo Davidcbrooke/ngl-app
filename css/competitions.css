@@ -7,3 +7,6 @@
 @media (max-width:520px){.comp-stages{grid-template-columns:1fr}}
 .comp-mine{margin:0 0 16px;border-left:6px solid var(--red,#c6152e)}.comp-mine h2{margin:0 0 4px}.comp-mine .row{gap:10px;flex-wrap:wrap}
 .comp-sale{display:block;color:var(--muted);font-size:12px;margin-top:4px}.comp-you{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.comp-wrap{overflow-x:auto}.comp-all th.grp{text-align:center;border-bottom:2px solid var(--navy,#28225c)}.comp-all th.grp.you,.comp-all .you{background:#f6f5fb}
+.comp-all th.n,.comp-all td.n{text-align:center;white-space:nowrap}.comp-all .num{font-size:18px}.comp-all .num.red{color:#c6152e}.comp-all .num.ok{color:#1f8a4c}
+.comp-all td.n .btn{margin-left:6px}
