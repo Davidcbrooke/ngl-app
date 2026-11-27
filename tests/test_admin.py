@@ -24,7 +24,7 @@ def test_club_has_no_admin(account):
     pg.route("#/home")
     assert pg.p.locator(".admin-link").count() == 1      # always at the bottom of the menu
     pg.route("#/admin")
-    assert "admin staff only" in pg.p.inner_text("#page") and pg.p.locator("#admGate").count() == 1
+    assert "admin staff only" in pg.p.inner_text("#page").lower() and pg.p.locator("#admGate").count() == 1
 
 
 

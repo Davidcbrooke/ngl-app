@@ -170,7 +170,7 @@ JUDGE_FIELDS = {"name", "club", "email", "phone", "qualifications", "qualificati
 def test_staging_judge_registers_and_books(page):
     email = f"autotest-judge-{secrets.token_hex(4)}@example.com"
     pw = "Test-" + secrets.token_hex(8)
-    page.p.goto(page.base + "#/judge")
+    page.p.goto(page.base + "?db=test#/judge")
     page.p.wait_for_selector(".jg #jgLogin", timeout=20000)
     page.p.click("[data-jg=mode][data-m=register]")
     page.p.fill("#jgRgName", "AUTOTEST Judge")

@@ -363,7 +363,7 @@ const fbApi = {
     return cred;
   },
   async reset(email){ const {auth, A} = await fb(); return auth.sendPasswordResetEmail(A, email); },
-  async signOut(){ const {auth, A} = await fb(); CLUB = null; window.removeEventListener('hashchange', window.NGL_ONHASH); await auth.signOut(A); location.replace(location.pathname); }
+  async signOut(){ const {auth, A} = await fb(); CLUB = null; window.removeEventListener('hashchange', window.NGL_ONHASH); await auth.signOut(A); location.replace(location.pathname + (Q0.has('db') ? '?db' + (Q0.get('db') ? '=' + Q0.get('db') : '') : '')); }   // keep ?db / ?db=test (not used on the live address)
 };
 
 export { demo, DEFAULT_LICENCES, code, iso };

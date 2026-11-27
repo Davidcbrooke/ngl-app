@@ -12,6 +12,18 @@ export const FIREBASE_STAGING = {
   messagingSenderId: '45192519828',
   appId: '1:45192519828:web:b0233b4e1e0dbe7b0c5481'
 };
+// Test database (27 Nov 2026): a separate Firebase project for the automatic tests, since ngl-club-hub-staging
+// became the LIVE database at the switch-over. Used only with ?db=test, and never on the live address.
+export const FIREBASE_TEST = {
+  apiKey: 'AIzaSyDAhc5T6Rhfca7Xror5Vyy7R3kJTAP4Bns',
+  authDomain: 'ngl-club-hub-test.firebaseapp.com',
+  projectId: 'ngl-club-hub-test',
+  storageBucket: 'ngl-club-hub-test.firebasestorage.app',
+  messagingSenderId: '524265757313',
+  appId: '1:524265757313:web:239ae655776e481a7dcb80'
+};
+export const TEST_DB = ENV !== 'live' && new URLSearchParams(location.search).get('db') === 'test';
+export const FIREBASE = TEST_DB ? FIREBASE_TEST : FIREBASE_STAGING;
 // Receipts. Orders are paid at checkout (card or Pay by bank through Stripe), so there are no invoices to chase.
 // Licence fees + VAT; books, medals and t-shirts carry no VAT.
 export const INVOICE = {name: 'SAADI Gymnastics Ltd trading as National Gymnastics League', address: ['66 Waveney Road', 'Harpenden', 'Hertfordshire', 'AL5 4QZ'],

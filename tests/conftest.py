@@ -45,8 +45,8 @@ class Page:
         self.p.on("pageerror", lambda e: self.errors.append(str(e)))
 
     def go(self, hash_="#/home", demo=False):
-        # Not sample data: ?db connects to the database (live since switch-over). Only signed-out screens use it; nothing is written.
-        self.p.goto(self.base + ("?demo" if demo else "?db") + hash_)
+        # Not sample data: ?db=test connects to the separate TEST database (ngl-club-hub-test), never the live one.
+        self.p.goto(self.base + ("?demo" if demo else "?db=test") + hash_)
         self.p.wait_for_selector("#page h1, #authRoot h1", timeout=20000)
 
     def route(self, hash_):
@@ -80,10 +80,7 @@ def phone(browser, base_url):
 
 @pytest.fixture(scope="session")
 def account(browser, base_url):
-    """One fresh test club on the staging database. Made-up example.com email, so no emails are sent."""
-    # Switch-over (27 Nov 2026): the staging project became the LIVE Club Hub database, so tests no longer
-    # create clubs in it. They come back when a new, separate staging project is set up.
-    pytest.skip("Real-database tests are off: ngl-club-hub-staging is now the live database")
+    """One fresh test club on the TEST database (ngl-club-hub-test). Made-up example.com email, so no emails are sent."""
     email = f"autotest-{secrets.token_hex(4)}@example.com"
     pw = "Test-" + secrets.token_hex(8)
     pg = Page(browser, base_url)
@@ -108,8 +105,17 @@ def account(browser, base_url):
         pg.ctx.close()
 
 
+NEEDS_STORAGE = ("test_club_can_upload_its_own_music", "test_club_cannot_store", "test_club_places_a_real_order")
+NEEDS_LIVE_CARD = ("test_basket_order_goes_straight_to_payment",)
+
+
 def pytest_collection_modifyitems(items):
-    # Switch-over (27 Nov 2026): tests that write to the database are off; that database is now the live Club Hub
+    # Tests that write to the database use the separate TEST project (ngl-club-hub-test) through ?db=test.
+    # Two things the test project doesn't have (27 Nov 2026):
+    #  - file storage: new Firebase projects only get Storage on the paid (Blaze) plan, so upload tests are skipped;
+    #  - its own card-payment script: the "NGL card payments STAGING" script reads the live database.
     for it in items:
-        if "staging" in it.name:
-            it.add_marker(pytest.mark.skip(reason="Writes to the database, which is now live"))
+        if it.name.startswith(NEEDS_STORAGE):
+            it.add_marker(pytest.mark.skip(reason="Needs file storage: the test Firebase project has none (Blaze plan)"))
+        elif it.name.startswith(NEEDS_LIVE_CARD):
+            it.add_marker(pytest.mark.skip(reason="Card checkout script is wired to the live database, not the test one"))

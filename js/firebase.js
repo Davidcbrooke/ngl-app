@@ -1,6 +1,6 @@
 // Firebase loader: same SDK version as today's hubs. The project called ngl-club-hub-staging became the LIVE
 // Club Hub database at switch-over (27 Nov 2026); the old hubs' projects (ngl-schools, saadi-rotation) are no longer written to by the app.
-import { FIREBASE_STAGING } from './config.js';
+import { FIREBASE } from './config.js';
 
 const V = '10.12.2';
 let FB = null;
@@ -11,7 +11,7 @@ export async function fb(){
     import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`),
     import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`)
   ]);
-  const a = app.initializeApp(FIREBASE_STAGING);
+  const a = app.initializeApp(FIREBASE);
   // Offline storage on (as the old music tool had): reads work and changes are kept while offline, then sent when the connection returns
   let D; try { D = fs.initializeFirestore(a, {localCache: fs.persistentLocalCache({tabManager: fs.persistentMultipleTabManager()})}); } catch (e) { console.warn('Offline storage not available', e); D = fs.getFirestore(a); }
   FB = {auth, fs, A: auth.getAuth(a), D};
@@ -35,7 +35,7 @@ export function authMessage(e){
 export async function inviteLogin(email){
   const {auth, A} = await fb();
   const app = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
-  const a2 = app.getApps().find(x => x.name === 'invite') || app.initializeApp(FIREBASE_STAGING, 'invite');
+  const a2 = app.getApps().find(x => x.name === 'invite') || app.initializeApp(FIREBASE, 'invite');
   const A2 = auth.getAuth(a2);
   try { await auth.createUserWithEmailAndPassword(A2, email, crypto.randomUUID() + 'Aa1!'); }
   catch (e) { if (e.code !== 'auth/email-already-in-use') throw e; }
